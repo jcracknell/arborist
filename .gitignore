@@ -1,0 +1,8 @@
+# IDE cache
+.vs/
+.idea/
+*.user
+
+# Build artifacts
+[Bb]in/
+[Oo]bj/

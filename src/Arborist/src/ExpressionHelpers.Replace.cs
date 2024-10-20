@@ -16,16 +16,6 @@ public static partial class ExpressionHelpers {
     /// Replaces all occurrences of the expressions identified by the provided <paramref name="replacements"/> mapping
     /// in the subject <paramref name="expression"/>.
     /// </summary>
-    public static Expression Replace(Expression expression, IEnumerable<KeyValuePair<Expression, Expression>> replacements) =>
-        Replace(expression, replacements switch {
-            IReadOnlyDictionary<Expression, Expression> dictionary => dictionary,
-            _ => CreateReplacementsDictionary(replacements)
-        });
-
-    /// <summary>
-    /// Replaces all occurrences of the expressions identified by the provided <paramref name="replacements"/> mapping
-    /// in the subject <paramref name="expression"/>.
-    /// </summary>
     public static Expression Replace(Expression expression, IReadOnlyDictionary<Expression, Expression> replacements) =>
         new ReplacingExpressionVisitor(replacements).Visit(expression);
 

@@ -1,4 +1,4 @@
-namespace Arborist.Tests;
+namespace Arborist;
 
 public class ExpressionHelpersAndTests {
     [Fact]

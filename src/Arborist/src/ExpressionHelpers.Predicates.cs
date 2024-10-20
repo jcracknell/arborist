@@ -44,4 +44,16 @@ public static partial class ExpressionHelpers {
 
         return ChainedBinOp(ExpressionType.OrElse, Const<TDelegate>(false), expressions);
     }
+
+    /// <summary>
+    /// Creates a negated version of the provided predicate <paramref name="expression"/>.
+    /// </summary>
+    public static Expression<TDelegate> Not<TDelegate>(Expression<TDelegate> expression) {
+        AssertPredicateExpressionType(typeof(TDelegate));
+
+        return Expression.Lambda<TDelegate>(
+            Expression.Not(expression.Body),
+            expression.Parameters
+        );
+    }
 }

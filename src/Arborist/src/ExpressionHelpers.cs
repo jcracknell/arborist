@@ -31,7 +31,7 @@ public static partial class ExpressionHelpers {
 
     private static Expression<TDelegate> ChainedBinOp<TDelegate>(
         ExpressionType expressionType,
-        Expression<TDelegate> zero,
+        object? zero,
         IEnumerable<Expression<TDelegate>> expressions
     ) where TDelegate : Delegate {
         if(expressions is not IReadOnlyList<Expression<TDelegate>> expressionList)
@@ -40,7 +40,7 @@ public static partial class ExpressionHelpers {
         AssertFuncExpressionType(typeof(TDelegate));
 
         switch(expressionList.Count) {
-            case 0: return zero;
+            case 0: return Const<TDelegate>(zero);
             case 1: return expressionList[0];
         }
 
@@ -57,6 +57,52 @@ public static partial class ExpressionHelpers {
             )),
             parameters: head.Parameters
         );
+    }
+
+    private static Expression<TDelegate> ChainedBinOpTree<TDelegate>(
+        ExpressionType expressionType,
+        object? zero,
+        IEnumerable<Expression<TDelegate>> expressions
+    ) where TDelegate : Delegate {
+        if(expressions is not IReadOnlyList<Expression<TDelegate>> expressionList)
+            return ChainedBinOpTree(expressionType, zero, expressions.ToList());
+
+        AssertFuncExpressionType(typeof(TDelegate));
+
+        switch(expressionList.Count) {
+            case 0: return Const<TDelegate>(zero);
+            case 1: return expressionList[0];
+        }
+
+        var head = expressionList[0];
+        var parameterCount = expressionList.Count * head.Parameters.Count;
+        var replacements = new Dictionary<Expression, Expression>(parameterCount);
+        foreach(var expr in expressionList.Skip(1))
+            foreach(var (search, replace) in head.Parameters.Zip(expr.Parameters))
+                replacements[search] = replace;
+
+        return Expression.Lambda<TDelegate>(
+            Recurse(expressionType, expressionList, 0, expressionList.Count, replacements),
+            expressionList[0].Parameters
+        );
+
+        static Expression Recurse(
+            ExpressionType expressionType,
+            IReadOnlyList<Expression<TDelegate>> expressionList,
+            int start,
+            int end,
+            IReadOnlyDictionary<Expression, Expression> replacements
+        ) => (end - start) switch {
+            1 => start switch {
+                0 => expressionList[0].Body,
+                _ => Replace(expressionList[start].Body, replacements),
+            },
+            var len => Expression.MakeBinary(
+                binaryType: expressionType,
+                left: Recurse(expressionType, expressionList, start, start + len / 2, replacements),
+                right: Recurse(expressionType, expressionList, start + len / 2, end, replacements)
+            )
+        };
     }
 
     private static Expression<TDelegate> Const<TDelegate>(object? value)

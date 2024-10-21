@@ -92,17 +92,25 @@ public static partial class ExpressionHelpers {
             int start,
             int end,
             IReadOnlyDictionary<Expression, Expression> replacements
-        ) => (end - start) switch {
-            1 => start switch {
-                0 => expressionList[0].Body,
-                _ => Replace(expressionList[start].Body, replacements),
-            },
-            var len => Expression.MakeBinary(
+        ) {
+            if(1 == end - start) {
+                // As a minor optimization, we can return the body of the initial expression directly as we
+                // are using its parameters in the result expression.
+                if(0 == start)
+                    return expressionList[0].Body;
+
+                return Replace(expressionList[start].Body, replacements);
+            }
+
+            // Add any remainder to the midpoint to make the resulting expression left-biased
+            var middle = end / 2 + (end & 1);
+
+            return Expression.MakeBinary(
                 binaryType: expressionType,
-                left: Recurse(expressionType, expressionList, start, start + len / 2, replacements),
-                right: Recurse(expressionType, expressionList, start + len / 2, end, replacements)
-            )
-        };
+                left: Recurse(expressionType, expressionList, start, middle, replacements),
+                right: Recurse(expressionType, expressionList, middle, end, replacements)
+            );
+        }
     }
 
     private static Expression<TDelegate> Const<TDelegate>(object? value)

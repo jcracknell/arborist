@@ -31,4 +31,23 @@ public class ExpressionHelpersAndTreeTests {
 
         Assert.Equivalent(expectedBody, expr.Body);
     }
+
+    [Fact]
+    public void AndTree_should_be_left_biased() {
+        var expr = ExpressionHelpers.AndTree<Func<string, bool>>(
+            x => true,
+            x => false,
+            x => true
+        );
+
+        var expectedBody = Expression.AndAlso(
+            Expression.AndAlso(
+                Expression.Constant(true),
+                Expression.Constant(false)
+            ),
+            Expression.Constant(true)
+        );
+
+        Assert.Equivalent(expectedBody, expr.Body);
+    }
 }

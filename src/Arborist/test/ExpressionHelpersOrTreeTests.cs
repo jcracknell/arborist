@@ -31,4 +31,23 @@ public class ExpressionHelpersOrTreeTests {
 
         Assert.Equivalent(expectedBody, expr.Body);
     }
+
+    [Fact]
+    public void OrTree_should_be_left_biased() {
+        var expr = ExpressionHelpers.OrTree<Func<string, bool>>(
+            x => true,
+            x => false,
+            x => true
+        );
+
+        var expectedBody = Expression.OrElse(
+            Expression.OrElse(
+                Expression.Constant(true),
+                Expression.Constant(false)
+            ),
+            Expression.Constant(true)
+        );
+
+        Assert.Equivalent(expectedBody, expr.Body);
+    }
 }

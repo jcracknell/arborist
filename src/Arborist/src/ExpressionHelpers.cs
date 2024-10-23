@@ -2,7 +2,7 @@ namespace Arborist;
 
 public static partial class ExpressionHelpers {
     private static void AssertActionExpressionType(Type type) {
-        if(!IsPredicateExpressionType(type))
+        if(!IsActionExpressionType(type))
             throw new InvalidOperationException($"Invalid Action type: {type}.");
     }
 

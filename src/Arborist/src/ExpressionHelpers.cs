@@ -103,7 +103,7 @@ public static partial class ExpressionHelpers {
             }
 
             // Add any remainder to the midpoint to make the resulting expression left-biased
-            var middle = end / 2 + (end & 1);
+            var middle = start + Math.DivRem(end - start, 2, out var rem) + rem;
 
             return Expression.MakeBinary(
                 binaryType: expressionType,

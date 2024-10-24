@@ -75,7 +75,7 @@ public static class EI {
     /// <typeparam name="R">
     /// The return type of the interpolated <paramref name="expression"/>.
     /// </typeparam>
-    /// <exception cref="InterpolatedSpliceEvaluationException"Eval>
+    /// <exception cref="InterpolatedSpliceEvaluationException">
     /// This method should only be used in an interpolated expression.
     /// </exception>
     public static R SpliceBody<A, R>(

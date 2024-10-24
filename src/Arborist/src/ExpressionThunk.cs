@@ -29,6 +29,16 @@ public static class ExpressionThunk {
         ExpressionHelpers.GetMethod(expression);
 
     /// <summary>
+    /// Grafts the provided <paramref name="branch"/> expression onto the <paramref name="root"/> expression,
+    /// replacing references to its parameter with the body of the <paramref name="root"/> expression.
+    /// </summary>
+    public static Expression<Func<R>> Graft<A, R>(Expression<Func<A>> root, Expression<Func<A, R>> branch) =>
+        Expression.Lambda<Func<R>>(
+            body: ExpressionHelpers.Replace(branch.Body, branch.Parameters[0], root.Body),
+            parameters: root.Parameters
+        );
+
+    /// <summary>
     /// Applies the interpolation process to the provided <paramref name="expression"/>, replacing
     /// calls to splicing methods defined on <see cref="EI"/> with the corresponding subexpressions.
     /// </summary>
@@ -38,16 +48,6 @@ public static class ExpressionThunk {
     /// </typeparam>
     public static Expression<Func<R>> Interpolate<R>(Expression<Func<R>> expression) =>
         ExpressionHelpers.Interpolate(expression);
-
-    /// <summary>
-    /// Rebases the provided <paramref name="branch"/> expression onto the <paramref name="root"/> expression,
-    /// replacing references to its parameter with the body of the <paramref name="root"/> expression.
-    /// </summary>
-    public static Expression<Func<R>> Rebase<A, R>(Expression<Func<A>> root, Expression<Func<A, R>> branch) =>
-        Expression.Lambda<Func<R>>(
-            body: ExpressionHelpers.Replace(branch.Body, branch.Parameters[0], root.Body),
-            parameters: root.Parameters
-        );
 
     /// <summary>
     /// Attempts to get a constructor identified by the provided <paramref name="expression"/>.

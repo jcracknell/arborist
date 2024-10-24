@@ -4,8 +4,8 @@ namespace Arborist;
 
 public partial class ExpressionOn1Tests {
     [Fact]
-    public void Rebase_works_as_expected() {
-        var actual = ExpressionOn<Cat>.Rebase(c => c.Name, str => str.Length);
+    public void Graft_works_as_expected() {
+        var actual = ExpressionOn<Cat>.Graft(c => c.Name, str => str.Length);
 
         var expected = Expression.Lambda<Func<Cat, int>>(
             Expression.Property(

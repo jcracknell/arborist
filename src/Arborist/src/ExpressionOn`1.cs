@@ -32,6 +32,16 @@ public static class ExpressionOn<A> {
         ExpressionHelpers.GetMethod(expression);
 
     /// <summary>
+    /// Grafts the provided <paramref name="branch"/> expression onto the <paramref name="root"/> expression,
+    /// replacing references to its parameter with the body of the <paramref name="root"/> expression.
+    /// </summary>
+    public static Expression<Func<A, R>> Graft<B, R>(Expression<Func<A, B>> root, Expression<Func<B, R>> branch) =>
+        Expression.Lambda<Func<A, R>>(
+            body: ExpressionHelpers.Replace(branch.Body, branch.Parameters[0], root.Body),
+            parameters: root.Parameters
+        );
+
+    /// <summary>
     /// Applies the interpolation process to the provided <paramref name="expression"/>, replacing
     /// calls to splicing methods defined on <see cref="EI"/> with the corresponding subexpressions.
     /// </summary>
@@ -41,16 +51,6 @@ public static class ExpressionOn<A> {
     /// </typeparam>
     public static Expression<Func<A, R>> Interpolate<R>(Expression<Func<A, R>> expression) =>
         ExpressionHelpers.Interpolate(expression);
-
-    /// <summary>
-    /// Rebases the provided <paramref name="branch"/> expression onto the <paramref name="root"/> expression,
-    /// replacing references to its parameter with the body of the <paramref name="root"/> expression.
-    /// </summary>
-    public static Expression<Func<A, R>> Rebase<B, R>(Expression<Func<A, B>> root, Expression<Func<B, R>> branch) =>
-        Expression.Lambda<Func<A, R>>(
-            body: ExpressionHelpers.Replace(branch.Body, branch.Parameters[0], root.Body),
-            parameters: root.Parameters
-        );
 
     /// <summary>
     /// Attempts to get a constructor identified by the provided <paramref name="expression"/>.

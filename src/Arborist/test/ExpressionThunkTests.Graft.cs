@@ -2,7 +2,7 @@ namespace Arborist;
 
 public partial class ExpressionThunkTests {
     [Fact]
-    public void Rebase_works_as_expected() {
+    public void Graft_works_as_expected() {
         var expected = Expression.Lambda<Func<int>>(
             Expression.Property(
                 Expression.Constant("foo"),
@@ -10,7 +10,7 @@ public partial class ExpressionThunkTests {
             )
         );
 
-        var actual = ExpressionThunk.Rebase(() => "foo", str => str.Length);
+        var actual = ExpressionThunk.Graft(() => "foo", str => str.Length);
 
         Assert.Equivalent(expected, actual);
     }

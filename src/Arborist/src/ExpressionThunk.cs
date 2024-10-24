@@ -40,6 +40,16 @@ public static class ExpressionThunk {
         ExpressionHelpers.Interpolate(expression);
 
     /// <summary>
+    /// Rebases the provided <paramref name="branch"/> expression onto the <paramref name="root"/> expression,
+    /// replacing references to its parameter with the body of the <paramref name="root"/> expression.
+    /// </summary>
+    public static Expression<Func<R>> Rebase<A, R>(Expression<Func<A>> root, Expression<Func<A, R>> branch) =>
+        Expression.Lambda<Func<R>>(
+            body: ExpressionHelpers.Replace(branch.Body, branch.Parameters[0], root.Body),
+            parameters: root.Parameters
+        );
+
+    /// <summary>
     /// Attempts to get a constructor identified by the provided <paramref name="expression"/>.
     /// </summary>
     public static bool TryGetConstructor<R>(

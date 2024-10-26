@@ -1,70 +1,80 @@
 using Arborist.Internal;
-using System.Collections.Immutable;
 
 namespace Arborist;
 
 public static partial class ExpressionHelpers {
-    /// <summary>
-    /// Applies the interpolation process to the provided <paramref name="expression"/>, replacing
-    /// calls to splicing methods defined on <see cref="EI"/> with the corresponding subexpressions.
-    /// </summary>
-    /// <seealso cref="EI"/>
-    public static Expression<TDelegate> Interpolate<TDelegate>(Expression<TDelegate> expression)
+    internal static Expression<TDelegate> InterpolateCore<TData, TDelegate>(TData data, LambdaExpression expression)
         where TDelegate : Delegate
     {
         var analyzer = new AnalyzingInterpolationVisitor(expression);
         analyzer.Visit(expression.Body);
 
-        var evaluatedExpressions = EvaluateInterpolatedExpressions(analyzer.EvaluatedExpressions);
-        if(evaluatedExpressions.Count == 0)
-            return expression;
+        var parameterExpressions = expression.Parameters.Skip(1);
 
-        var interpolator = new SplicingInterpolationVisitor(evaluatedExpressions);
+        var interpolator = new SplicingInterpolationVisitor(
+            evaluatedSpliceParameters: EvaluateInterpolatedExpressions(
+                data: data,
+                evaluatedExpressions: analyzer.EvaluatedExpressions,
+                dataReferences: analyzer.DataReferences
+            )
+        );
 
         return Expression.Lambda<TDelegate>(
             body: interpolator.Visit(expression.Body),
-            parameters: expression.Parameters
+            parameters: expression.Parameters.Skip(1)
         );
     }
 
-    private static IReadOnlyDictionary<Expression, object?> EvaluateInterpolatedExpressions(
-        IReadOnlySet<Expression> expressions
+    private static IReadOnlyDictionary<Expression, object?> EvaluateInterpolatedExpressions<TData>(
+        TData data,
+        IReadOnlySet<Expression> evaluatedExpressions,
+        IReadOnlySet<MemberExpression> dataReferences
     ) {
-        if(expressions.Count == 0)
+        if(evaluatedExpressions.Count == 0)
             return ImmutableDictionary<Expression, object?>.Empty;
 
-        var pending = default(List<Expression>);
-        var result = new Dictionary<Expression, object?>(expressions.Count);
-        foreach(var expr in expressions) {
+        var unevaluatedExpressions = default(List<Expression>);
+        var evaluatedValues = new Dictionary<Expression, object?>(evaluatedExpressions.Count);
+        foreach(var expr in evaluatedExpressions) {
             switch(expr) {
                 case ConstantExpression { Value: var value }:
-                    result[expr] = value;
+                    evaluatedValues[expr] = value;
                     break;
                 case UnaryExpression { NodeType: ExpressionType.Convert, Operand: ConstantExpression { Value: var value } }:
-                    result[expr] = value;
+                    evaluatedValues[expr] = value;
                     break;
                 default:
-                    (pending ??= new(expressions.Count - result.Count)).Add(expr);
+                    (unevaluatedExpressions ??= new(evaluatedExpressions.Count - evaluatedValues.Count)).Add(expr);
                     break;
             }
         }
 
         // If there are no expressions requiring evaluation, then we can skip costly evaluation
-        if(pending is null)
-            return result;
+        if(unevaluatedExpressions is not { Count: not 0 })
+            return evaluatedValues;
 
-        var evaluated = Expression.Lambda<Func<object?[]>>(
-            Expression.NewArrayInit(
-                typeof(object),
-                pending.Select(expr => Expression.Convert(expr, typeof(object)))
-            )
+        var dataParameter = Expression.Parameter(typeof(TData));
+
+        // Build a dictionary mapping references to ISplicingContext.Data with the data parameter
+        var dataReferenceReplacements = new Dictionary<Expression, Expression>(dataReferences.Count);
+        foreach(var dataReference in dataReferences)
+            dataReferenceReplacements[dataReference] = dataParameter;
+
+        var evaluated = Expression.Lambda<Func<TData, object?[]>>(
+            Expression.NewArrayInit(typeof(object),
+                from expr in unevaluatedExpressions select Expression.Convert(
+                    ExpressionHelpers.Replace(expr, dataReferenceReplacements),
+                    typeof(object)
+                )
+            ),
+            dataParameter
         )
         .Compile()
-        .Invoke();
+        .Invoke(data);
 
-        for(var i = 0; i < pending.Count; i++)
-            result[pending[i]] = evaluated[i];
+        for(var i = 0; i < unevaluatedExpressions.Count; i++)
+            evaluatedValues[unevaluatedExpressions[i]] = evaluated[i];
 
-        return result;
+        return evaluatedValues;
     }
 }

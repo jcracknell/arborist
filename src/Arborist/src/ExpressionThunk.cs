@@ -1,3 +1,4 @@
+using Arborist.Interpolation;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
@@ -40,14 +41,69 @@ public static class ExpressionThunk {
 
     /// <summary>
     /// Applies the interpolation process to the provided <paramref name="expression"/>, replacing
-    /// calls to splicing methods defined on <see cref="EI"/> with the corresponding subexpressions.
+    /// calls to splicing methods defined on the provided <see cref="IInterpolationContext"/>
+    /// argument with the corresponding subexpressions.
     /// </summary>
-    /// <seealso cref="EI"/>
     /// <typeparam name="R">
     /// The expression result type.
     /// </typeparam>
-    public static Expression<Func<R>> Interpolate<R>(Expression<Func<R>> expression) =>
-        ExpressionHelpers.Interpolate(expression);
+    [ExpressionInterpolator]
+    public static Expression<Func<R>> Interpolate<R>(
+        Expression<Func<IInterpolationContext, R>> expression
+    ) =>
+        ExpressionHelpers.InterpolateCore<object?, Func<R>>(default, expression);
+
+    /// <summary>
+    /// Applies the interpolation process to the provided <paramref name="expression"/>, replacing
+    /// calls to splicing methods defined on the provided <see cref="IInterpolationContext"/>
+    /// argument with the corresponding subexpressions.
+    /// </summary>
+    [ExpressionInterpolator]
+    public static Expression<Action> Interpolate(
+        Expression<Action<IInterpolationContext>> expression
+    ) =>
+        ExpressionHelpers.InterpolateCore<object?, Action>(default, expression);
+
+    /// <summary>
+    /// Applies the interpolation process to the provided <paramref name="expression"/>, replacing
+    /// calls to splicing methods defined on the provided <see cref="IInterpolationContext{TData}"/>
+    /// argument with the corresponding subexpressions.
+    /// </summary>
+    /// <param name="data">
+    /// Data provided to the interpolation process, accessible via the <see cref="IInterpolationContext{TData}.Data"/>
+    /// property of the <see cref="IInterpolationContext{TData}"/> argument.
+    /// </param>
+    /// <typeparam name="TData">
+    /// The type of the data provided to the interpolation process.
+    /// </typeparam>
+    /// <typeparam name="R">
+    /// The expression result type.
+    /// </typeparam>
+    [ExpressionInterpolator]
+    public static Expression<Func<R>> Interpolate<TData, R>(
+        TData data,
+        Expression<Func<IInterpolationContext<TData>, R>> expression
+    ) =>
+        ExpressionHelpers.InterpolateCore<TData, Func<R>>(data, expression);
+
+    /// <summary>
+    /// Applies the interpolation process to the provided <paramref name="expression"/>, replacing
+    /// calls to splicing methods defined on the provided <see cref="IInterpolationContext{TData}"/>
+    /// argument with the corresponding subexpressions.
+    /// </summary>
+    /// <param name="data">
+    /// Data provided to the interpolation process, accessible via the <see cref="IInterpolationContext{TData}.Data"/>
+    /// property of the <see cref="IInterpolationContext{TData}"/> argument.
+    /// </param>
+    /// <typeparam name="TData">
+    /// The type of the data provided to the interpolation process.
+    /// </typeparam>
+    [ExpressionInterpolator]
+    public static Expression<Action> Interpolate<TData>(
+        TData data,
+        Expression<Action<IInterpolationContext<TData>>> expression
+    ) =>
+        ExpressionHelpers.InterpolateCore<TData, Action>(data, expression);
 
     /// <summary>
     /// Attempts to get a constructor identified by the provided <paramref name="expression"/>.

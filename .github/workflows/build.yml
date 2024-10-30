@@ -1,0 +1,27 @@
+name: build
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_NOLOGO: true
+
+    steps:
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.1xx
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build and Test
+        run: |
+          dotnet restore --verbosity minimal src/Arborist.sln
+          dotnet build --no-restore -c Release src/Arborist.sln
+          dotnet test --no-restore src/Arborist.sln

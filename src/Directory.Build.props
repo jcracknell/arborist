@@ -1,6 +1,11 @@
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project>
+  <PropertyGroup>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+
   <PropertyGroup>
     <Nullable>enable</Nullable>
+    <InheritDocEnabled>true</InheritDocEnabled>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
@@ -16,13 +21,10 @@
   </ItemGroup>
 
   <PropertyGroup>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <!-- CS1573: Parameter has no matching param tag in XML documentation -->
     <NoWarn>$(NoWarn),1573</NoWarn>
     <!-- CS1591: Missing XML comment for publicly visible type or member -->
     <NoWarn>$(NoWarn),1591</NoWarn>
-    <!-- CS8784: Generator failed to initialize -->
-    <WarningsAsErrors>$(WarningsAsErrors),8784</WarningsAsErrors>
-    <!-- CS8032: Analyzer failed to initialize -->
-    <WarningsAsErrors>$(WarningsAsErrors),8032</WarningsAsErrors>
   </PropertyGroup>
 </Project>

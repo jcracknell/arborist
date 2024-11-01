@@ -26,5 +26,7 @@
     <NoWarn>$(NoWarn),1573</NoWarn>
     <!-- CS1591: Missing XML comment for publicly visible type or member -->
     <NoWarn>$(NoWarn),1591</NoWarn>
+    <!-- CS1712: Type parameter has no matching typeparam tag -->
+    <NoWarn>$(NoWarn),1712</NoWarn>
   </PropertyGroup>
 </Project>

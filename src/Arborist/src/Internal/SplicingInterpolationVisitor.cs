@@ -41,7 +41,7 @@ public class SplicingInterpolationVisitor : InterpolationVisitor {
             tup => tup.Second!
         );
 
-        return Coerce(declaredType, ExpressionHelpers.Replace(interpolatedLambda.Body, argumentReplacements));
+        return Coerce(declaredType, ExpressionHelper.Replace(interpolatedLambda.Body, argumentReplacements));
     }
 
     protected Expression VisitSpliceValue(MethodCallExpression node) {

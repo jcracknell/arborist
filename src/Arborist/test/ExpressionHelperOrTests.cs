@@ -1,9 +1,9 @@
 namespace Arborist;
 
-public class ExpressionHelpersOrTests {
+public class ExpressionHelperOrTests {
     [Fact]
     public void Or_should_return_true_when_empty() {
-        var expr = ExpressionHelpers.Or(Enumerable.Empty<Expression<Func<string, bool>>>());
+        var expr = ExpressionHelper.Or(Enumerable.Empty<Expression<Func<string, bool>>>());
 
         var constExpr = Assert.IsAssignableFrom<ConstantExpression>(expr.Body);
         Assert.Equal(false, constExpr.Value);
@@ -11,7 +11,7 @@ public class ExpressionHelpersOrTests {
 
     [Fact]
     public void Or_should_work_with_1_expression() {
-        var expr = ExpressionHelpers.Or<Func<string, bool>>(x => true);
+        var expr = ExpressionHelper.Or<Func<string, bool>>(x => true);
 
         var expected = Expression.Constant(true);
 
@@ -20,7 +20,7 @@ public class ExpressionHelpersOrTests {
 
     [Fact]
     public void Or_should_work_with_2_expressions() {
-        var expr = ExpressionHelpers.Or<Func<string, bool>>(x => true, x => false);
+        var expr = ExpressionHelper.Or<Func<string, bool>>(x => true, x => false);
 
         var expected = Expression.OrElse(
             Expression.Constant(true),
@@ -32,7 +32,7 @@ public class ExpressionHelpersOrTests {
 
     [Fact]
     public void Or_should_work_with_3_expressions() {
-        var expr = ExpressionHelpers.Or<Func<string, bool>>(x => true, x => false, x => true);
+        var expr = ExpressionHelper.Or<Func<string, bool>>(x => true, x => false, x => true);
 
         var expected = Expression.OrElse(
             Expression.OrElse(

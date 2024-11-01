@@ -3,7 +3,7 @@ using Arborist.Internal.Collections;
 
 namespace Arborist;
 
-public static partial class ExpressionHelpers {
+public static partial class ExpressionHelper {
     /// <summary>
     /// Replaces all occurrences of the provided <paramref name="search"/> expression with the
     /// <paramref name="replacement"/> expression in the subject <paramref name="expression"/>.

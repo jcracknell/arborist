@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace Arborist;
 
-public static partial class ExpressionHelpers {
+public static partial class ExpressionHelper {
     /// <summary>
     /// Gets the constructor identified by the provided <paramref name="expression"/>.
     /// </summary>

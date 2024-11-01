@@ -1,6 +1,6 @@
 namespace Arborist;
 
-public static partial class ExpressionHelpers {
+public static partial class ExpressionHelper {
     /// <summary>
     /// Combines the provided predicate expressions into a single expression by ANDing their bodies
     /// together. Returns a true-valued predicate expression if the provided collection of predicates

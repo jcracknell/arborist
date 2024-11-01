@@ -1,9 +1,9 @@
 namespace Arborist;
 
-public class ExpressionHelpersNotTests {
+public class ExpressionHelperNotTests {
     [Fact]
     public void Not_applys_unary_not() {
-        var expr = ExpressionHelpers.Not<Func<string, bool>>(x => true);
+        var expr = ExpressionHelper.Not<Func<string, bool>>(x => true);
 
         var unary = Assert.IsAssignableFrom<UnaryExpression>(expr.Body);
         Assert.Equal(ExpressionType.Not, unary.NodeType);
@@ -15,7 +15,7 @@ public class ExpressionHelpersNotTests {
     [Fact]
     public void Not_does_nothing_special() {
         // N.B. the compiler will optimize !true in an expression tree
-        var expr = ExpressionHelpers.Not(ExpressionHelpers.Not<Func<string, bool>>(x => true));
+        var expr = ExpressionHelper.Not(ExpressionHelper.Not<Func<string, bool>>(x => true));
 
         var unary0 = Assert.IsAssignableFrom<UnaryExpression>(expr.Body);
         Assert.Equal(ExpressionType.Not, unary0.NodeType);

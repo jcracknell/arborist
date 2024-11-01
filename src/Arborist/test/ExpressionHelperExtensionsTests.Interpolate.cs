@@ -3,7 +3,7 @@ using Arborist.Interpolation;
 
 namespace Arborist;
 
-public partial class ExpressionHelpersTests {
+public partial class ExpressionHelperExtensionsTests {
     [Fact]
     public void Interpolate_should_throw_InterpolatedParameterCaptureException() {
         var spliceBodyMethod = typeof(IInterpolationContext).GetMethods().Single(m => m.GetParameters().Length == 2);
@@ -13,21 +13,21 @@ public partial class ExpressionHelpersTests {
         Assert.True(parameters[1].IsDefined(typeof(EvaluatedSpliceParameterAttribute), false));
 
         Assert.Throws<InterpolatedParameterCaptureException>(() => {
-            ExpressionOn<Owner>.Interpolate((x, o) => x.SpliceBody(o, y => o));
+            ExpressionHelper.On<Owner>().Interpolate((x, o) => x.SpliceBody(o, y => o));
         });
     }
 
     [Fact]
     public void Interpolate_should_throw_EvaluatedSpliceException() {
         Assert.Throws<InterpolationContextEvaluationException>(() => {
-            ExpressionThunk.Interpolate(x => x.Value(x.Value(1) + 2));
+            ExpressionHelper.OnNone.Interpolate(x => x.Value(x.Value(1) + 2));
         });
     }
 
     [Fact]
     public void Interpolate_Splice_should_work_as_expected() {
         var add = Expression.Add(Expression.Constant(1), Expression.Constant(2));
-        var interpolated = ExpressionThunk.Interpolate(x => 2 * x.Splice<int>(add));
+        var interpolated = ExpressionHelper.OnNone.Interpolate(x => 2 * x.Splice<int>(add));
 
         var expected = Expression.Lambda<Func<int>>(Expression.Multiply(Expression.Constant(2), add));
 
@@ -36,8 +36,8 @@ public partial class ExpressionHelpersTests {
 
     [Fact]
     public void Interpolate_SpliceBody_should_work_as_expected_for_0_parameters() {
-        var spliced = ExpressionThunk.Of(() => "foo");
-        var interpolated = ExpressionThunk.Interpolate(x => x.SpliceBody(spliced).Length);
+        var spliced = ExpressionHelper.OnNone.Of(() => "foo");
+        var interpolated = ExpressionHelper.OnNone.Interpolate(x => x.SpliceBody(spliced).Length);
 
         var expected = Expression.Lambda<Func<int>>(
             body: Expression.Property(
@@ -51,8 +51,8 @@ public partial class ExpressionHelpersTests {
 
     [Fact]
     public void Interpolate_SpliceBody_should_work_as_expected_for_1_parameter() {
-        var nameExpr = ExpressionOn<Owner>.Of(o => o.Name);
-        var interpolated = ExpressionOn<Owner>.Interpolate((x, o) => x.SpliceBody(o, nameExpr).Length);
+        var nameExpr = ExpressionHelper.On<Owner>().Of(o => o.Name);
+        var interpolated = ExpressionHelper.On<Owner>().Interpolate((x, o) => x.SpliceBody(o, nameExpr).Length);
 
         var expected = Expression.Lambda<Func<Owner, int>>(
             body: Expression.Property(
@@ -70,8 +70,8 @@ public partial class ExpressionHelpersTests {
 
     [Fact]
     public void Interpolate_SpliceBody_should_work_within_a_lambda() {
-        var catNameExpr = ExpressionOn<Cat>.Of(c => c.Name);
-        var interpolated = ExpressionOn<Owner>.Interpolate(
+        var catNameExpr = ExpressionHelper.On<Cat>().Of(c => c.Name);
+        var interpolated = ExpressionHelper.On<Owner>().Interpolate(
             (x, o) => o.CatsEnumerable.Any(c => x.SpliceBody(c, catNameExpr) == "Garfield")
         );
 
@@ -83,8 +83,8 @@ public partial class ExpressionHelpersTests {
 
     [Fact]
     public void Interpolate_SpliceBody_should_work_within_a_subexpression() {
-        var catNameExpr = ExpressionOn<Cat>.Of(c => c.Name);
-        var interpolated = ExpressionOn<Owner>.Interpolate(
+        var catNameExpr = ExpressionHelper.On<Cat>().Of(c => c.Name);
+        var interpolated = ExpressionHelper.On<Owner>().Interpolate(
             (x, o) => o.CatsQueryable.Any(c => x.SpliceBody(c, catNameExpr) == "Garfield")
         );
 
@@ -122,7 +122,7 @@ public partial class ExpressionHelpersTests {
             Expression.Parameter(typeof(Cat))
         );
 
-        var interpolated = ExpressionOn<Owner>.Interpolate((x, o) => o.CatsQueryable.Any(x.Quote(quoted)));
+        var interpolated = ExpressionHelper.On<Owner>().Interpolate((x, o) => o.CatsQueryable.Any(x.Quote(quoted)));
 
         var expected = Expression.Lambda<Func<Owner, bool>>(
             Expression.Call(
@@ -143,7 +143,7 @@ public partial class ExpressionHelpersTests {
 
     [Fact]
     public void Interpolate_Value_should_embed_constants() {
-        var interpolated = ExpressionThunk.Interpolate(x => x.Value("foo"));
+        var interpolated = ExpressionHelper.OnNone.Interpolate(x => x.Value("foo"));
 
         var expected = Expression.Lambda<Func<string>>(Expression.Constant("foo"));
 

@@ -1,36 +1,6 @@
 namespace Arborist;
 
 public static partial class ExpressionHelper {
-    /// <summary>
-    /// Helpers for expressions accepting no parameters.
-    /// </summary>
-    public static IExpressionHelperOnNone OnNone =>
-        ExpressionHelperOnNone.Instance;
-
-    /// <summary>
-    /// Helpers for expressions accepting a single parameter.
-    /// </summary>
-    public static IExpressionHelperOn<A> On<A>() =>
-        ExpressionHelperOn<A>.Instance;
-        
-    /// <summary>
-    /// Helpers for expressions accepting two parameters.
-    /// </summary>
-    public static IExpressionHelperOn<A, B> On<A, B>() =>
-        ExpressionHelperOn<A, B>.Instance;
-        
-    /// <summary>
-    /// Helpers for expressions accepting 3 parameters.
-    /// </summary>
-    public static IExpressionHelperOn<A, B, C> On<A, B, C>() =>
-        ExpressionHelperOn<A, B, C>.Instance;
-        
-    /// <summary>
-    /// Helpers for expressions accepting 4 parameters.
-    /// </summary>
-    public static IExpressionHelperOn<A, B, C, D> On<A, B, C, D>() =>
-        ExpressionHelperOn<A, B, C, D>.Instance;
-        
     internal static void AssertActionExpressionType(Type type) {
         if(!IsActionExpressionType(type))
             throw new InvalidOperationException($"Invalid Action type: {type}.");

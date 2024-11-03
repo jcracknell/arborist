@@ -1,7 +1,6 @@
-using Arborist.Interpolation;
 using System.Reflection;
 
-namespace Arborist.Internal;
+namespace Arborist.Interpolation.Internal;
 
 public class AnalyzingInterpolationVisitor : InterpolationVisitor {
     private readonly LambdaExpression _interpolatedExpression;

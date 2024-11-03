@@ -1,6 +1,4 @@
-using Arborist.Interpolation;
-
-namespace Arborist.Internal;
+namespace Arborist.Interpolation.Internal;
 
 public class SplicingInterpolationVisitor : InterpolationVisitor {
     private readonly IReadOnlyDictionary<Expression, object?> _evaluatedSpliceParameters;

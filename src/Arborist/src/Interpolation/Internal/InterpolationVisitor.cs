@@ -1,6 +1,4 @@
-using Arborist.Interpolation;
-
-namespace Arborist.Internal;
+namespace Arborist.Interpolation.Internal;
 
 public abstract class InterpolationVisitor : ExpressionVisitor {
     protected override Expression VisitMethodCall(MethodCallExpression node) =>

@@ -1,4 +1,4 @@
-using Arborist.Internal;
+using Arborist.Interpolation.Internal;
 
 namespace Arborist;
 

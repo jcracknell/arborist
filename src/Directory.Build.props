@@ -31,5 +31,7 @@
     <NoWarn>$(NoWarn),1591</NoWarn>
     <!-- CS1712: Type parameter has no matching typeparam tag -->
     <NoWarn>$(NoWarn),1712</NoWarn>
+    <!-- xUnit2014: Use Assert.Single to check for collection size -->
+    <NoWarn>$(NoWarn),xUnit2013</NoWarn>
   </PropertyGroup>
 </Project>

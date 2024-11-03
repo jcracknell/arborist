@@ -1,0 +1,34 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_NOLOGO: true
+
+    steps:
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.1xx
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build and Release
+        run: |
+          dotnet restore --verbosity minimal src/Arborist.sln
+          dotnet build --no-restore -c Release src/Arborist.sln
+          dotnet test --no-restore src/Arborist.sln
+          dotnet pack -o ./nuget src/Arborist.sln
+          for f in ./nuget/*.nupkg; do \
+            dotnet nuget push \
+              -s https://api.nuget.org/v3/index.json \
+              -k ${{secrets.NUGET_API_KEY}} \ 
+              "$f"; \
+          done

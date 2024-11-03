@@ -1,6 +1,9 @@
 <Project>
   <PropertyGroup>
-    <Version>0.1.0</Version>
+    <Version>0.0.1</Version>
+    <IsPackable>false</IsPackable>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageAuthor>James Cracknell</PackageAuthor>
   </PropertyGroup>
 
   <PropertyGroup>

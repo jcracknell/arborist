@@ -18,4 +18,17 @@ public static class ExpressionOn<A, B> {
     /// </remarks>
     public static Expression<Action<A, B>> Of(Expression<Action<A, B>> expression) =>
         expression;
+
+    /// <summary>
+    /// Grafts the provided <paramref name="branch"/> expression onto the <paramref name="root"/> expression,
+    /// replacing references to its parameter with the body of the <paramref name="root"/> expression.
+    /// </summary>
+    public static Expression<Func<A, B, RR>> Graft<R, RR>(
+        Expression<Func<A, B, R>> root,
+        Expression<Func<R, RR>> branch
+    ) =>
+        Expression.Lambda<Func<A, B, RR>>(
+            body: ExpressionHelper.Replace(branch.Body, branch.Parameters[0], root.Body),
+            parameters: root.Parameters
+        );
 }

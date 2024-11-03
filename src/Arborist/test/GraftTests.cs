@@ -5,32 +5,40 @@ namespace Arborist;
 public class GraftTests {
     [Fact]
     public void Graft0_works_as_expected() {
-        var expected = Expression.Lambda<Func<int>>(
-            Expression.Property(
-                Expression.Constant("foo"),
-                typeof(string).GetProperty(nameof(string.Length))!
-            )
-        );
-
-        var actual = ExpressionOnNone.Graft(() => "foo", str => str.Length);
+        var expected = ExpressionOnNone.Of(() => "foo".Length);
+        var actual = ExpressionOnNone.Graft(() => "foo", v => v.Length);
 
         Assert.Equivalent(expected, actual);
     }
 
     [Fact]
     public void Graft1_works_as_expected() {
-        var actual = ExpressionOn<Cat>.Graft(c => c.Name, str => str.Length);
+        var expected = ExpressionOn<Cat>.Of(a => a.Name.Length);
+        var actual = ExpressionOn<Cat>.Graft(a => a.Name, v => v.Length);
 
-        var expected = Expression.Lambda<Func<Cat, int>>(
-            Expression.Property(
-                Expression.Property(
-                    actual.Parameters[0],
-                    typeof(Cat).GetProperty(nameof(Cat.Name))!
-                ),
-                typeof(string).GetProperty(nameof(string.Length))!
-            ),
-            actual.Parameters
-        );
+        Assert.Equivalent(expected, actual);
+    }
+
+    [Fact]
+    public void Graft2_works_as_expected() {
+        var expected = ExpressionOn<Cat, Cat>.Of((a, b) => a.Name.Length);
+        var actual = ExpressionOn<Cat, Cat>.Graft((a, b) => a.Name, v => v.Length);
+
+        Assert.Equivalent(expected, actual);
+    }
+
+    [Fact]
+    public void Graft3_works_as_expected() {
+        var expected = ExpressionOn<Cat, Cat, Cat>.Of((a, b, c) => a.Name.Length);
+        var actual = ExpressionOn<Cat, Cat, Cat>.Graft((a, b, c) => a.Name, v => v.Length);
+
+        Assert.Equivalent(expected, actual);
+    }
+
+    [Fact]
+    public void Graft4_works_as_expected() {
+        var expected = ExpressionOn<Cat, Cat, Cat, Cat>.Of((a, b, c, d) => a.Name.Length);
+        var actual = ExpressionOn<Cat, Cat, Cat, Cat>.Graft((a, b, c, d) => a.Name, v => v.Length);
 
         Assert.Equivalent(expected, actual);
     }

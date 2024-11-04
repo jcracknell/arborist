@@ -13,13 +13,11 @@ public static partial class OrderingExtensions {
             return Ordering<TResult>.Unordered;
 
         var builder = new OrderingBuilder<TResult>();
-        builder.Add(projection(ordering.Term));
-
-        var rest = ordering.Rest;
-        while(!rest.IsEmpty) {
+        var rest = ordering;
+        do {
             builder.Add(projection(rest.Term));
             rest = rest.Rest;
-        }
+        } while(!rest.IsEmpty);
 
         return builder.Build();
     }

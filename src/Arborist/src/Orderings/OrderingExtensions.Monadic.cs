@@ -5,14 +5,14 @@ public static partial class OrderingExtensions {
     /// Applies the provided <paramref name="projection"/> to the terms of the subject ordering,
     /// returning a new <see cref="Ordering{TSelector}"/> containing the results.
     /// </summary>
-    public static Ordering<TResult> Select<TSelector, TResult>(
+    public static Ordering<TProjected> Select<TSelector, TProjected>(
         this Ordering<TSelector> ordering,
-        Func<OrderingTerm<TSelector>, OrderingTerm<TResult>> projection
+        Func<OrderingTerm<TSelector>, OrderingTerm<TProjected>> projection
     ) {
         if(ordering.IsEmpty)
-            return Ordering<TResult>.Unordered;
+            return Ordering<TProjected>.Unordered;
 
-        var builder = new OrderingBuilder<TResult>();
+        var builder = new OrderingBuilder<TProjected>();
         var rest = ordering;
         do {
             builder.Add(projection(rest.Term));
@@ -26,14 +26,14 @@ public static partial class OrderingExtensions {
     /// Applies the provided <paramref name="projection"/> to the terms of the subject ordering,
     /// returning a new <see cref="Ordering{TSelector}"/> containing the results.
     /// </summary>
-    public static Ordering<TResult> SelectMany<TSelector, TResult>(
+    public static Ordering<TProjected> SelectMany<TSelector, TProjected>(
         this Ordering<TSelector> ordering,
-        Func<OrderingTerm<TSelector>, IEnumerable<OrderingTerm<TResult>>> projection
+        Func<OrderingTerm<TSelector>, IEnumerable<OrderingTerm<TProjected>>> projection
     ) {
         if(ordering.IsEmpty)
-            return OrderingNil<TResult>.Instance;
+            return OrderingNil<TProjected>.Instance;
 
-        var builder = new OrderingBuilder<TResult>();
+        var builder = new OrderingBuilder<TProjected>();
         var rest = ordering;
         do {
             builder.AddRange(projection(rest.Term));

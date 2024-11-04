@@ -24,4 +24,11 @@ public static class OrderingTerm {
     /// </summary>
     public static OrderingTerm<TSelector> Descending<TSelector>(TSelector selector) =>
         Create(selector, OrderingDirection.Descending);
+    
+    /// <summary>
+    /// Creates an <see cref="OrderingTerm{TSelector}"/> with the same selector and the opposite
+    /// <see cref="OrderingDirection"/>.
+    /// </summary>
+    public static OrderingTerm<TSelector> Reversed<TSelector>(this OrderingTerm<TSelector> term) =>
+        Create(term.Selector, term.Direction.Reversed());
 }

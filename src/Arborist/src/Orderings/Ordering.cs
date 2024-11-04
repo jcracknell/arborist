@@ -27,6 +27,12 @@ public static class Ordering {
     /// <summary>
     /// Creates an <see cref="Ordering{TSelector}"/> using the specified <paramref name="terms"/>.
     /// </summary>
+    public static Ordering<TSelector> By<TSelector>(params OrderingTerm<TSelector>[] terms) =>
+        Ordering<TSelector>.By(terms);
+
+    /// <summary>
+    /// Creates an <see cref="Ordering{TSelector}"/> using the specified <paramref name="terms"/>.
+    /// </summary>
     public static Ordering<TSelector> By<TSelector>(ReadOnlySpan<OrderingTerm<TSelector>> terms) =>
         Ordering<TSelector>.By(terms);
 

@@ -46,6 +46,13 @@ public interface Ordering<out TSelector> : IEnumerable<OrderingTerm<TSelector>>,
         return builder.Build();
     }
 
+
+    /// <summary>
+    /// Creates an <see cref="Ordering{TSelector}"/> using the specified <paramref name="terms"/>.
+    /// </summary>
+    public static Ordering<TSelector> By(params OrderingTerm<TSelector>[] terms) =>
+        By(terms.AsSpan());
+
     /// <summary>
     /// Creates an <see cref="Ordering{TSelector}"/> using the specified <paramref name="terms"/>.
     /// </summary>

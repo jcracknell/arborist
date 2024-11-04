@@ -37,6 +37,24 @@ public class OrderingTests {
     }
 
     [Fact]
+    public void By_should_work_with_collection_expression() {
+        var actual = Ordering.By([OrderingTerm.Ascending("a"), OrderingTerm.Descending("b")]);
+
+        Assert.Equal(2, actual.Count());
+        Assert.Equal(OrderingTerm.Ascending("a"), actual.ElementAt(0));
+        Assert.Equal(OrderingTerm.Descending("b"), actual.ElementAt(1));
+    }
+
+    [Fact]
+    public void By_should_work_with_params() {
+        var actual = Ordering.By(OrderingTerm.Ascending("a"), OrderingTerm.Descending("b"));
+
+        Assert.Equal(2, actual.Count());
+        Assert.Equal(OrderingTerm.Ascending("a"), actual.ElementAt(0));
+        Assert.Equal(OrderingTerm.Descending("b"), actual.ElementAt(1));
+    }
+
+    [Fact]
     public void Select_should_work_as_expected() {
         var actual = Ordering.ByAscending("a").ThenByDescending("aa")
         .Select(term => OrderingTerm.Create(term.Selector.Length, term.Direction));
@@ -77,6 +95,24 @@ public class OrderingTests {
         Assert.Equivalent(expected[0], actual.ElementAt(0));
         Assert.Equivalent(expected[1], actual.ElementAt(1));
         Assert.Equivalent(expected[2], actual.ElementAt(2));
+    }
+
+    [Fact]
+    public void ThenBy_should_work_with_collection_expression() {
+        var actual = Ordering<string>.Unordered.ThenBy([OrderingTerm.Ascending("a"), OrderingTerm.Descending("b")]);
+
+        Assert.Equal(2, actual.Count());
+        Assert.Equal(OrderingTerm.Ascending("a"), actual.ElementAt(0));
+        Assert.Equal(OrderingTerm.Descending("b"), actual.ElementAt(1));
+    }
+
+    [Fact]
+    public void ThenBy_should_work_with_params() {
+        var actual = Ordering<string>.Unordered.ThenBy(OrderingTerm.Ascending("a"), OrderingTerm.Descending("b"));
+
+        Assert.Equal(2, actual.Count());
+        Assert.Equal(OrderingTerm.Ascending("a"), actual.ElementAt(0));
+        Assert.Equal(OrderingTerm.Descending("b"), actual.ElementAt(1));
     }
 
     [Fact]

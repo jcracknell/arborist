@@ -30,7 +30,7 @@ public static partial class OrderingExtensions {
     /// </summary>
     public static Ordering<TSelector> ThenBy<TSelector>(
         this Ordering<TSelector> ordering,
-        Ordering<TSelector> terms
+        IEnumerable<OrderingTerm<TSelector>> terms
     ) {
         var builder = new OrderingBuilder<TSelector>();
         builder.AddRange(ordering);
@@ -43,7 +43,16 @@ public static partial class OrderingExtensions {
     /// </summary>
     public static Ordering<TSelector> ThenBy<TSelector>(
         this Ordering<TSelector> ordering,
-        IEnumerable<OrderingTerm<TSelector>> terms
+        params OrderingTerm<TSelector>[] terms
+    ) =>
+        ordering.ThenBy(terms.AsSpan());
+
+    /// <summary>
+    /// Adds the provided <paramref name="terms"/> to the subject ordering, returning a new instance.
+    /// </summary>
+    public static Ordering<TSelector> ThenBy<TSelector>(
+        this Ordering<TSelector> ordering,
+        ReadOnlySpan<OrderingTerm<TSelector>> terms
     ) {
         var builder = new OrderingBuilder<TSelector>();
         builder.AddRange(ordering);

@@ -42,15 +42,8 @@ internal struct OrderingBuilder<TSelector> {
         }
     }
 
-    public void AddRange(Ordering<TSelector> terms) {
-        if(terms.IsEmpty)
-            return;
-
-        var rest = terms;
-        do {
-            Add(rest.Term);
-            rest = rest.Rest;
-        } while(!rest.IsEmpty);
+    public void AddRange(OrderingTerm<TSelector>[] terms) {
+        AddRange(terms.AsSpan());
     }
 
     public void AddRange(ReadOnlySpan<OrderingTerm<TSelector>> terms) {
@@ -62,12 +55,23 @@ internal struct OrderingBuilder<TSelector> {
         switch(terms) {
             case IReadOnlyCollection<OrderingTerm<TSelector>> { Count: 0 }: return;
             case Ordering<TSelector> ordering:
-                AddRange(ordering);
+                AddRangeOrdering(ordering);
                 return;
             default:
                 AddRangeEnumerated(terms);
                 return;
         }
+    }
+
+    private void AddRangeOrdering(Ordering<TSelector> terms) {
+        if(terms.IsEmpty)
+            return;
+
+        var rest = terms;
+        do {
+            Add(rest.Term);
+            rest = rest.Rest;
+        } while(!rest.IsEmpty);
     }
 
 

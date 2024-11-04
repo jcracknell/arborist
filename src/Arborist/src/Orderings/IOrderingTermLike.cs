@@ -1,6 +1,10 @@
 namespace Arborist.Orderings;
 
-public interface IOrderingTermLike {
+/// <summary>
+/// Untyped representation of an <see cref="OrderingTerm{TSelector}"/>.
+/// Permits implementation of <see cref="IEquatable{T}"/>.
+/// </summary>
+public interface IOrderingTermLike : IEquatable<IOrderingTermLike> {
     public object? Selector { get; }
 
     /// <summary>

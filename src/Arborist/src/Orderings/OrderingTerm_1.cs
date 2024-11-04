@@ -10,7 +10,7 @@ namespace Arborist.Orderings;
 /// <seealso cref="OrderingTerm"/>
 /// <seealso cref="Ordering{TSelector}"/>
 [JsonConverter(typeof(OrderingTermJsonConverterFactory))]
-public interface OrderingTerm<out TSelector> : IOrderingTermLike, IEquatable<IOrderingTermLike> {
+public interface OrderingTerm<out TSelector> : IOrderingTermLike {
     public new TSelector Selector { get; }
 
     object? IOrderingTermLike.Selector => Selector;

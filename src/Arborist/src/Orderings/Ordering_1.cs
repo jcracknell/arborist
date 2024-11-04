@@ -17,7 +17,7 @@ namespace Arborist.Orderings;
 /// <seealso cref="OrderingTerm{TSelector}"/>
 [CollectionBuilder(typeof(Ordering), nameof(Ordering.By))]
 [JsonConverter(typeof(OrderingJsonConverterFactory))]
-public interface Ordering<out TSelector> : IEnumerable<OrderingTerm<TSelector>>, IOrderingLike, IEquatable<IOrderingLike> {
+public interface Ordering<out TSelector> : IEnumerable<OrderingTerm<TSelector>>, IOrderingLike {
     /// <summary>
     /// An empty <see cref="Ordering{TSelector}"/> containing no terms.
     /// </summary>

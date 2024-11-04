@@ -5,9 +5,9 @@ public static partial class OrderingExtensions {
     /// Applies the provided <paramref name="ordering"/> to the subject <see cref="IQueryable{T}"/>,
     /// overriding any existing ordering of results.
     /// </summary>
-    public static IQueryable<A> OrderBy<A>(
+    public static IQueryable<A> OrderBy<A, B>(
         this IQueryable<A> queryable,
-        Ordering<Expression<Func<A, object?>>> ordering
+        Ordering<Expression<Func<A, B>>> ordering
     ) =>
         ordering.IsEmpty switch {
             true => queryable,
@@ -22,9 +22,9 @@ public static partial class OrderingExtensions {
     /// Applies the provided <paramref name="ordering"/> to the subject <see cref="IQueryable{T}"/>
     /// as an extension to the currently defined ordering of results.
     /// </summary>
-    public static IOrderedQueryable<A> ThenBy<A>(
+    public static IOrderedQueryable<A> ThenBy<A, B>(
         this IOrderedQueryable<A> queryable,
-        Ordering<Expression<Func<A, object?>>> ordering
+        Ordering<Expression<Func<A, B>>> ordering
     ) =>
         ordering.IsEmpty switch {
             true => queryable,

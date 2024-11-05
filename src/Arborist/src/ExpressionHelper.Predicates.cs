@@ -22,7 +22,12 @@ public static partial class ExpressionHelper {
     {
         AssertPredicateExpressionType(typeof(TDelegate));
 
-        return ChainedBinOp(ExpressionType.AndAlso, true, expressions);
+        return (Expression<TDelegate>)AggregateImpl(
+            expressions: expressions,
+            seed: Const<TDelegate>(true),
+            binaryOperator: ExpressionOn<bool, bool>.Of(static (a, b) => a && b),
+            options: new() { DiscardSeedExpression = true }
+        );
     }
 
     /// <summary>
@@ -56,7 +61,11 @@ public static partial class ExpressionHelper {
     {
         AssertPredicateExpressionType(typeof(TDelegate));
 
-        return ChainedBinOpTree(ExpressionType.AndAlso, true, expressions);
+        return (Expression<TDelegate>)AggregateTreeImpl(
+            expressions: expressions,
+            fallback: Const<TDelegate>(true),
+            binaryOperator: ExpressionOn<bool, bool>.Of(static (a, b) => a && b)
+        );
     }
 
     /// <summary>
@@ -78,7 +87,12 @@ public static partial class ExpressionHelper {
     {
         AssertPredicateExpressionType(typeof(TDelegate));
 
-        return ChainedBinOp(ExpressionType.OrElse, false, expressions);
+        return (Expression<TDelegate>)AggregateImpl(
+            expressions: expressions,
+            seed: Const<TDelegate>(false),
+            binaryOperator: ExpressionOn<bool, bool>.Of(static (a, b) => a || b),
+            options: new() { DiscardSeedExpression = true }
+        );
     }
 
     /// <summary>
@@ -112,7 +126,11 @@ public static partial class ExpressionHelper {
     {
         AssertPredicateExpressionType(typeof(TDelegate));
 
-        return ChainedBinOpTree(ExpressionType.OrElse, false, expressions);
+        return (Expression<TDelegate>)AggregateTreeImpl(
+            expressions: expressions,
+            fallback: Const<TDelegate>(false),
+            binaryOperator: ExpressionOn<bool, bool>.Of(static (a, b) => a || b)
+        );
     }
 
     /// <summary>

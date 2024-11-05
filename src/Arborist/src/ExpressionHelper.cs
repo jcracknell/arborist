@@ -29,99 +29,15 @@ public static partial class ExpressionHelper {
     internal static bool IsPredicateExpressionType(Type type) =>
         IsFuncExpressionType(type) && typeof(bool) == type.GetGenericArguments()[^1];
 
-    internal static Expression<TDelegate> ChainedBinOp<TDelegate>(
-        ExpressionType expressionType,
-        object? zero,
-        IEnumerable<Expression<TDelegate>> expressions
-    ) where TDelegate : Delegate {
-        if(expressions is not IReadOnlyList<Expression<TDelegate>> expressionList)
-            return ChainedBinOp(expressionType, zero, expressions.ToList());
-
-        AssertFuncExpressionType(typeof(TDelegate));
-
-        switch(expressionList.Count) {
-            case 0: return Const<TDelegate>(zero);
-            case 1: return expressionList[0];
-        }
-
-        var head = expressionList[0];
-
-        return Expression.Lambda<TDelegate>(
-            body: expressionList.Skip(1).Aggregate(head.Body, (acc, expr) => Expression.MakeBinary(
-                binaryType: expressionType,
-                left: acc,
-                right: Replace(expr.Body, expr.Parameters.Zip(head.Parameters).ToDictionary(
-                    tup => (Expression)tup.First,
-                    tup => (Expression)tup.Second
-                ))
-            )),
-            parameters: head.Parameters
-        );
-    }
-
-    internal static Expression<TDelegate> ChainedBinOpTree<TDelegate>(
-        ExpressionType expressionType,
-        object? zero,
-        IEnumerable<Expression<TDelegate>> expressions
-    ) where TDelegate : Delegate {
-        if(expressions is not IReadOnlyList<Expression<TDelegate>> expressionList)
-            return ChainedBinOpTree(expressionType, zero, expressions.ToList());
-
-        AssertFuncExpressionType(typeof(TDelegate));
-
-        switch(expressionList.Count) {
-            case 0: return Const<TDelegate>(zero);
-            case 1: return expressionList[0];
-        }
-
-        var head = expressionList[0];
-        var parameterCount = expressionList.Count * head.Parameters.Count;
-        var replacements = new Dictionary<Expression, Expression>(parameterCount);
-        foreach(var expr in expressionList.Skip(1))
-            foreach(var (search, replace) in head.Parameters.Zip(expr.Parameters))
-                replacements[search] = replace;
-
-        return Expression.Lambda<TDelegate>(
-            Recurse(expressionType, expressionList, 0, expressionList.Count, replacements),
-            expressionList[0].Parameters
-        );
-
-        static Expression Recurse(
-            ExpressionType expressionType,
-            IReadOnlyList<Expression<TDelegate>> expressionList,
-            int start,
-            int end,
-            IReadOnlyDictionary<Expression, Expression> replacements
-        ) {
-            if(1 == end - start) {
-                // As a minor optimization, we can return the body of the initial expression directly as we
-                // are using its parameters in the result expression.
-                if(0 == start)
-                    return expressionList[0].Body;
-
-                return Replace(expressionList[start].Body, replacements);
-            }
-
-            // Add any remainder to the midpoint to make the resulting expression left-biased
-            var middle = start + Math.DivRem(end - start, 2, out var rem) + rem;
-
-            return Expression.MakeBinary(
-                binaryType: expressionType,
-                left: Recurse(expressionType, expressionList, start, middle, replacements),
-                right: Recurse(expressionType, expressionList, middle, end, replacements)
-            );
-        }
-    }
-
-    internal static Expression<TDelegate> Const<TDelegate>(object? value)
-        where TDelegate : Delegate
+    internal static Expression<TFunc> Const<TFunc>(object? value)
+        where TFunc : Delegate
     {
-        AssertFuncExpressionType(typeof(TDelegate));
+        AssertFuncExpressionType(typeof(TFunc));
 
-        var genericArguments = typeof(TDelegate).GetGenericArguments();
+        var genericArguments = typeof(TFunc).GetGenericArguments();
         var resultType = genericArguments[^1];
 
-        return Expression.Lambda<TDelegate>(
+        return Expression.Lambda<TFunc>(
             Expression.Constant(value, resultType),
             genericArguments[..^1].Select(Expression.Parameter)
         );

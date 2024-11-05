@@ -11,12 +11,12 @@ public class ExpressionHelperOrTreeTests {
 
     [Fact]
     public void OrTree_works_as_expected() {
-        var expr = ExpressionHelper.OrTree<Func<string, bool>>(
+        var expr = ExpressionHelper.OrTree<string>([
             x => true,
             x => false,
             x => false,
             x => true
-        );
+        ]);
 
         var expectedBody = Expression.OrElse(
             Expression.OrElse(
@@ -34,11 +34,11 @@ public class ExpressionHelperOrTreeTests {
 
     [Fact]
     public void OrTree_should_be_left_biased() {
-        var expr = ExpressionHelper.OrTree<Func<string, bool>>(
+        var expr = ExpressionHelper.OrTree<string>([
             x => true,
             x => false,
             x => true
-        );
+        ]);
 
         var expectedBody = Expression.OrElse(
             Expression.OrElse(

@@ -31,44 +31,6 @@ public static partial class ExpressionHelper {
     }
 
     /// <summary>
-    /// Combines the provided predicate <paramref name="expressions"/> into a balanced expression tree by
-    /// ANDing their bodies together. Returns a true-valued predicate expression if the provided collection
-    /// of predicates is empty.
-    /// </summary>
-    /// <remarks>
-    /// This method is useful as it significantly reduces the maximum expression depth as compared to the
-    /// results of <see cref="And{TDelegate}(IEnumerable{Expression{TDelegate}})"/>, which is important
-    /// in certain scenarios (i.e. when interpreted by EntityFramework to produce queries for Microsoft
-    /// SQL Server).
-    /// </remarks>
-    public static Expression<TDelegate> AndTree<TDelegate>(params Expression<TDelegate>[] expressions)
-        where TDelegate : Delegate =>
-        AndTree(expressions.AsEnumerable());
-
-    /// <summary>
-    /// Combines the provided predicate <paramref name="expressions"/> into a balanced expression tree by
-    /// ANDing their bodies together. Returns a true-valued predicate expression if the provided collection
-    /// of predicates is empty.
-    /// </summary>
-    /// <remarks>
-    /// This method is useful as it significantly reduces the maximum expression depth as compared to the
-    /// results of <see cref="And{TDelegate}(IEnumerable{Expression{TDelegate}})"/>, which is important
-    /// in certain scenarios (i.e. when interpreted by EntityFramework to produce queries for Microsoft
-    /// SQL Server).
-    /// </remarks>
-    public static Expression<TDelegate> AndTree<TDelegate>(IEnumerable<Expression<TDelegate>> expressions)
-        where TDelegate : Delegate
-    {
-        AssertPredicateExpressionType(typeof(TDelegate));
-
-        return (Expression<TDelegate>)AggregateTreeImpl(
-            expressions: expressions,
-            fallback: Const<TDelegate>(true),
-            binaryOperator: ExpressionOn<bool, bool>.Of(static (a, b) => a && b)
-        );
-    }
-
-    /// <summary>
     /// Combines the provided predicate expressions into a single expression by ORing their bodies
     /// together. Returns a false-valued predicate expression if the provided collection of predicates
     /// is empty.
@@ -92,44 +54,6 @@ public static partial class ExpressionHelper {
             seed: Const<TDelegate>(false),
             binaryOperator: ExpressionOn<bool, bool>.Of(static (a, b) => a || b),
             options: new() { DiscardSeedExpression = true }
-        );
-    }
-
-    /// <summary>
-    /// Combines the provided predicate <paramref name="expressions"/> into a balanced expression tree by
-    /// ORing their bodies together. Returns a false-valued predicate expression if the provided collection
-    /// of predicates is empty.
-    /// </summary>
-    /// <remarks>
-    /// This method is useful as it significantly reduces the maximum expression depth as compared to the
-    /// results of <see cref="Or{TDelegate}(IEnumerable{Expression{TDelegate}})"/>, which is important
-    /// in certain scenarios (i.e. when interpreted by EntityFramework to produce queries for Microsoft
-    /// SQL Server).
-    /// </remarks>
-    public static Expression<TDelegate> OrTree<TDelegate>(params Expression<TDelegate>[] expressions)
-        where TDelegate : Delegate =>
-        OrTree(expressions.AsEnumerable());
-
-    /// <summary>
-    /// Combines the provided predicate <paramref name="expressions"/> into a balanced expression tree by
-    /// ORing their bodies together. Returns a false-valued predicate expression if the provided collection
-    /// of predicates is empty.
-    /// </summary>
-    /// <remarks>
-    /// This method is useful as it significantly reduces the maximum expression depth as compared to the
-    /// results of <see cref="Or{TDelegate}(IEnumerable{Expression{TDelegate}})"/>, which is important
-    /// in certain scenarios (i.e. when interpreted by EntityFramework to produce queries for Microsoft
-    /// SQL Server).
-    /// </remarks>
-    public static Expression<TDelegate> OrTree<TDelegate>(IEnumerable<Expression<TDelegate>> expressions)
-        where TDelegate : Delegate
-    {
-        AssertPredicateExpressionType(typeof(TDelegate));
-
-        return (Expression<TDelegate>)AggregateTreeImpl(
-            expressions: expressions,
-            fallback: Const<TDelegate>(false),
-            binaryOperator: ExpressionOn<bool, bool>.Of(static (a, b) => a || b)
         );
     }
 

@@ -11,12 +11,12 @@ public class ExpressionHelperAndTreeTests {
 
     [Fact]
     public void AndTree_works_as_expected() {
-        var expr = ExpressionHelper.AndTree<Func<string, bool>>(
+        var expr = ExpressionHelper.AndTree<string>([
             x => true,
             x => false,
             x => false,
             x => true
-        );
+        ]);
 
         var expectedBody = Expression.AndAlso(
             Expression.AndAlso(
@@ -34,11 +34,11 @@ public class ExpressionHelperAndTreeTests {
 
     [Fact]
     public void AndTree_should_be_left_biased() {
-        var expr = ExpressionHelper.AndTree<Func<string, bool>>(
+        var expr = ExpressionHelper.AndTree<string>([
             x => true,
             x => false,
             x => true
-        );
+        ]);
 
         var expectedBody = Expression.AndAlso(
             Expression.AndAlso(

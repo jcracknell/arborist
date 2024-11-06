@@ -47,9 +47,10 @@ public class AnalyzingInterpolationVisitor : InterpolationVisitor {
             && property.Name.Equals(nameof(IInterpolationContext<object>.Data))
         ) {
             (_dataReferences ??= new()).Add(node);
+            return node;
+        } else {
+            return base.VisitMember(node);
         }
-
-        return base.VisitMember(node);
     }
 
     protected override Expression VisitParameter(ParameterExpression node) {

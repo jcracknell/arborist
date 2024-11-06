@@ -6,14 +6,14 @@ namespace Arborist.Interpolation;
 /// </summary>
 public interface IInterpolationContext {
     /// <summary>
-    /// Splices the provided <paramref name="expression"/> into the parent expression tree
+    /// Splices the provided lambda <paramref name="expression"/> into the parent expression tree
     /// as a quoted (inline) expression tree.
     /// </summary>
     /// <exception cref="InterpolationContextEvaluationException">
     /// This method should only be used in an interpolated expression.
     /// </exception>
-    public TExpression SpliceQuoted<TExpression>([EvaluatedSpliceParameter] TExpression expression)
-        where TExpression : Expression =>
+    public TLambda SpliceQuoted<TLambda>([EvaluatedSpliceParameter] TLambda expression)
+        where TLambda : LambdaExpression =>
         throw InterpolationContextEvaluationException.Evaluated(ExpressionOnNone.GetMethod(() => SpliceQuoted(expression)));
 
     /// <summary>

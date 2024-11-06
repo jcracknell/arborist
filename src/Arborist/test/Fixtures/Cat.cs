@@ -5,5 +5,5 @@ public class Cat {
     public string Name { get; init; } = default!;
     public int Age { get; init; }
     public decimal? Weight { get; init; }
-    public Owner? Owner { get; init; }
+    public Owner Owner { get; init; } = default!;
 }

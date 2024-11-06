@@ -11,8 +11,8 @@ public class SplicingInterpolationVisitor : InterpolationVisitor {
         return node.Method.Name switch {
             nameof(IInterpolationContext.Splice) => VisitSplice(node),
             nameof(IInterpolationContext.SpliceBody) => VisitSpliceBody(node),
-            nameof(IInterpolationContext.Value) => VisitSpliceValue(node),
-            nameof(IInterpolationContext.Quote) => VisitSpliceQuoted(node),
+            nameof(IInterpolationContext.SpliceValue) => VisitSpliceValue(node),
+            nameof(IInterpolationContext.SpliceQuoted) => VisitSpliceQuoted(node),
             _ => throw new Exception($"Unhandled {typeof(IInterpolationContext)} method: {node.Method}.")
         };
     }

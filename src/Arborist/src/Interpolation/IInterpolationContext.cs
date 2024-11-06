@@ -12,9 +12,9 @@ public interface IInterpolationContext {
     /// <exception cref="InterpolationContextEvaluationException">
     /// This method should only be used in an interpolated expression.
     /// </exception>
-    public TExpression Quote<TExpression>([EvaluatedSpliceParameter] TExpression expression)
+    public TExpression SpliceQuoted<TExpression>([EvaluatedSpliceParameter] TExpression expression)
         where TExpression : Expression =>
-        throw InterpolationContextEvaluationException.Evaluated(ExpressionOnNone.GetMethod(() => Quote(expression)));
+        throw InterpolationContextEvaluationException.Evaluated(ExpressionOnNone.GetMethod(() => SpliceQuoted(expression)));
 
     /// <summary>
     /// Splices the provided expression tree with type <typeparamref name="A"/> into the
@@ -161,6 +161,6 @@ public interface IInterpolationContext {
     /// <exception cref="InterpolationContextEvaluationException">
     /// This method should only be used in an interpolated expression.
     /// </exception>
-    public A Value<A>([EvaluatedSpliceParameter] A value) =>
-        throw InterpolationContextEvaluationException.Evaluated(ExpressionOnNone.GetMethod(() => Value(value)));
+    public A SpliceValue<A>([EvaluatedSpliceParameter] A value) =>
+        throw InterpolationContextEvaluationException.Evaluated(ExpressionOnNone.GetMethod(() => SpliceValue(value)));
 }

@@ -20,7 +20,7 @@ public class InterpolateTests {
     [Fact]
     public void Interpolate_should_throw_EvaluatedSpliceException() {
         Assert.Throws<InterpolationContextEvaluationException>(() => {
-            ExpressionOnNone.Interpolate(x => x.Value(x.Value(1) + 2));
+            ExpressionOnNone.Interpolate(x => x.SpliceValue(x.SpliceValue(1) + 2));
         });
     }
 
@@ -116,13 +116,13 @@ public class InterpolateTests {
     }
 
     [Fact]
-    public void Interpolate_Quote_should_work_as_expected() {
+    public void Interpolate_SpliceQuoted_should_work_as_expected() {
         var quoted = Expression.Lambda<Func<Cat, bool>>(
             Expression.Constant(true),
             Expression.Parameter(typeof(Cat))
         );
 
-        var interpolated = ExpressionOn<Owner>.Interpolate((x, o) => o.CatsQueryable.Any(x.Quote(quoted)));
+        var interpolated = ExpressionOn<Owner>.Interpolate((x, o) => o.CatsQueryable.Any(x.SpliceQuoted(quoted)));
 
         var expected = Expression.Lambda<Func<Owner, bool>>(
             Expression.Call(
@@ -142,8 +142,8 @@ public class InterpolateTests {
     }
 
     [Fact]
-    public void Interpolate_Value_should_embed_constants() {
-        var interpolated = ExpressionOnNone.Interpolate(x => x.Value("foo"));
+    public void Interpolate_SpliceValue_should_embed_constants() {
+        var interpolated = ExpressionOnNone.Interpolate(x => x.SpliceValue("foo"));
 
         var expected = Expression.Lambda<Func<string>>(Expression.Constant("foo"));
 

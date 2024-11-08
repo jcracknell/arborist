@@ -25,20 +25,20 @@ public static class ExpressionOn<A> {
     /// <summary>
     /// Gets the constructor identified by the provided <paramref name="expression"/>.
     /// </summary>
-    public static ConstructorInfo GetConstructor<R>(Expression<Func<A, R>> expression) =>
-        ExpressionHelper.GetConstructor(expression);
+    public static ConstructorInfo GetConstructorInfo<R>(Expression<Func<A, R>> expression) =>
+        ExpressionHelper.GetConstructorInfo(expression);
 
     /// <summary>
     /// Gets the method identified by the provided <paramref name="expression"/>.
     /// </summary>
-    public static MethodInfo GetMethod<R>(Expression<Func<A, R>> expression) =>
-        ExpressionHelper.GetMethod(expression);
+    public static MethodInfo GetMethodInfo<R>(Expression<Func<A, R>> expression) =>
+        ExpressionHelper.GetMethodInfo(expression);
 
     /// <summary>
     /// Gets the method identified by the provided <paramref name="expression"/>.
     /// </summary>
-    public static MethodInfo GetMethod(Expression<Action<A>> expression) =>
-        ExpressionHelper.GetMethod(expression);
+    public static MethodInfo GetMethodInfo(Expression<Action<A>> expression) =>
+        ExpressionHelper.GetMethodInfo(expression);
 
     /// <summary>
     /// Grafts the provided <paramref name="branch"/> expression onto the <paramref name="root"/> expression,
@@ -122,27 +122,27 @@ public static class ExpressionOn<A> {
     /// <summary>
     /// Attempts to get a constructor identified by the provided <paramref name="expression"/>.
     /// </summary>
-    public static bool TryGetConstructor<R>(
+    public static bool TryGetConstructorInfo<R>(
         Expression<Func<A, R>> expression,
         [MaybeNullWhen(false)] out ConstructorInfo constructorInfo
     ) =>
-        ExpressionHelper.TryGetConstructor(expression, out constructorInfo);
+        ExpressionHelper.TryGetConstructorInfo(expression, out constructorInfo);
 
     /// <summary>
     /// Attempts to get a method identified by the provided <paramref name="expression"/>.
     /// </summary>
-    public static bool TryGetMethod<R>(
+    public static bool TryGetMethodInfo<R>(
         Expression<Func<A, R>> expression,
         [MaybeNullWhen(false)] out MethodInfo methodInfo
     ) =>
-        ExpressionHelper.TryGetMethod(expression, out methodInfo);
+        ExpressionHelper.TryGetMethodInfo(expression, out methodInfo);
 
     /// <summary>
     /// Attempts to get a method identified by the provided <paramref name="expression"/>.
     /// </summary>
-    public static bool TryGetMethod(
+    public static bool TryGetMethodInfo(
         Expression<Action<A>> expression,
         [MaybeNullWhen(false)] out MethodInfo methodInfo
     ) =>
-        ExpressionHelper.TryGetMethod(expression, out methodInfo);
+        ExpressionHelper.TryGetMethodInfo(expression, out methodInfo);
 }

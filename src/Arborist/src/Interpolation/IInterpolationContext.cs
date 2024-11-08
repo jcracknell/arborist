@@ -14,7 +14,7 @@ public interface IInterpolationContext {
     /// </exception>
     public TLambda SpliceQuoted<TLambda>([EvaluatedSpliceParameter] TLambda expression)
         where TLambda : LambdaExpression =>
-        throw InterpolationContextEvaluationException.Evaluated(ExpressionOnNone.GetMethod(() => SpliceQuoted(expression)));
+        throw InterpolationContextEvaluationException.Evaluated(ExpressionOnNone.GetMethodInfo(() => SpliceQuoted(expression)));
 
     /// <summary>
     /// Splices the provided expression tree with type <typeparamref name="A"/> into the
@@ -24,7 +24,7 @@ public interface IInterpolationContext {
     /// This method should only be used in an interpolated expression.
     /// </exception>
     public A Splice<A>([EvaluatedSpliceParameter] Expression expression) =>
-        throw InterpolationContextEvaluationException.Evaluated(ExpressionOnNone.GetMethod(() => Splice<A>(expression)));
+        throw InterpolationContextEvaluationException.Evaluated(ExpressionOnNone.GetMethodInfo(() => Splice<A>(expression)));
 
     /// <summary>
     /// Splices the delegate defined by the argument <paramref name="expression"/> into
@@ -35,7 +35,7 @@ public interface IInterpolationContext {
     /// </exception>
     public TDelegate Splice<TDelegate>([EvaluatedSpliceParameter] Expression<TDelegate> expression)
         where TDelegate : Delegate =>
-        throw InterpolationContextEvaluationException.Evaluated(ExpressionOnNone.GetMethod(() => Splice(expression)));
+        throw InterpolationContextEvaluationException.Evaluated(ExpressionOnNone.GetMethodInfo(() => Splice(expression)));
 
     /// <summary>
     /// Splices the body of the argument <paramref name="expression"/> into the
@@ -48,7 +48,7 @@ public interface IInterpolationContext {
     /// This method should only be used in an interpolated expression.
     /// </exception>
     public R SpliceBody<R>([EvaluatedSpliceParameter] Expression<Func<R>> expression) =>
-        throw InterpolationContextEvaluationException.Evaluated(ExpressionOnNone.GetMethod(() => SpliceBody(expression)));
+        throw InterpolationContextEvaluationException.Evaluated(ExpressionOnNone.GetMethodInfo(() => SpliceBody(expression)));
 
     /// <summary>
     /// Splices the body of the argument <paramref name="expression"/> into the
@@ -68,7 +68,7 @@ public interface IInterpolationContext {
         [InterpolatedSpliceParameter] A a,
         [EvaluatedSpliceParameter] Expression<Func<A, R>> expression
     ) =>
-        throw InterpolationContextEvaluationException.Evaluated(ExpressionOnNone.GetMethod(() => SpliceBody(a, expression)));
+        throw InterpolationContextEvaluationException.Evaluated(ExpressionOnNone.GetMethodInfo(() => SpliceBody(a, expression)));
 
     /// <summary>
     /// Splices the body of the argument <paramref name="expression"/> into the
@@ -92,7 +92,7 @@ public interface IInterpolationContext {
         [InterpolatedSpliceParameter] B b,
         [EvaluatedSpliceParameter] Expression<Func<A, B, R>> expression
     ) =>
-        throw InterpolationContextEvaluationException.Evaluated(ExpressionOnNone.GetMethod(() => SpliceBody(a, b, expression)));
+        throw InterpolationContextEvaluationException.Evaluated(ExpressionOnNone.GetMethodInfo(() => SpliceBody(a, b, expression)));
 
     /// <summary>
     /// Splices the body of the argument <paramref name="expression"/> into the
@@ -120,7 +120,7 @@ public interface IInterpolationContext {
         [InterpolatedSpliceParameter] C c,
         [EvaluatedSpliceParameter] Expression<Func<A, B, C, R>> expression
     ) =>
-        throw InterpolationContextEvaluationException.Evaluated(ExpressionOnNone.GetMethod(() => SpliceBody(a, b, c, expression)));
+        throw InterpolationContextEvaluationException.Evaluated(ExpressionOnNone.GetMethodInfo(() => SpliceBody(a, b, c, expression)));
 
     /// <summary>
     /// Splices the body of the argument <paramref name="expression"/> into the
@@ -152,7 +152,7 @@ public interface IInterpolationContext {
         [InterpolatedSpliceParameter] D d,
         [EvaluatedSpliceParameter] Expression<Func<A, B, C, R>> expression
     ) =>
-        throw InterpolationContextEvaluationException.Evaluated(ExpressionOnNone.GetMethod(() => SpliceBody(a, b, c, d, expression)));
+        throw InterpolationContextEvaluationException.Evaluated(ExpressionOnNone.GetMethodInfo(() => SpliceBody(a, b, c, d, expression)));
 
     /// <summary>
     /// Splices a constant reference to the result of the provided <paramref name="value"/>
@@ -162,5 +162,5 @@ public interface IInterpolationContext {
     /// This method should only be used in an interpolated expression.
     /// </exception>
     public A SpliceValue<A>([EvaluatedSpliceParameter] A value) =>
-        throw InterpolationContextEvaluationException.Evaluated(ExpressionOnNone.GetMethod(() => SpliceValue(value)));
+        throw InterpolationContextEvaluationException.Evaluated(ExpressionOnNone.GetMethodInfo(() => SpliceValue(value)));
 }

@@ -7,8 +7,8 @@ public static partial class ExpressionHelper {
     /// <summary>
     /// Gets the constructor identified by the provided <paramref name="expression"/>.
     /// </summary>
-    public static ConstructorInfo GetConstructor(Expression expression) =>
-        TryGetConstructor(expression, out var constructorInfo) switch {
+    public static ConstructorInfo GetConstructorInfo(Expression expression) =>
+        TryGetConstructorInfo(expression, out var constructorInfo) switch {
             true => constructorInfo,
             false => throw new ArgumentException("Argument expression is not a simple constructor invocation.", nameof(expression))
         };
@@ -16,8 +16,8 @@ public static partial class ExpressionHelper {
     /// <summary>
     /// Gets the method identified by the provided <paramref name="expression"/>.
     /// </summary>
-    public static MethodInfo GetMethod(Expression expression) =>
-        TryGetMethod(expression, out var methodInfo) switch {
+    public static MethodInfo GetMethodInfo(Expression expression) =>
+        TryGetMethodInfo(expression, out var methodInfo) switch {
             true => methodInfo,
             false => throw new ArgumentException("Argument expression is not a simple method call.", nameof(expression))
         };
@@ -25,11 +25,11 @@ public static partial class ExpressionHelper {
     /// <summary>
     /// Attempts to get a constructor identified by the provided <paramref name="expression"/>.
     /// </summary>
-    public static bool TryGetConstructor(
+    public static bool TryGetConstructorInfo(
         Expression expression,
         [MaybeNullWhen(false)] out ConstructorInfo constructorInfo
     ) {
-        if(TryGetMember(expression, out var member)) {
+        if(TryGetMemberInfo(expression, out var member)) {
             constructorInfo = member as ConstructorInfo;
             return constructorInfo is not null;
         } else {
@@ -41,11 +41,11 @@ public static partial class ExpressionHelper {
     /// <summary>
     /// Attempts to get a method identified by the provided <paramref name="expression"/>.
     /// </summary>
-    public static bool TryGetMethod(
+    public static bool TryGetMethodInfo(
         Expression expression,
         [MaybeNullWhen(false)]out MethodInfo methodInfo
     ) {
-        if(TryGetMember(expression, out var member)) {
+        if(TryGetMemberInfo(expression, out var member)) {
             methodInfo = member as MethodInfo;
             return methodInfo is not null;
         } else {
@@ -54,7 +54,7 @@ public static partial class ExpressionHelper {
         }
     }
 
-    private static bool TryGetMember(
+    private static bool TryGetMemberInfo(
         Expression expression,
         [MaybeNullWhen(false)] out MemberInfo member
     ) {
@@ -72,9 +72,9 @@ public static partial class ExpressionHelper {
                 member = newExpr.Constructor;
                 return true;
             case LambdaExpression lambda:
-                return TryGetMember(lambda.Body, out member);
+                return TryGetMemberInfo(lambda.Body, out member);
             case UnaryExpression { NodeType: ExpressionType.Convert } convert:
-                return TryGetMember(convert.Operand, out member);
+                return TryGetMemberInfo(convert.Operand, out member);
             default:
                 member = default;
                 return false;

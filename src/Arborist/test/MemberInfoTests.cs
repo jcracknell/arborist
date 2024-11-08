@@ -4,33 +4,33 @@ namespace Arborist;
 
 public class MemberInfoTests {
     [Fact]
-    public void GetConstructor0_should_work_as_expected() {
+    public void GetConstructorInfo0_should_work_as_expected() {
         var expected = typeof(MemberFixture).GetConstructor(Array.Empty<Type>());
-        var actual = ExpressionOnNone.GetConstructor(() => new MemberFixture());
+        var actual = ExpressionOnNone.GetConstructorInfo(() => new MemberFixture());
 
         Assert.Equal(expected, actual);
     }
 
     [Fact]
-    public void GetMethod0_should_work_as_expected() {
+    public void GetMethodInfo0_should_work_as_expected() {
         var expected = typeof(MemberFixture).GetMethod(nameof(MemberFixture.Method), Array.Empty<Type>());
-        var actual = ExpressionOnNone.GetMethod(() => default(MemberFixture)!.Method());
+        var actual = ExpressionOnNone.GetMethodInfo(() => default(MemberFixture)!.Method());
 
         Assert.Equal(expected, actual);
     }
 
     [Fact]
-    public void GetConstructor1_should_work_as_expected() {
+    public void GetConstructorInfo1_should_work_as_expected() {
         var expected = typeof(MemberFixture).GetConstructor(Array.Empty<Type>());
-        var actual = ExpressionOn<string>.GetConstructor(s => new MemberFixture());
+        var actual = ExpressionOn<string>.GetConstructorInfo(s => new MemberFixture());
 
         Assert.Equal(expected, actual);
     }
 
     [Fact]
-    public void GetMethod1_should_work_as_expected() {
+    public void GetMethodInfo1_should_work_as_expected() {
         var expected = typeof(MemberFixture).GetMethod(nameof(MemberFixture.Method), Array.Empty<Type>());
-        var actual = ExpressionOn<MemberFixture>.GetMethod(m => m.Method());
+        var actual = ExpressionOn<MemberFixture>.GetMethodInfo(m => m.Method());
 
         Assert.Equal(expected, actual);
     }

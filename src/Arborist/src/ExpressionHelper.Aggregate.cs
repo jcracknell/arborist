@@ -137,6 +137,7 @@ public static partial class ExpressionHelper {
         if(!enumerator.MoveNext())
             return seed;
 
+        var parameters = enumerator.Current.Parameters;
         var replacements = new Dictionary<Expression, Expression>();
         var replacingVisitor = new ReplacingExpressionVisitor(replacements);
         var body = seed.Body;
@@ -147,7 +148,7 @@ public static partial class ExpressionHelper {
             var current = enumerator.Current;
 
             replacements.Clear();
-            foreach(var (ps, pr) in current.Parameters.Zip(seed.Parameters))
+            foreach(var (ps, pr) in current.Parameters.Zip(parameters))
                 replacements[ps] = pr;
 
             var right = replacingVisitor.Visit(current.Body);
@@ -160,13 +161,13 @@ public static partial class ExpressionHelper {
             }
 
             replacements.Clear();
-            replacements[binaryOperator.Parameters[0]] = body;
-            replacements[binaryOperator.Parameters[1]] = right;
+            replacements[op0] = body;
+            replacements[op1] = right;
 
             body = replacingVisitor.Visit(binaryOperator.Body);
         } while(enumerator.MoveNext());
 
-        return Expression.Lambda(body, seed.Parameters);
+        return Expression.Lambda(body, parameters);
     }
 }
 

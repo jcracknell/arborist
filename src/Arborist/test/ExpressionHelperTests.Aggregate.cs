@@ -35,7 +35,7 @@ public partial class ExpressionHelperTests {
 
     [Fact]
     public void Aggregate2_should_work_as_expected() {
-        var expected = ExpressionOn<Cat, Owner>.Of((p0, p1) => "" + p0.Name + p1.Name);
+        var expected = ExpressionOn<Cat, Owner>.Of((c, o) => "" + c.Name + o.Name);
         var actual = ExpressionHelper.Aggregate(
             expressions: new[] {
                 ExpressionOn<Cat, Owner>.Of((c, o) => c.Name),
@@ -50,7 +50,7 @@ public partial class ExpressionHelperTests {
 
     [Fact]
     public void Aggregate3_should_work_as_expected() {
-        var expected = ExpressionOn<Cat, Owner, int>.Of((p0, p1, p2) => "" + p0.Name + p1.Name + p2.ToString());
+        var expected = ExpressionOn<Cat, Owner, int>.Of((c, o, i) => "" + c.Name + o.Name + i.ToString());
         var actual = ExpressionHelper.Aggregate(
             expressions: new[] {
                 ExpressionOn<Cat, Owner, int>.Of((c, o, i) => c.Name),
@@ -66,7 +66,7 @@ public partial class ExpressionHelperTests {
 
     [Fact]
     public void Aggregate4_should_work_as_expected() {
-        var expected = ExpressionOn<Cat, Owner, int, string>.Of((p0, p1, p2, p3) => "" + p0.Name + p1.Name + p2.ToString() + p3.ToLowerInvariant());
+        var expected = ExpressionOn<Cat, Owner, int, string>.Of((c, o, i, s) => "" + c.Name + o.Name + i.ToString() + s.ToLowerInvariant());
         var actual = ExpressionHelper.Aggregate(
             expressions: new[] {
                 ExpressionOn<Cat, Owner, int, string>.Of((c, o, i, s) => c.Name),

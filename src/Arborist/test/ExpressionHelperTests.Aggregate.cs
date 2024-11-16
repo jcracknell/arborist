@@ -41,7 +41,7 @@ public partial class ExpressionHelperTests {
                 ExpressionOn<Cat, Owner>.Of((c, o) => c.Name),
                 ExpressionOn<Cat, Owner>.Of((c, o) => o.Name)
             },
-            seed: ExpressionOn<Cat, Owner>.Of((p0, p1) => ""),
+            seed: ExpressionOn<Cat, Owner>.Of((c, o) => ""),
             binaryOperator: (acc, v) => acc + v
         );
 
@@ -57,7 +57,7 @@ public partial class ExpressionHelperTests {
                 ExpressionOn<Cat, Owner, int>.Of((c, o, i) => o.Name),
                 ExpressionOn<Cat, Owner, int>.Of((c, o, i) => i.ToString())
             },
-            seed: ExpressionOn<Cat, Owner, int>.Of((p0, p1, p2) => ""),
+            seed: ExpressionOn<Cat, Owner, int>.Of((c, o, i) => ""),
             binaryOperator: (acc, v) => acc + v
         );
 
@@ -74,7 +74,7 @@ public partial class ExpressionHelperTests {
                 ExpressionOn<Cat, Owner, int, string>.Of((c, o, i, s) => i.ToString()),
                 ExpressionOn<Cat, Owner, int, string>.Of((c, o, i, s) => s.ToLowerInvariant())
             },
-            seed: ExpressionOn<Cat, Owner, int, string>.Of((p0, p1, p2, p3) => ""),
+            seed: ExpressionOn<Cat, Owner, int, string>.Of((c, o, i, s) => ""),
             binaryOperator: (acc, v) => acc + v
         );
 

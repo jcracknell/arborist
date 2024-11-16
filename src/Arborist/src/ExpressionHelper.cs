@@ -29,7 +29,7 @@ public static partial class ExpressionHelper {
     internal static bool IsPredicateExpressionType(Type type) =>
         IsFuncExpressionType(type) && typeof(bool) == type.GetGenericArguments()[^1];
 
-    internal static Expression<TFunc> Const<TFunc>(object? value)
+    internal static Expression<TFunc> Const<TFunc>(IReadOnlyCollection<ParameterExpression>? parameters, object? value)
         where TFunc : Delegate
     {
         AssertFuncExpressionType(typeof(TFunc));
@@ -39,7 +39,7 @@ public static partial class ExpressionHelper {
 
         return Expression.Lambda<TFunc>(
             Expression.Constant(value, resultType),
-            genericArguments[..^1].Select(Expression.Parameter)
+            parameters ?? genericArguments[..^1].Select(Expression.Parameter)
         );
     }
 }

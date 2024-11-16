@@ -1,3 +1,4 @@
+using Arborist.Internal;
 using Arborist.Utils;
 
 namespace Arborist;
@@ -8,23 +9,25 @@ public static partial class ExpressionHelper {
     /// together. Returns a true-valued predicate expression if the provided collection of predicates
     /// is empty.
     /// </summary>
-    public static Expression<TDelegate> And<TDelegate>(params Expression<TDelegate>[] expressions)
+    public static Expression<TDelegate> And<TDelegate>(params Expression<TDelegate>[] predicates)
         where TDelegate : Delegate =>
-        And(expressions.AsEnumerable());
+        And(predicates.AsEnumerable());
 
     /// <summary>
     /// Combines the provided predicate expressions into a single expression by ANDing their bodies
     /// together. Returns a true-valued predicate expression if the provided collection of predicates
     /// is empty.
     /// </summary>
-    public static Expression<TDelegate> And<TDelegate>(IEnumerable<Expression<TDelegate>> expressions)
+    public static Expression<TDelegate> And<TDelegate>(IEnumerable<Expression<TDelegate>> predicates)
         where TDelegate : Delegate
     {
         AssertPredicateExpressionType(typeof(TDelegate));
 
+        var predicateList = CollectionHelpers.AsReadOnlyList(predicates);
+
         return (Expression<TDelegate>)AggregateImpl(
-            expressions: expressions,
-            seed: Const<TDelegate>(true),
+            expressions: predicateList,
+            seed: Const<TDelegate>(predicateList.FirstOrDefault()?.Parameters, true),
             binaryOperator: ExpressionOn<bool, bool>.Of(static (a, b) => a && b),
             options: new() { DiscardSeedExpression = true }
         );
@@ -35,23 +38,25 @@ public static partial class ExpressionHelper {
     /// together. Returns a false-valued predicate expression if the provided collection of predicates
     /// is empty.
     /// </summary>
-    public static Expression<TDelegate> Or<TDelegate>(params Expression<TDelegate>[] expressions)
+    public static Expression<TDelegate> Or<TDelegate>(params Expression<TDelegate>[] predicates)
         where TDelegate : Delegate =>
-        Or(expressions.AsEnumerable());
+        Or(predicates.AsEnumerable());
 
     /// <summary>
     /// Combines the provided predicate expressions into a single expression by ORing their bodies
     /// together. Returns a false-valued predicate expression if the provided collection of predicates
     /// is empty.
     /// </summary>
-    public static Expression<TDelegate> Or<TDelegate>(IEnumerable<Expression<TDelegate>> expressions)
+    public static Expression<TDelegate> Or<TDelegate>(IEnumerable<Expression<TDelegate>> predicates)
         where TDelegate : Delegate
     {
         AssertPredicateExpressionType(typeof(TDelegate));
 
+        var predicateList = CollectionHelpers.AsReadOnlyList(predicates);
+
         return (Expression<TDelegate>)AggregateImpl(
-            expressions: expressions,
-            seed: Const<TDelegate>(false),
+            expressions: predicateList,
+            seed: Const<TDelegate>(predicateList.FirstOrDefault()?.Parameters, false),
             binaryOperator: ExpressionOn<bool, bool>.Of(static (a, b) => a || b),
             options: new() { DiscardSeedExpression = true }
         );

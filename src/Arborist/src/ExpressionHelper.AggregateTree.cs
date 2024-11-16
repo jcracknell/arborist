@@ -122,13 +122,12 @@ public static partial class ExpressionHelper {
             case 1: return expressionList[0];
         }
 
-        var parameters = expressionList[0].Parameters;
         var replacements = new Dictionary<Expression, Expression>();
         var replacementVisitor = new ReplacingExpressionVisitor(replacements);
 
         return Expression.Lambda(
-            AggregateTreeBody(expressionList, binaryOperator, 0, expressionList.Count, parameters, replacements, replacementVisitor),
-            parameters
+            AggregateTreeBody(expressionList, binaryOperator, 0, expressionList.Count, fallback.Parameters, replacements, replacementVisitor),
+            fallback.Parameters
         );
     }
 

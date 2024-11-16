@@ -1,3 +1,5 @@
+using Arborist.Internal;
+
 namespace Arborist;
 
 public static partial class ExpressionHelper {
@@ -77,10 +79,14 @@ public static partial class ExpressionHelper {
         AndTreeUnsafe(predicates);
 
     public static Expression<TPredicate> AndTreeUnsafe<TPredicate>(IEnumerable<Expression<TPredicate>> predicates)
-        where TPredicate : Delegate =>
-        (Expression<TPredicate>)AggregateTreeImpl(
-            expressions: predicates,
-            fallback: Const<TPredicate>(true),
+        where TPredicate : Delegate
+    {
+        var predicateList = CollectionHelpers.AsReadOnlyList(predicates);
+
+        return (Expression<TPredicate>)AggregateTreeImpl(
+            expressions: predicateList,
+            fallback: Const<TPredicate>(predicateList.FirstOrDefault()?.Parameters, true),
             binaryOperator: ExpressionOn<bool, bool>.Of(static (a, b) => a && b)
         );
+    }
 }

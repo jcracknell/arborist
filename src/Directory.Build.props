@@ -33,5 +33,7 @@
     <NoWarn>$(NoWarn),1712</NoWarn>
     <!-- xUnit2014: Use Assert.Single to check for collection size -->
     <NoWarn>$(NoWarn),xUnit2013</NoWarn>
+    <!-- Error communicating with package source -->
+    <NoWarn>$(NoWarn),NU1900</NoWarn>
   </PropertyGroup>
 </Project>

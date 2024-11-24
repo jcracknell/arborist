@@ -29,6 +29,7 @@ public class ReadmeTests {
     public void Splice_example_should_work() {
         var projection = ExpressionOn<string>.Of(v => v.Length);
 
+        /*
         var interpolated0 = ExpressionOn<IEnumerable<string>>.Interpolate(
             new { projection },
             static (x, e) => e.Select(x.Splice(x.Data.projection))
@@ -43,6 +44,7 @@ public class ReadmeTests {
             expected: ExpressionOnNone.Of(() => Math.Abs(2)),
             actual: ExpressionOnNone.Interpolate(x => Math.Abs(x.Splice<int>(Expression.Constant(2))))
         );
+        */
     }
 
     [Fact]

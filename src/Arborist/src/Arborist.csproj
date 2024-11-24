@@ -3,9 +3,14 @@
     <TargetFramework>net8.0</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
+
   <PropertyGroup>
     <IsPackable>true</IsPackable>
     <PackageId>Arborist</PackageId>
     <Description>Arborist provides surgical tools for operating on expression trees.</Description>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../Arborist.CodeGen/src/Arborist.CodeGen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
 </Project>

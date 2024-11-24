@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Arborist.CodeGen</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Arborist\src\Arborist.csproj" />
+    <ProjectReference Include="..\src\Arborist.CodeGen.csproj" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all"/>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all"/>
+    <PackageReference Include="Microsoft.NET.Test.Sdk"/>
+    <PackageReference Include="xunit"/>
+    <PackageReference Include="xunit.runner.visualstudio"/>
+  </ItemGroup>
+
+</Project>

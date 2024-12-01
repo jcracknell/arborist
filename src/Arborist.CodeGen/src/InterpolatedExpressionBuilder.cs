@@ -117,21 +117,16 @@ public class InterpolatedExpressionBuilder {
     }
 
     public InterpolatedExpressionTree CreateType(ITypeSymbol type) {
+        if(!TypeSymbolHelpers.IsAccessible(type))
+            return _diagnostics.InaccesibleSymbol(type, InterpolatedExpressionTree.Unsupported);
+
         // If this is a static type, it is not possible to create a TypeRef (as it can't be
         // used as a type parameter)
-        if(type.IsStatic && TypeSymbolHelpers.IsNameableType(type))
-            return InterpolatedExpressionTree.Verbatim($"typeof({CreateTypeName(type)})");
+        if(type.IsStatic && TypeSymbolHelpers.TryCreateTypeName(type, out var typeName))
+            return InterpolatedExpressionTree.Verbatim($"typeof({typeName})");
 
         var typeRef = CreateTypeRef(type);
         return InterpolatedExpressionTree.Member(typeRef, "Type");
-    }
-
-    public string CreateTypeName(ITypeSymbol type) {
-        try {
-            return TypeSymbolHelpers.CreateTypeName(type);
-        } catch {
-            return _diagnostics.UnsupportedType(type, "???");
-        }
     }
 
     public InterpolatedExpressionTree CreateTypeRef(ITypeSymbol type) {
@@ -168,9 +163,9 @@ public class InterpolatedExpressionBuilder {
                     [InterpolatedExpressionTree.Verbatim($"new {{ {anonymousProperties} }}")]
                 );
 
-            case INamedTypeSymbol named when TypeSymbolHelpers.IsNameableType(named):
+            case INamedTypeSymbol named when TypeSymbolHelpers.TryCreateTypeName(named, out var typeName):
                 return InterpolatedExpressionTree.Verbatim(
-                    $"global::Arborist.Interpolation.Internal.TypeRef<{CreateTypeName(named)}>.Instance"
+                    $"global::Arborist.Interpolation.Internal.TypeRef<{typeName}>.Instance"
                 );
 
             // If we have a generic type containing an anonymous type, we can generate a static local
@@ -259,27 +254,45 @@ public class InterpolatedExpressionBuilder {
         if(method.ReducedFrom is not null)
             return CreateGenericMethodCall(method.ReducedFrom.Construct(method.TypeArguments, method.TypeArgumentNullableAnnotations), node);
 
-        // Only specify type arguments if they were explicitly specified in the original call
-        // (in which case we know they are nameable)
-        var typeArgs = node switch {
-            { Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax _ } } =>
-                method.TypeArguments.MkString("<", CreateTypeName, ", ", ">"),
-            _ => string.Empty
-        };
-
+        var typeArgs = CreateGenericMethodCallTypeArgs(method, node);
         var valueArgs = method.Parameters.Select(p => CreateDefaultValue(p.Type)).ToList();
 
-        return method.IsStatic switch {
-            true => InterpolatedExpressionTree.StaticCall(
-                $"{CreateTypeName(method.ContainingType)}.{method.Name}{typeArgs}",
+        if(method.IsStatic) {
+            if(!TypeSymbolHelpers.TryCreateTypeName(method.ContainingType, out var containingTypeName))
+                return _diagnostics.UnsupportedType(method.ContainingType, InterpolatedExpressionTree.Unsupported);
+
+            return InterpolatedExpressionTree.StaticCall(
+                $"{containingTypeName}.{method.Name}{typeArgs}",
                 valueArgs
-            ),
-            false => InterpolatedExpressionTree.InstanceCall(
+            );
+        } else {
+            return InterpolatedExpressionTree.InstanceCall(
                 CreateDefaultValue(method.ContainingType),
                 $"{method.Name}{typeArgs}",
                 valueArgs
-            )
-        };
+            );
+        }
+    }
+
+    private string CreateGenericMethodCallTypeArgs(IMethodSymbol methodSymbol, InvocationExpressionSyntax? node) {
+        switch(node) {
+            // Only specify type arguments if they were explicitly specified in the original call
+            // (in which case we know they are nameable).
+            case { Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax } }:
+                var typeArgNames = new List<string>(methodSymbol.TypeArguments.Length);
+                foreach(var typeArg in methodSymbol.TypeArguments) {
+                    if(TypeSymbolHelpers.TryCreateTypeName(typeArg, out var typeArgName)) {
+                        typeArgNames.Add(typeArgName);
+                    } else {
+                        return _diagnostics.UnsupportedType(typeArg, "???");
+                    }
+                }
+
+                return typeArgNames.MkString("<", ", ", ">");
+
+            default:
+                return "";
+        }
     }
 
     public InterpolatedExpressionTree CreateParameter(ITypeSymbol type, string name) {

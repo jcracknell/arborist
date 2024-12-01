@@ -58,10 +58,16 @@ public class InterpolatedExpressionBuilder {
     }
 
     public InterpolatedExpressionTree CreateExpression(string factoryName, params InterpolatedExpressionTree[] args) =>
-        InterpolatedExpressionTree.StaticCall($"{ExpressionTypeName}.{factoryName}", args);
+        InterpolatedExpressionTree.StaticCall(
+            InterpolatedExpressionTree.Verbatim($"{ExpressionTypeName}.{factoryName}"),
+            args
+        );
 
     public InterpolatedExpressionTree CreateExpression(string factoryName, IEnumerable<InterpolatedExpressionTree> args) =>
-        InterpolatedExpressionTree.StaticCall($"{ExpressionTypeName}.{factoryName}", args.ToList()!);
+        InterpolatedExpressionTree.StaticCall(
+            InterpolatedExpressionTree.Verbatim($"{ExpressionTypeName}.{factoryName}"),
+            [..args]
+        );
 
     public InterpolatedExpressionTree CreateExpressionArray(IEnumerable<InterpolatedExpressionTree> elements) =>
         InterpolatedExpressionTree.Concat(
@@ -159,7 +165,7 @@ public class InterpolatedExpressionBuilder {
                 .MkString(p => $"{p.Name} = {CreateDefaultValue(p.Type)}", ", ");
 
                 return InterpolatedExpressionTree.StaticCall(
-                    "global::Arborist.Interpolation.Internal.TypeRef.Create",
+                    InterpolatedExpressionTree.Verbatim("global::Arborist.Interpolation.Internal.TypeRef.Create"),
                     [InterpolatedExpressionTree.Verbatim($"new {{ {anonymousProperties} }}")]
                 );
 
@@ -200,7 +206,7 @@ public class InterpolatedExpressionBuilder {
         ));
 
         return InterpolatedExpressionTree.StaticCall(
-            methodName,
+            InterpolatedExpressionTree.Verbatim(methodName),
             [..TypeSymbolHelpers.GetInheritedTypeArguments(type).Select(CreateTypeRef)]
         );
     }
@@ -232,7 +238,7 @@ public class InterpolatedExpressionBuilder {
     private InterpolatedExpressionTree CreateMethodInfoUncached(IMethodSymbol method, InvocationExpressionSyntax? node) {
         if(method.IsGenericMethod)
             return InterpolatedExpressionTree.StaticCall(
-                "global::Arborist.ExpressionOnNone.GetMethodInfo",
+                InterpolatedExpressionTree.Verbatim("global::Arborist.ExpressionOnNone.GetMethodInfo"),
                 [InterpolatedExpressionTree.Lambda([], CreateGenericMethodCall(method, node))]
             );
 
@@ -240,7 +246,9 @@ public class InterpolatedExpressionBuilder {
         var parameterTypes = CreateTypeArray(method.Parameters.Select(p => p.Type));
 
         return InterpolatedExpressionTree.Concat(
-            InterpolatedExpressionTree.InstanceCall(declaringType, "GetMethod", [
+            InterpolatedExpressionTree.InstanceCall(
+                declaringType,
+                InterpolatedExpressionTree.Verbatim("GetMethod"), [
                 InterpolatedExpressionTree.Verbatim($"\"{method.Name}\""),
                 parameterTypes
             ]),
@@ -262,19 +270,25 @@ public class InterpolatedExpressionBuilder {
                 return _diagnostics.UnsupportedType(method.ContainingType, InterpolatedExpressionTree.Unsupported);
 
             return InterpolatedExpressionTree.StaticCall(
-                $"{containingTypeName}.{method.Name}{typeArgs}",
+                InterpolatedExpressionTree.Concat(
+                    InterpolatedExpressionTree.Verbatim($"{containingTypeName}.{method.Name}"),
+                    typeArgs
+                ),
                 valueArgs
             );
         } else {
             return InterpolatedExpressionTree.InstanceCall(
                 CreateDefaultValue(method.ContainingType),
-                $"{method.Name}{typeArgs}",
+                InterpolatedExpressionTree.Concat(
+                    InterpolatedExpressionTree.Verbatim(method.Name),
+                    typeArgs
+                ),
                 valueArgs
             );
         }
     }
 
-    private string CreateGenericMethodCallTypeArgs(IMethodSymbol methodSymbol, InvocationExpressionSyntax? node) {
+    private InterpolatedExpressionTree CreateGenericMethodCallTypeArgs(IMethodSymbol methodSymbol, InvocationExpressionSyntax? node) {
         switch(node) {
             // Only specify type arguments if they were explicitly specified in the original call
             // (in which case we know they are nameable).
@@ -284,14 +298,14 @@ public class InterpolatedExpressionBuilder {
                     if(TypeSymbolHelpers.TryCreateTypeName(typeArg, out var typeArgName)) {
                         typeArgNames.Add(typeArgName);
                     } else {
-                        return _diagnostics.UnsupportedType(typeArg, "???");
+                        return _diagnostics.UnsupportedType(typeArg, InterpolatedExpressionTree.Unsupported);
                     }
                 }
 
-                return typeArgNames.MkString("<", ", ", ">");
+                return InterpolatedExpressionTree.Verbatim(typeArgNames.MkString("<", ", ", ">"));
 
             default:
-                return "";
+                return InterpolatedExpressionTree.Verbatim("");
         }
     }
 

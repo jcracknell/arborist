@@ -3,9 +3,6 @@ using System.Text;
 namespace Arborist.CodeGen;
 
 public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpressionTree> {
-    public static implicit operator InterpolatedExpressionTree(string value) =>
-        Verbatim(value);
-
     public static InterpolatedExpressionTree Unsupported { get; } = new UnsupportedNode();
 
     public static InterpolatedExpressionTree Verbatim(string value) =>

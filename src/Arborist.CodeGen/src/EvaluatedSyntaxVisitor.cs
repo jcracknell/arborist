@@ -189,14 +189,31 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpression
         if(node.Initializer is null)
             return newExpr;
 
-        return InterpolatedExpressionTree.Concat(
-            newExpr,
-            InterpolatedExpressionTree.Initializer([..node.Initializer.Expressions.Select(Visit)])
-        );
+        return InterpolatedExpressionTree.Concat(newExpr, Visit(node.Initializer));
     }
 
-    public override InterpolatedExpressionTree? VisitInitializerExpression(InitializerExpressionSyntax node) =>
-        InterpolatedExpressionTree.Initializer([..node.Expressions.Select(Visit)]);
+    public override InterpolatedExpressionTree VisitInitializerExpression(InitializerExpressionSyntax node) =>
+        InterpolatedExpressionTree.Initializer([..node.Expressions.Select(VisitInitializerElement)]);
+
+    private InterpolatedExpressionTree VisitInitializerElement(ExpressionSyntax node) {
+        switch(node) {
+            // This requires handling as a special case of IdentifierNameSyntax
+            case AssignmentExpressionSyntax assignment:
+                if(_context.SemanticModel.GetSymbolInfo(assignment.Left).Symbol is not {} leftSymbol)
+                    return _context.Diagnostics.UnsupportedEvaluatedSyntax(node, InterpolatedExpressionTree.Unsupported);
+                if(!TypeSymbolHelpers.IsAccessible(leftSymbol))
+                    return _context.Diagnostics.InaccesibleSymbol(leftSymbol, InterpolatedExpressionTree.Unsupported);
+
+                return InterpolatedExpressionTree.Concat(
+                    InterpolatedExpressionTree.Verbatim(assignment.Left.ToString()),
+                    InterpolatedExpressionTree.Verbatim(" = "),
+                    Visit(assignment.Right)
+                );
+
+            default:
+                return Visit(node);
+        }
+    }
 
     public override InterpolatedExpressionTree VisitAssignmentExpression(AssignmentExpressionSyntax node) =>
         InterpolatedExpressionTree.Concat(
@@ -261,11 +278,10 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpression
     }
 
     public override InterpolatedExpressionTree VisitIdentifierName(IdentifierNameSyntax node) {
-        var symbol = _context.SemanticModel.GetSymbolInfo(node).Symbol;
-        if(symbol is not null && !TypeSymbolHelpers.IsAccessible(symbol))
-            return _context.Diagnostics.InaccesibleSymbol(symbol, InterpolatedExpressionTree.Unsupported);
+        if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not {} symbol)
+            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node, InterpolatedExpressionTree.Unsupported);
 
-        if(symbol is IParameterSymbol && !_evaluableParameters.Contains(node.Identifier.Text)) {
+        if(!_evaluableParameters.Contains(node.Identifier.Text)) {
             if(_interpolatableParameters.Contains(node.Identifier.Text))
                 return _context.Diagnostics.EvaluatedParameter(node, InterpolatedExpressionTree.Unsupported);
 

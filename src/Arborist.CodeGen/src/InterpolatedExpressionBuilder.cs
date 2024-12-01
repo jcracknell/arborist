@@ -305,7 +305,7 @@ public class InterpolatedExpressionBuilder {
                 return InterpolatedExpressionTree.Verbatim(typeArgNames.MkString("<", ", ", ">"));
 
             default:
-                return InterpolatedExpressionTree.Verbatim("");
+                return InterpolatedExpressionTree.Empty;
         }
     }
 

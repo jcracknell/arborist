@@ -309,28 +309,32 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
         if(node.Initializer is null)
             return newExpr;
 
-        return _builder.CreateExpression(nameof(Expression.MemberInit),
-            newExpr,
-            Visit(node.Initializer)
-        );
+        return node.Initializer.Kind() switch {
+            SyntaxKind.ObjectInitializerExpression =>
+                _builder.CreateExpression(nameof(Expression.MemberInit), newExpr, Visit(node.Initializer)),
+            SyntaxKind.CollectionInitializerExpression =>
+                _builder.CreateExpression(nameof(Expression.ListInit), newExpr, Visit(node.Initializer)),
+            _ => _context.Diagnostics.UnsupportedInterpolatedSyntax(node.Initializer, InterpolatedExpressionTree.Unsupported)
+        };
     }
 
-    public override InterpolatedExpressionTree VisitInitializerExpression(InitializerExpressionSyntax node) {
-        var typeSymbol = (ITypeSymbol)_context.SemanticModel.GetSymbolInfo(node).Symbol!;
+    public override InterpolatedExpressionTree VisitInitializerExpression(InitializerExpressionSyntax node) =>
+        // This is a pain in the butt because from a syntactical standpoint an initializer is a "bracketed list
+        // of things" (e.g. a collection initializer is a bracketed list of bracketed lists), but we care very
+        // much about the context in which the bracketed list and its elements occur.
+        node.Kind() switch {
+            SyntaxKind.ObjectInitializerExpression => InterpolatedExpressionTree.Concat(
+                InterpolatedExpressionTree.Verbatim("new global::System.Linq.Expressions.MemberBinding[] "),
+                InterpolatedExpressionTree.Initializer([..node.Expressions.Select(VisitObjectInitializerElement)])
+            ),
+            SyntaxKind.CollectionInitializerExpression => InterpolatedExpressionTree.Concat(
+                InterpolatedExpressionTree.Verbatim("new global::System.Linq.Expressions.ElementInit[] "),
+                InterpolatedExpressionTree.Initializer([..node.Expressions.Select(VisitCollectionInitializerElement)])
+            ),
+            _ => _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedExpressionTree.Unsupported)
+        };
 
-        switch(node.Kind()) {
-            case SyntaxKind.ObjectInitializerExpression:
-                return InterpolatedExpressionTree.ObjectInit(
-                    InterpolatedExpressionTree.Verbatim("new global::System.Linq.Expressions.MemberBinding[]"),
-                    [..node.Expressions.Select(VisitObjectInitializerExpressionSyntax)]
-                );
-
-            default:
-                return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedExpressionTree.Unsupported);
-        }
-    }
-
-    private InterpolatedExpressionTree VisitObjectInitializerExpressionSyntax(ExpressionSyntax node) {
+    private InterpolatedExpressionTree VisitObjectInitializerElement(ExpressionSyntax node) {
         switch(node) {
             case AssignmentExpressionSyntax { Left: IdentifierNameSyntax identifier } assignment:
                 var identifierSymbol = _context.SemanticModel.GetSymbolInfo(identifier).Symbol;
@@ -354,6 +358,42 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
             default:
                 return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedExpressionTree.Unsupported);
         }
+    }
+
+    private InterpolatedExpressionTree VisitCollectionInitializerElement(ExpressionSyntax node) =>
+        node switch {
+            InitializerExpressionSyntax initializer =>
+                VisitCollectionInitializerElement(initializer, initializer.Expressions),
+            _ => VisitCollectionInitializerElement(node, new[] { node })
+        };
+
+    private InterpolatedExpressionTree VisitCollectionInitializerElement(
+        ExpressionSyntax node,
+        IReadOnlyList<ExpressionSyntax> argumentExpressions
+    ) {
+        if(node.Parent?.Parent is not {} parentSymbol)
+            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedExpressionTree.Unsupported);
+        if(_context.SemanticModel.GetTypeInfo(parentSymbol).Type is not {} parentType)
+            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedExpressionTree.Unsupported);
+
+        // TODO: we should probably look into overload resolution, but this is good enough for the
+        // vast majority of cases.
+        var argumentTypes = argumentExpressions.Select(e => _context.SemanticModel.GetTypeInfo(e)).ToList();
+        var methodSymbol = parentType.GetMembers("Add").OfType<IMethodSymbol>().FirstOrDefault(
+            m => !m.IsStatic
+            && m.Parameters.Length == argumentExpressions.Count
+            && m.Parameters.All(p => TypeSymbolHelpers.IsSubtype(argumentTypes[p.Ordinal].Type, p.Type))
+        );
+
+        if(methodSymbol is null)
+            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedExpressionTree.Unsupported);
+        if(!TypeSymbolHelpers.IsAccessible(methodSymbol))
+            return _context.Diagnostics.InaccesibleSymbol(methodSymbol, InterpolatedExpressionTree.Unsupported);
+
+        return _builder.CreateExpression(nameof(Expression.ElementInit), [
+            _builder.CreateMethodInfo(methodSymbol, default),
+            _builder.CreateExpressionArray([..argumentExpressions.Select(Visit)])
+        ]);
     }
 
     public override InterpolatedExpressionTree VisitParenthesizedExpression(ParenthesizedExpressionSyntax node) =>

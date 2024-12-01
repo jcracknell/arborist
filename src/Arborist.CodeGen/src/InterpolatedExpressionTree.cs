@@ -8,9 +8,6 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
     public static InterpolatedExpressionTree Verbatim(string value) =>
         new VerbatimNode(value);
 
-    public static InterpolatedExpressionTree AddInitializer(IReadOnlyList<InterpolatedExpressionTree> values) =>
-        new AddInitializerNode(values);
-
     public static InterpolatedExpressionTree ArrowBody(InterpolatedExpressionTree expression) =>
         new ArrowBodyNode(expression);
 
@@ -32,6 +29,9 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
         InterpolatedExpressionTree index
     ) =>
         new IndexerNode(body, index);
+
+    public static InterpolatedExpressionTree Initializer(IReadOnlyList<InterpolatedExpressionTree> elements) =>
+        new InitializerNode(elements);
 
     public static InterpolatedExpressionTree InstanceCall(
         InterpolatedExpressionTree expression,
@@ -59,12 +59,6 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
         InterpolatedExpressionTree body
     ) =>
         new MethodDefinitionNode(method, parameters, typeConstraints, body);
-
-    public static InterpolatedExpressionTree ObjectInit(
-        InterpolatedExpressionTree body,
-        IReadOnlyList<InterpolatedExpressionTree> initializers
-    ) =>
-        new ObjectInitNode(body, initializers);
 
     public static InterpolatedExpressionTree StaticCall(
         string method,
@@ -178,33 +172,6 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
 
         public override bool Equals(InterpolatedExpressionTree? obj) =>
             obj is VerbatimNode that && this.Expr.Equals(that.Expr);
-    }
-
-    private class AddInitializerNode(IReadOnlyList<InterpolatedExpressionTree> values) : InterpolatedExpressionTree {
-        public IReadOnlyList<InterpolatedExpressionTree> Values { get; } = values;
-
-        public override bool IsSupported =>
-            Values.All(v => v.IsSupported);
-
-        public override void Render(RenderingContext context) {
-            context.Append("{ ");
-            if(Values.Count != 0) {
-                context.Append(" ");
-                context.Append(Values[0]);
-                for(var i = 1; i < Values.Count; i++) {
-                    context.Append(", ");
-                    context.Append(Values[i]);
-                }
-            }
-            context.Append(" }");
-        }
-
-        public override int GetHashCode() =>
-            Values.Aggregate(default(int), (h, v) => h ^ v.GetHashCode());
-
-        public override bool Equals(InterpolatedExpressionTree? obj) =>
-            obj is AddInitializerNode that
-            && this.Values.SequenceEqual(that.Values);
     }
 
     private class ArrowBodyNode(InterpolatedExpressionTree expression) : InterpolatedExpressionTree {
@@ -350,36 +317,34 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
             && this.Args.SequenceEqual(that.Args);
     }
 
-    private class InitializerNode(InterpolatedExpressionTree body, IReadOnlyList<InterpolatedExpressionTree> initializers)
+    private class InitializerNode(IReadOnlyList<InterpolatedExpressionTree> initializers)
          : InterpolatedExpressionTree
     {
-        public InterpolatedExpressionTree Body { get; } = body;
         public IReadOnlyList<InterpolatedExpressionTree> Initializers { get; } = initializers;
 
         public override bool IsSupported =>
-            Body.IsSupported && Initializers.All(i => i.IsSupported);
+            Initializers.All(static i => i.IsSupported);
 
         public override void Render(RenderingContext context) {
-            context.Append(Body);
-            context.Append(" {");
+            context.AppendIndent("{");
             if(Initializers.Count != 0) {
+                context.AppendNewLine();
                 context.Indent(Initializers[0]);
                 for(var i = 1; i < Initializers.Count; i++) {
                     context.Append(",");
                     context.AppendNewLine();
                     context.Indent(Initializers[i]);
                 }
+                context.AppendNewLine();
             }
-            context.AppendNewLine();
-            context.Append("}");
+            context.AppendIndent("}");
         }
 
         public override int GetHashCode() =>
-            Initializers.Aggregate(Body.GetHashCode(), (h, i) => h ^ i.GetHashCode());
+            Initializers.Aggregate(default(int), (h, i) => h ^ i.GetHashCode());
 
         public override bool Equals(InterpolatedExpressionTree? obj) =>
             obj is InitializerNode that
-            && this.Body.Equals(that.Body)
             && this.Initializers.SequenceEqual(that.Initializers);
     }
 
@@ -464,40 +429,6 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
             && this.Parameters.SequenceEqual(that.Parameters)
             && this.TypeConstraints.SequenceEqual(that.TypeConstraints)
             && this.Body.Equals(that.Body);
-    }
-
-    private class ObjectInitNode(InterpolatedExpressionTree body, IReadOnlyList<InterpolatedExpressionTree> initializers)
-        : InterpolatedExpressionTree
-    {
-        public InterpolatedExpressionTree Body { get; } = body;
-        public IReadOnlyList<InterpolatedExpressionTree> Initializers { get; } = initializers;
-
-        public override bool IsSupported =>
-            Body.IsSupported && Initializers.All(static i => i.IsSupported);
-
-        public override void Render(RenderingContext context) {
-            context.Append(Body);
-            context.Append(" {");
-            if(Initializers.Count != 0) {
-                context.AppendNewLine();
-                context.Indent(Initializers[0]);
-                for(var i = 1; i < Initializers.Count; i++) {
-                    context.Append(",");
-                    context.AppendNewLine();
-                    context.Indent(Initializers[i]);
-                }
-                context.AppendNewLine();
-            }
-            context.AppendIndent("}");
-        }
-
-        public override int GetHashCode() =>
-            Initializers.Aggregate(Body.GetHashCode(), static (h, i) => h ^ i.GetHashCode());
-
-        public override bool Equals(InterpolatedExpressionTree? obj) =>
-            obj is ObjectInitNode that
-            && this.Body.Equals(that.Body)
-            && this.Initializers.SequenceEqual(that.Initializers);
     }
 
     private class StaticCallNode(string method, IReadOnlyList<InterpolatedExpressionTree> args) : InterpolatedExpressionTree {

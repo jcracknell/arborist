@@ -64,9 +64,9 @@ public class InterpolatedExpressionBuilder {
         InterpolatedExpressionTree.StaticCall($"{ExpressionTypeName}.{factoryName}", args.ToList()!);
 
     public InterpolatedExpressionTree CreateExpressionArray(IEnumerable<InterpolatedExpressionTree> elements) =>
-        InterpolatedExpressionTree.ObjectInit(
-            InterpolatedExpressionTree.Verbatim($"new {ExpressionTypeName}[]"),
-            elements.ToList()
+        InterpolatedExpressionTree.Concat(
+            InterpolatedExpressionTree.Verbatim($"new {ExpressionTypeName}[] "),
+            InterpolatedExpressionTree.Initializer(elements.ToList())
         );
 
     public InterpolatedExpressionTree CreateExpressionType(SyntaxNode syntax) =>
@@ -213,13 +213,13 @@ public class InterpolatedExpressionBuilder {
     public InterpolatedExpressionTree CreateTypeArray(IEnumerable<ITypeSymbol> types) =>
         types switch {
             IReadOnlyCollection<ITypeSymbol> { Count: 0 } => InterpolatedExpressionTree.Verbatim("global::System.Type.EmptyTypes"),
-            _ => InterpolatedExpressionTree.ObjectInit(
-                InterpolatedExpressionTree.Verbatim("new global::System.Type[]"),
-                types.Select(CreateType).ToList()
+            _ => InterpolatedExpressionTree.Concat(
+                InterpolatedExpressionTree.Verbatim("new global::System.Type[] "),
+                InterpolatedExpressionTree.Initializer(types.Select(CreateType).ToList())
             )
         };
 
-    public InterpolatedExpressionTree CreateMethodInfo(IMethodSymbol method, InvocationExpressionSyntax node) {
+    public InterpolatedExpressionTree CreateMethodInfo(IMethodSymbol method, InvocationExpressionSyntax? node) {
         if(_methodInfos.TryGetValue(method, out var cached))
             return InterpolatedExpressionTree.Verbatim(cached.Identifier);
 
@@ -234,7 +234,7 @@ public class InterpolatedExpressionBuilder {
         }
     }
 
-    private InterpolatedExpressionTree CreateMethodInfoUncached(IMethodSymbol method, InvocationExpressionSyntax node) {
+    private InterpolatedExpressionTree CreateMethodInfoUncached(IMethodSymbol method, InvocationExpressionSyntax? node) {
         if(method.IsGenericMethod)
             return InterpolatedExpressionTree.StaticCall(
                 "global::Arborist.ExpressionOnNone.GetMethodInfo",
@@ -253,7 +253,7 @@ public class InterpolatedExpressionBuilder {
         );
     }
 
-    private InterpolatedExpressionTree CreateGenericMethodCall(IMethodSymbol method, InvocationExpressionSyntax node) {
+    private InterpolatedExpressionTree CreateGenericMethodCall(IMethodSymbol method, InvocationExpressionSyntax? node) {
         // Roslyn does a stupid thing where it represents extension methods as instance
         // methods, which makes dealing with them a pain in the ass.
         if(method.ReducedFrom is not null)
@@ -261,9 +261,9 @@ public class InterpolatedExpressionBuilder {
 
         // Only specify type arguments if they were explicitly specified in the original call
         // (in which case we know they are nameable)
-        var memberAccess = (MemberAccessExpressionSyntax)node.Expression;
-        var typeArgs = memberAccess.Name switch {
-            GenericNameSyntax => method.TypeArguments.MkString("<", CreateTypeName, ", ", ">"),
+        var typeArgs = node switch {
+            { Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax _ } } =>
+                method.TypeArguments.MkString("<", CreateTypeName, ", ", ">"),
             _ => string.Empty
         };
 

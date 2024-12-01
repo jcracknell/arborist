@@ -3,40 +3,74 @@ using Microsoft.CodeAnalysis;
 namespace Arborist.CodeGen;
 
 internal static class TypeSymbolHelpers {
-    public static string CreateTypeName(ITypeSymbol type) {
+    public static bool TryCreateTypeName(ITypeSymbol type, out string typeName) {
         var nullAnnotation = NullableAnnotation.Annotated == type.NullableAnnotation ? "?" : "";
 
-        if(type is ITypeParameterSymbol)
-            return string.Concat(type.Name, nullAnnotation);
+        if(type is ITypeParameterSymbol) {
+            typeName = string.Concat(type.Name, nullAnnotation);
+            return true;
+        }
 
-        var containingName = type switch {
-            { ContainingType: not null } => $"{CreateTypeName(type.ContainingType)}.",
-            { ContainingNamespace.IsGlobalNamespace: true } => "global::",
-            _ => $"{CreateNamespaceName(type.ContainingNamespace)}."
-        };
+        if(!TryCreateTypeContainingName(type, out var containingName)) {
+            typeName = default!;
+            return false;
+        }
 
         switch(type) {
             case { IsAnonymousType: true }:
-                throw new ArgumentException($"Cannot generate name for anonymous type {type}.", nameof(type));
+                typeName = default!;
+                return false;
 
             case INamedTypeSymbol { IsGenericType: true } named:
-                return string.Concat(
+                var typeArgumentNames = new List<string>(named.TypeArguments.Length);
+                foreach(var typeArgument in named.TypeArguments) {
+                    if(TryCreateTypeName(typeArgument, out var typeArgumentName)) {
+                        typeArgumentNames.Add(typeArgumentName);
+                    } else {
+                        typeName = default!;
+                        return false;
+                    }
+                }
+
+                typeName = string.Concat(
                     containingName,
                     type.Name,
-                    named.TypeArguments.Cast<INamedTypeSymbol>().MkString("<", CreateTypeName, ", ", ">"),
+                    typeArgumentNames.MkString("<", ", ", ">"),
                     nullAnnotation
                 );
+                return true;
 
             case INamedTypeSymbol named:
-                return string.Concat(
+                typeName = string.Concat(
                     containingName,
                     type.Name,
                     nullAnnotation
                 );
+                return true;
 
             default:
-                throw new ArgumentException(nameof(type));
+                typeName = default!;
+                return false;
         }
+
+    }
+
+    private static bool TryCreateTypeContainingName(ITypeSymbol type, out string containingName) {
+        if(type.ContainingType is not null) {
+            if(TryCreateTypeName(type.ContainingType, out var containingTypeName)) {
+                containingName = $"{containingTypeName}.";
+                return true;
+            } else {
+                containingName = default!;
+                return false;
+            }
+        }
+
+        containingName = type.ContainingNamespace.IsGlobalNamespace switch {
+            true => "global::",
+            false => $"{CreateNamespaceName(type.ContainingNamespace)}."
+        };
+        return true;
     }
 
     public static string CreateReparametrizedTypeName(

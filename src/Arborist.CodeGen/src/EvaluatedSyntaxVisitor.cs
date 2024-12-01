@@ -38,10 +38,18 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpression
         if(_context.IsInterpolationDataAccess(node))
             return InterpolatedExpressionTree.Verbatim(_builder.DataIdentifier);
 
+        if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not {} symbol)
+            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node, InterpolatedExpressionTree.Unsupported);
+        if(!TypeSymbolHelpers.IsAccessible(symbol))
+            return _context.Diagnostics.InaccesibleSymbol(symbol, InterpolatedExpressionTree.Unsupported);
+
         switch(_context.SemanticModel.GetSymbolInfo(node).Symbol) {
             case IFieldSymbol field when field.IsStatic || field.IsConst:
+                if(!TypeSymbolHelpers.TryCreateTypeName(symbol.ContainingType, out var fieldContainingTypeName))
+                    return _context.Diagnostics.UnsupportedType(field.ContainingType, InterpolatedExpressionTree.Unsupported);
+
                 return InterpolatedExpressionTree.Member(
-                    InterpolatedExpressionTree.Verbatim(_builder.CreateTypeName(field.ContainingType)),
+                    InterpolatedExpressionTree.Verbatim(fieldContainingTypeName),
                     node.Name.ToString()
                 );
 
@@ -52,8 +60,11 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpression
                 );
 
             case IPropertySymbol { IsStatic: true } property:
+                if(!TypeSymbolHelpers.TryCreateTypeName(property.ContainingType, out var propertyContainingTypeName))
+                    return _context.Diagnostics.UnsupportedType(property.ContainingType, InterpolatedExpressionTree.Unsupported);
+
                 return InterpolatedExpressionTree.Member(
-                    InterpolatedExpressionTree.Verbatim(_builder.CreateTypeName(property.ContainingType)),
+                    InterpolatedExpressionTree.Verbatim(propertyContainingTypeName),
                     node.Name.ToString()
                 );
 
@@ -75,19 +86,23 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpression
         if(node.Expression is not MemberAccessExpressionSyntax memberAccess)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node.Expression, InterpolatedExpressionTree.Unsupported);
 
-        var methodName = GetMethodName(memberAccess.Name);
-
         switch(_context.SemanticModel.GetSymbolInfo(node).Symbol) {
             case IMethodSymbol method when method.IsStatic || method.IsExtensionMethod:
+                if(!TypeSymbolHelpers.TryCreateTypeName(method.ContainingType, out var methodContainingTypeName))
+                    return _context.Diagnostics.UnsupportedType(method.ContainingType, InterpolatedExpressionTree.Unsupported);
+
                 return InterpolatedExpressionTree.StaticCall(
-                    $"{_builder.CreateTypeName(method.ContainingType)}.{methodName}",
+                    InterpolatedExpressionTree.Concat(
+                        $"{methodContainingTypeName}.",
+                        GetInvocationMethodName(memberAccess.Name)
+                    ),
                     node.ArgumentList.Arguments.Select(static a => a.Expression).Select(Visit).ToList()
                 );
 
             case IMethodSymbol method:
                 return InterpolatedExpressionTree.InstanceCall(
                     Visit(memberAccess.Expression),
-                    methodName,
+                    GetInvocationMethodName(memberAccess.Name),
                     node.ArgumentList.Arguments.Select(static a => a.Expression).Select(Visit).ToList()
                 );
 
@@ -96,22 +111,24 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpression
         }
     }
 
-    private string GetMethodName(SimpleNameSyntax methodName) {
-        // Emit type arguments if they were explicitly specified
-        if(methodName is GenericNameSyntax generic)
-            return generic.TypeArgumentList.Arguments.MkString($"{generic.Identifier.Text}<", GetTypeArgument, ", ", ">");
+    private InterpolatedExpressionTree GetInvocationMethodName(SimpleNameSyntax methodName) {
+        // Emit explicitly passed type arguments
+        if(methodName is not GenericNameSyntax generic)
+            return InterpolatedExpressionTree.Verbatim(methodName.Identifier.Text);
 
-        return methodName.Identifier.Text;
-    }
+        var typeArgumentNames = new List<string>(generic.TypeArgumentList.Arguments.Count);
+        foreach(var typeArgument in generic.TypeArgumentList.Arguments) {
+            if(_context.SemanticModel.GetTypeInfo(typeArgument).Type is not {} typeArgumentSymbol)
+                return _context.Diagnostics.UnsupportedEvaluatedSyntax(typeArgument, InterpolatedExpressionTree.Unsupported);
+            if(!TypeSymbolHelpers.IsAccessible(typeArgumentSymbol))
+                return _context.Diagnostics.InaccesibleSymbol(typeArgumentSymbol, InterpolatedExpressionTree.Unsupported);
+            if(!TypeSymbolHelpers.TryCreateTypeName(typeArgumentSymbol, out var typeArgumentName))
+                return _context.Diagnostics.UnsupportedType(typeArgumentSymbol, InterpolatedExpressionTree.Unsupported);
 
-    private string GetTypeArgument(TypeSyntax node) {
-        switch(_context.SemanticModel.GetTypeInfo(node).Type) {
-            case INamedTypeSymbol namedType:
-                return _builder.CreateTypeName(namedType);
-
-            default:
-                return _context.Diagnostics.UnsupportedEvaluatedSyntax(node, "???");
+            typeArgumentNames.Add(typeArgumentName);
         }
+
+        return InterpolatedExpressionTree.Verbatim(typeArgumentNames.MkString($"{generic.Identifier.Text}<", ", ", ">"));
     }
 
     public override InterpolatedExpressionTree VisitAnonymousObjectCreationExpression(AnonymousObjectCreationExpressionSyntax node) =>
@@ -130,11 +147,16 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpression
         };
 
     public override InterpolatedExpressionTree VisitCastExpression(CastExpressionSyntax node) {
-        if(_context.SemanticModel.GetTypeInfo(node).Type is not INamedTypeSymbol namedType)
+        if(_context.SemanticModel.GetTypeInfo(node).Type is not {} nodeType)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node, InterpolatedExpressionTree.Unsupported);
 
+        if(!TypeSymbolHelpers.IsAccessible(nodeType))
+            return _context.Diagnostics.InaccesibleSymbol(nodeType, InterpolatedExpressionTree.Unsupported);
+        if(!TypeSymbolHelpers.TryCreateTypeName(nodeType, out var nodeTypeName))
+            return _context.Diagnostics.UnsupportedType(nodeType, InterpolatedExpressionTree.Unsupported);
+
         return InterpolatedExpressionTree.Concat(
-            InterpolatedExpressionTree.Verbatim($"({_builder.CreateTypeName(namedType)})"),
+            InterpolatedExpressionTree.Verbatim($"({nodeTypeName})"),
             Visit(node.Expression)
         );
     }
@@ -146,12 +168,17 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpression
         VisitBaseObjectCreationExpression(node);
 
     private InterpolatedExpressionTree VisitBaseObjectCreationExpression(BaseObjectCreationExpressionSyntax node) {
-        var typeSymbol = _context.SemanticModel.GetTypeInfo(node).Type!;
+        if(_context.SemanticModel.GetTypeInfo(node).Type is not {} typeSymbol)
+            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node, InterpolatedExpressionTree.Unsupported);
+        if(!TypeSymbolHelpers.IsAccessible(typeSymbol))
+            return _context.Diagnostics.InaccesibleSymbol(typeSymbol, InterpolatedExpressionTree.Unsupported);
+        if(!TypeSymbolHelpers.TryCreateTypeName(typeSymbol, out var typeName))
+            return _context.Diagnostics.UnsupportedType(typeSymbol, InterpolatedExpressionTree.Unsupported);
 
         var newExpr = InterpolatedExpressionTree.StaticCall(
             node switch {
                 ImplicitObjectCreationExpressionSyntax => "new",
-                _ => $"new {_builder.CreateTypeName(typeSymbol)}"
+                _ => $"new {typeName}"
             },
             [..(node.ArgumentList switch {
                 null => Array.Empty<InterpolatedExpressionTree>(),
@@ -252,10 +279,14 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpression
         if(node.Type is null)
             return InterpolatedExpressionTree.Verbatim(node.Identifier.Text);
 
-        if(_context.SemanticModel.GetTypeInfo(node.Type).Type is not INamedTypeSymbol namedType)
+        if(_context.SemanticModel.GetTypeInfo(node.Type).Type is not {} parameterType)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node, InterpolatedExpressionTree.Unsupported);
+        if(!TypeSymbolHelpers.IsAccessible(parameterType))
+            return _context.Diagnostics.InaccesibleSymbol(parameterType, InterpolatedExpressionTree.Unsupported);
+        if(!TypeSymbolHelpers.TryCreateTypeName(parameterType, out var parameterTypeName))
+            return _context.Diagnostics.UnsupportedType(parameterType, InterpolatedExpressionTree.Unsupported);
 
-        return InterpolatedExpressionTree.Verbatim($"{_builder.CreateTypeName(namedType)} {node.Identifier.Text}");
+        return InterpolatedExpressionTree.Verbatim($"{parameterTypeName} {node.Identifier.Text}");
     }
 
     public override InterpolatedExpressionTree VisitBinaryExpression(BinaryExpressionSyntax node) =>

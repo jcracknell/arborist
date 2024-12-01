@@ -168,6 +168,13 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpression
         );
     }
 
+    public override InterpolatedExpressionTree VisitAssignmentExpression(AssignmentExpressionSyntax node) =>
+        InterpolatedExpressionTree.Concat(
+            Visit(node.Left),
+            InterpolatedExpressionTree.Verbatim(" = "),
+            Visit(node.Right)
+        );
+
     public override InterpolatedExpressionTree VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node) {
         // Add parameters defined by this lambda expression to the set of evaluable parameters
         var evaluableSnapshot = _evaluableParameters;
@@ -210,7 +217,11 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpression
     }
 
     public override InterpolatedExpressionTree VisitIdentifierName(IdentifierNameSyntax node) {
-        if(!_evaluableParameters.Contains(node.Identifier.Text)) {
+        var symbol = _context.SemanticModel.GetSymbolInfo(node).Symbol;
+        if(symbol is not null && !TypeSymbolHelpers.IsAccessible(symbol))
+            return _context.Diagnostics.InaccesibleSymbol(symbol, InterpolatedExpressionTree.Unsupported);
+
+        if(symbol is IParameterSymbol && !_evaluableParameters.Contains(node.Identifier.Text)) {
             if(_interpolatableParameters.Contains(node.Identifier.Text))
                 return _context.Diagnostics.EvaluatedParameter(node, InterpolatedExpressionTree.Unsupported);
 

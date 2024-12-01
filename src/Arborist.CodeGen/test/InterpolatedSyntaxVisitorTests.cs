@@ -36,7 +36,7 @@ public class InterpolatedSyntaxVisitorTests {
                     __t0.Type.GetConstructor(new global::System.Type[] {
                         __t1.Type,
                         __t2.Type
-                    }),
+                    })!,
                     new global::System.Linq.Expressions.Expression[] {
                         global::System.Linq.Expressions.Expression.Constant('0', __t1.Type),
                         global::System.Linq.Expressions.Expression.Constant(3, __t2.Type)
@@ -65,11 +65,41 @@ public class InterpolatedSyntaxVisitorTests {
                             __t2.Type.GetConstructor(new global::System.Type[] {
                                 __t3.Type,
                                 __t4.Type
-                            }),
+                            })!,
                             new global::System.Linq.Expressions.Expression[] {
                                 global::System.Linq.Expressions.Expression.Constant('0', __t3.Type),
                                 global::System.Linq.Expressions.Expression.Constant(3, __t4.Type)
                             }
+                        )
+                    }
+                )
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
+    public void Should_handle_object_initializer() {
+        var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOnNone.Interpolate(x => new Cat { Name = ""Garfield"" });
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                global::System.Linq.Expressions.Expression.MemberInit(
+                    global::System.Linq.Expressions.Expression.New(
+                        __t0.Type.GetConstructor(global::System.Type.EmptyTypes)!,
+                        new global::System.Linq.Expressions.Expression[] { }
+                    ),
+                    new global::System.Linq.Expressions.MemberBinding[] {
+                        global::System.Linq.Expressions.Expression.Bind(
+                            __t0.Type.GetMember(""Name"")!,
+                            global::System.Linq.Expressions.Expression.Constant(
+                                ""Garfield"",
+                                __t1.Type
+                            )
                         )
                     }
                 )

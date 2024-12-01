@@ -61,6 +61,27 @@ public class EvaluatedSyntaxVisitorTests {
     }
 
     [Fact]
+    public void Should_handle_object_initializer() {
+        var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOnNone.Interpolate(x => x.SpliceValue(new Cat { Name = ""Garfield"" }));
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                global::System.Linq.Expressions.Expression.Constant(
+                    new global::Arborist.CodeGen.Fixtures.Cat() {
+                        Name = ""Garfield""
+                    },
+                    __t0.Type
+                )
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
     public void Should_handle_unary() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"

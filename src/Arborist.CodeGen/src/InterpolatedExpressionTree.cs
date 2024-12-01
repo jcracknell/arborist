@@ -5,8 +5,13 @@ namespace Arborist.CodeGen;
 public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpressionTree> {
     public static InterpolatedExpressionTree Unsupported { get; } = new UnsupportedNode();
 
+    /// <summary>
+    /// Singleton empty <see cref="InterpolatedExpressionTree"/> value.
+    /// </summary>
+    public static InterpolatedExpressionTree Empty { get; } = new VerbatimNode("");
+
     public static InterpolatedExpressionTree Verbatim(string value) =>
-        new VerbatimNode(value);
+        value.Length == 0 ? Empty : new VerbatimNode(value);
 
     public static InterpolatedExpressionTree ArrowBody(InterpolatedExpressionTree expression) =>
         new ArrowBodyNode(expression);

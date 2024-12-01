@@ -142,7 +142,7 @@ internal static class TypeSymbolHelpers {
 
     public static bool IsAccessible(ISymbol symbol) => symbol.DeclaredAccessibility switch {
         Accessibility.Public or Accessibility.Internal or Accessibility.NotApplicable =>
-            symbol.ContainingSymbol is null || IsAccessible(symbol.ContainingSymbol),
+            symbol.ContainingType is null || IsAccessible(symbol.ContainingType),
         _ => false
     };
 

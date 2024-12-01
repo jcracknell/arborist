@@ -82,6 +82,53 @@ public class EvaluatedSyntaxVisitorTests {
     }
 
     [Fact]
+    public void Should_handle_collection_initializer() {
+        var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOnNone.Interpolate(x => x.SpliceValue(new List<string> { ""foo"", ""bar"" }));
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                global::System.Linq.Expressions.Expression.Constant(
+                    new global::System.Collections.Generic.List<global::System.String>() {
+                        ""foo"",
+                        ""bar""
+                    },
+                    __t0.Type
+                )
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
+    public void Should_handle_dictionary_initializer() {
+        var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOnNone.Interpolate(x => x.SpliceValue(new Dictionary<string, int> {
+                { ""foo"", 1 },
+                { ""bar"", 2 }
+            }));
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                global::System.Linq.Expressions.Expression.Constant(
+                    new global::System.Collections.Generic.Dictionary<global::System.String, global::System.Int32>() {
+                        { ""foo"", 1 },
+                        { ""bar"", 2 }
+                    },
+                    __t0.Type
+                )
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
     public void Should_handle_unary() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"

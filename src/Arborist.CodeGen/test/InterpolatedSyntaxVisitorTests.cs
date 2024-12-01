@@ -109,6 +109,88 @@ public class InterpolatedSyntaxVisitorTests {
     }
 
     [Fact]
+    public void Should_handle_collection_initializer() {
+        var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOnNone.Interpolate(x => new List<string> { ""foo"", ""bar"" });
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                global::System.Linq.Expressions.Expression.ListInit(
+                    global::System.Linq.Expressions.Expression.New(
+                        __t0.Type.GetConstructor(global::System.Type.EmptyTypes)!,
+                        new global::System.Linq.Expressions.Expression[] { }
+                    ),
+                    new global::System.Linq.Expressions.ElementInit[] {
+                        global::System.Linq.Expressions.Expression.ElementInit(
+                            __m0,
+                            new global::System.Linq.Expressions.Expression[] {
+                                global::System.Linq.Expressions.Expression.Constant(
+                                    ""foo"",
+                                    __t1.Type
+                                )
+                            }
+                        ),
+                        global::System.Linq.Expressions.Expression.ElementInit(
+                            __m0,
+                            new global::System.Linq.Expressions.Expression[] {
+                                global::System.Linq.Expressions.Expression.Constant(
+                                    ""bar"",
+                                    __t1.Type
+                                )
+                            }
+                        )
+                    }
+                )
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
+    public void Should_handle_dictionary_initializer() {
+        var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOnNone.Interpolate(x => new Dictionary<string, int> {
+                { ""foo"", 1 }
+                { ""bar"", 2 }
+            });
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                global::System.Linq.Expressions.Expression.ListInit(
+                    global::System.Linq.Expressions.Expression.New(
+                        __t0.Type.GetConstructor(global::System.Type.EmptyTypes)!,
+                        new global::System.Linq.Expressions.Expression[] { }
+                    ),
+                    new global::System.Linq.Expressions.ElementInit[] {
+                        global::System.Linq.Expressions.Expression.ElementInit(
+                            __m0,
+                            new global::System.Linq.Expressions.Expression[] {
+                                global::System.Linq.Expressions.Expression.Constant(""foo"", __t3.Type),
+                                global::System.Linq.Expressions.Expression.Constant(1, __t2.Type)
+                            }
+                        ),
+                        global::System.Linq.Expressions.Expression.ElementInit(
+                            __m0,
+                            new global::System.Linq.Expressions.Expression[] {
+                                global::System.Linq.Expressions.Expression.Constant(""bar"", __t3.Type),
+                                global::System.Linq.Expressions.Expression.Constant(2, __t2.Type)
+                            }
+                        )
+                    }
+                )
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+
+    }
+
+    [Fact]
     public void Should_handle_instance_field() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"

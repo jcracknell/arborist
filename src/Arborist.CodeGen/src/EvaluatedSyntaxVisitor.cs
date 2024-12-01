@@ -34,7 +34,7 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpression
 
     public override InterpolatedExpressionTree VisitMemberAccessExpression(MemberAccessExpressionSyntax node) {
         // Replace references to the data property of the interpolation context with the
-        // locally defined data reference.
+        // locally defined data referenceover.
         if(_context.IsInterpolationDataAccess(node))
             return InterpolatedExpressionTree.Verbatim(_builder.DataIdentifier);
 
@@ -115,9 +115,9 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpression
     }
 
     public override InterpolatedExpressionTree VisitAnonymousObjectCreationExpression(AnonymousObjectCreationExpressionSyntax node) =>
-        InterpolatedExpressionTree.ObjectInit(
-            InterpolatedExpressionTree.Verbatim("new"),
-            [..node.Initializers.Select(Visit)]
+        InterpolatedExpressionTree.Concat(
+            InterpolatedExpressionTree.Verbatim("new "),
+            InterpolatedExpressionTree.Initializer([..node.Initializers.Select(Visit)])
         );
 
     public override InterpolatedExpressionTree? VisitAnonymousObjectMemberDeclarator(AnonymousObjectMemberDeclaratorSyntax node) =>
@@ -162,11 +162,14 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpression
         if(node.Initializer is null)
             return newExpr;
 
-        return InterpolatedExpressionTree.ObjectInit(
+        return InterpolatedExpressionTree.Concat(
             newExpr,
-            [..node.Initializer.Expressions.Select(Visit)]
+            InterpolatedExpressionTree.Initializer([..node.Initializer.Expressions.Select(Visit)])
         );
     }
+
+    public override InterpolatedExpressionTree? VisitInitializerExpression(InitializerExpressionSyntax node) =>
+        InterpolatedExpressionTree.Initializer([..node.Expressions.Select(Visit)]);
 
     public override InterpolatedExpressionTree VisitAssignmentExpression(AssignmentExpressionSyntax node) =>
         InterpolatedExpressionTree.Concat(
@@ -174,6 +177,20 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpression
             InterpolatedExpressionTree.Verbatim(" = "),
             Visit(node.Right)
         );
+
+    public override InterpolatedExpressionTree VisitElementBindingExpression(ElementBindingExpressionSyntax node) {
+        var arguments = node.ArgumentList.Arguments;
+        var trees = new List<InterpolatedExpressionTree>(2 * arguments.Count + 1);
+        trees.Add(InterpolatedExpressionTree.Verbatim("{ "));
+        trees.Add(Visit(arguments[0]));
+        for(var i = 1; i < arguments.Count; i++) {
+            trees.Add(InterpolatedExpressionTree.Verbatim(", "));
+            trees.Add(Visit(arguments[i]));
+        }
+        trees.Add(InterpolatedExpressionTree.Verbatim(" }"));
+
+        return InterpolatedExpressionTree.Concat(trees);
+    }
 
     public override InterpolatedExpressionTree VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node) {
         // Add parameters defined by this lambda expression to the set of evaluable parameters
@@ -221,7 +238,7 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpression
         if(symbol is not null && !TypeSymbolHelpers.IsAccessible(symbol))
             return _context.Diagnostics.InaccesibleSymbol(symbol, InterpolatedExpressionTree.Unsupported);
 
-        if(symbol is IParameterSymbol && !_evaluableParameters.Contains(node.Identifier.Text)) {
+        if(!_evaluableParameters.Contains(node.Identifier.Text)) {
             if(_interpolatableParameters.Contains(node.Identifier.Text))
                 return _context.Diagnostics.EvaluatedParameter(node, InterpolatedExpressionTree.Unsupported);
 

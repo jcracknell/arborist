@@ -80,13 +80,16 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
             InterpolatedExpressionTree.SwitchCase(
                 InterpolatedExpressionTree.Verbatim($"var {identifer}"),
                 InterpolatedExpressionTree.StaticCall(
-                    "global::Arborist.ExpressionHelper.Replace", [
+                    InterpolatedExpressionTree.Verbatim("global::Arborist.ExpressionHelper.Replace"),
+                    [
                         InterpolatedExpressionTree.Verbatim($"{identifer}.Body"),
                         InterpolatedExpressionTree.StaticCall(
-                            "global::Arborist.Internal.Collections.SmallDictionary.Create", [..(
+                            InterpolatedExpressionTree.Verbatim("global::Arborist.Internal.Collections.SmallDictionary.Create"),
+                            [..(
                                 from parameterIndex in Enumerable.Range(0, parameterCount)
                                 select InterpolatedExpressionTree.StaticCall(
-                                    $"new global::System.Collections.Generic.KeyValuePair<{_builder.ExpressionTypeName}, {_builder.ExpressionTypeName}>", [
+                                    InterpolatedExpressionTree.Verbatim($"new global::System.Collections.Generic.KeyValuePair<{_builder.ExpressionTypeName}, {_builder.ExpressionTypeName}>"),
+                                    [
                                         InterpolatedExpressionTree.Verbatim($"{identifer}.Parameters[{parameterIndex}]"),
                                         parameterTrees[parameterIndex]
                                     ]
@@ -109,7 +112,7 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
 
         return InterpolatedExpressionTree.InstanceCall(
             _builder.CreateTypeRef(expressionType),
-            "Coerce",
+            InterpolatedExpressionTree.Verbatim("Coerce"),
             [VisitEvaluatedSyntax(node.Expression)]
         );
     }
@@ -228,7 +231,7 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
                     InterpolatedExpressionTree.Concat(
                         InterpolatedExpressionTree.InstanceCall(
                             _builder.CreateType(field.ContainingType),
-                            nameof(Type.GetField),
+                            InterpolatedExpressionTree.Verbatim(nameof(Type.GetField)),
                             [InterpolatedExpressionTree.Verbatim($"\"{field.Name}\"")]
                         ),
                         InterpolatedExpressionTree.Verbatim("!")
@@ -244,7 +247,7 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
                     InterpolatedExpressionTree.Concat(
                         InterpolatedExpressionTree.InstanceCall(
                             _builder.CreateType(property.ContainingType),
-                            nameof(Type.GetProperty),
+                            InterpolatedExpressionTree.Verbatim(nameof(Type.GetProperty)),
                             [InterpolatedExpressionTree.Verbatim($"\"{property.Name}\"")]
                         ),
                         InterpolatedExpressionTree.Verbatim("!")
@@ -271,7 +274,7 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
             InterpolatedExpressionTree.Indexer(
                 InterpolatedExpressionTree.InstanceCall(
                     _builder.CreateType(typeSymbol),
-                    nameof(Type.GetConstructors),
+                    InterpolatedExpressionTree.Verbatim(nameof(Type.GetConstructors)),
                     []
                 ),
                 InterpolatedExpressionTree.Verbatim("0")
@@ -292,7 +295,7 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
         var constructorInfo = InterpolatedExpressionTree.Concat(
             InterpolatedExpressionTree.InstanceCall(
                 _builder.CreateType(methodSymbol.ContainingType),
-                nameof(Type.GetConstructor),
+                InterpolatedExpressionTree.Verbatim(nameof(Type.GetConstructor)),
                 [_builder.CreateTypeArray(methodSymbol.Parameters.Select(p => p.Type))]
             ),
             InterpolatedExpressionTree.Verbatim("!")
@@ -347,7 +350,7 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
                     InterpolatedExpressionTree.Concat(
                         InterpolatedExpressionTree.InstanceCall(
                             _builder.CreateType(identifierSymbol.ContainingType),
-                            nameof(Type.GetMember),
+                            InterpolatedExpressionTree.Verbatim(nameof(Type.GetMember)),
                             [InterpolatedExpressionTree.Verbatim($"\"{identifier.Identifier.Text}\"")]
                         ),
                         InterpolatedExpressionTree.Verbatim("!")

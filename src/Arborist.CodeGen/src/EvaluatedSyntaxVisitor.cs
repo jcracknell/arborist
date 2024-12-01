@@ -93,7 +93,7 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpression
 
                 return InterpolatedExpressionTree.StaticCall(
                     InterpolatedExpressionTree.Concat(
-                        $"{methodContainingTypeName}.",
+                        InterpolatedExpressionTree.Verbatim($"{methodContainingTypeName}."),
                         GetInvocationMethodName(memberAccess.Name)
                     ),
                     node.ArgumentList.Arguments.Select(static a => a.Expression).Select(Visit).ToList()
@@ -177,8 +177,8 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpression
 
         var newExpr = InterpolatedExpressionTree.StaticCall(
             node switch {
-                ImplicitObjectCreationExpressionSyntax => "new",
-                _ => $"new {typeName}"
+                ImplicitObjectCreationExpressionSyntax => InterpolatedExpressionTree.Verbatim("new"),
+                _ => InterpolatedExpressionTree.Verbatim($"new {typeName}")
             },
             [..(node.ArgumentList switch {
                 null => Array.Empty<InterpolatedExpressionTree>(),

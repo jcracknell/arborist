@@ -3,6 +3,9 @@ using System.Text;
 namespace Arborist.CodeGen;
 
 public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpressionTree> {
+    public static implicit operator InterpolatedExpressionTree(string value) =>
+        Verbatim(value);
+
     public static InterpolatedExpressionTree Unsupported { get; } = new UnsupportedNode();
 
     public static InterpolatedExpressionTree Verbatim(string value) =>
@@ -35,7 +38,7 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
 
     public static InterpolatedExpressionTree InstanceCall(
         InterpolatedExpressionTree expression,
-        string method,
+        InterpolatedExpressionTree method,
         IReadOnlyList<InterpolatedExpressionTree> args
     ) =>
         new InstanceCallNode(expression, method, args);
@@ -61,7 +64,7 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
         new MethodDefinitionNode(method, parameters, typeConstraints, body);
 
     public static InterpolatedExpressionTree StaticCall(
-        string method,
+        InterpolatedExpressionTree method,
         IReadOnlyList<InterpolatedExpressionTree> args
     ) =>
         new StaticCallNode(method, args);
@@ -248,11 +251,13 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
             && this.Index.Equals(that.Index);
     }
 
-    private class InstanceCallNode(InterpolatedExpressionTree body, string method, IReadOnlyList<InterpolatedExpressionTree> args)
-        : InterpolatedExpressionTree
-    {
+    private class InstanceCallNode(
+        InterpolatedExpressionTree body,
+        InterpolatedExpressionTree method,
+        IReadOnlyList<InterpolatedExpressionTree> args
+    ) : InterpolatedExpressionTree {
         public InterpolatedExpressionTree Body { get; } = body;
-        public string Method { get; } = method;
+        public InterpolatedExpressionTree Method { get; } = method;
         public IReadOnlyList<InterpolatedExpressionTree> Args { get; } = args;
 
         public override bool IsSupported =>
@@ -431,15 +436,15 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
             && this.Body.Equals(that.Body);
     }
 
-    private class StaticCallNode(string method, IReadOnlyList<InterpolatedExpressionTree> args) : InterpolatedExpressionTree {
-        public string Method { get; } = method;
+    private class StaticCallNode(InterpolatedExpressionTree method, IReadOnlyList<InterpolatedExpressionTree> args) : InterpolatedExpressionTree {
+        public InterpolatedExpressionTree Method { get; } = method;
         public IReadOnlyList<InterpolatedExpressionTree> Args { get; } = args;
 
         public override bool IsSupported =>
             Args.All(a => a.IsSupported);
 
         public override void Render(RenderingContext context) {
-            context.AppendIndent(Method);
+            context.Append(Method);
             context.Append("(");
             if(Args.Count != 0) {
                 context.AppendNewLine();

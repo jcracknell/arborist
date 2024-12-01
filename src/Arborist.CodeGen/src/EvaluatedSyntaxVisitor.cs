@@ -238,7 +238,7 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpression
         if(symbol is not null && !TypeSymbolHelpers.IsAccessible(symbol))
             return _context.Diagnostics.InaccesibleSymbol(symbol, InterpolatedExpressionTree.Unsupported);
 
-        if(!_evaluableParameters.Contains(node.Identifier.Text)) {
+        if(symbol is IParameterSymbol && !_evaluableParameters.Contains(node.Identifier.Text)) {
             if(_interpolatableParameters.Contains(node.Identifier.Text))
                 return _context.Diagnostics.EvaluatedParameter(node, InterpolatedExpressionTree.Unsupported);
 

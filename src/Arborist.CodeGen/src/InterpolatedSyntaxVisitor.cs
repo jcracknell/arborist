@@ -46,17 +46,35 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
     private InterpolatedExpressionTree VisitSplice(InvocationExpressionSyntax node, IMethodSymbol method) {
         var resultType = method.TypeArguments[0];
         var evaluatedNode = node.ArgumentList.Arguments[0].Expression;
-        var evaluatedType = _context.SemanticModel.GetTypeInfo(evaluatedNode).Type;
 
-        var evaluated = VisitEvaluatedSyntax(evaluatedNode);
-        if(evaluatedType is null)
-            return evaluated;
-        if(SymbolEqualityComparer.IncludeNullability.Equals(resultType, evaluatedType))
-            return evaluated;
+        if(_context.SemanticModel.GetTypeInfo(evaluatedNode).Type is not {} evaluatedType)
+            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedExpressionTree.Unsupported);
 
-        return _builder.CreateExpression(nameof(Expression.Convert),
-            evaluated,
-            _builder.CreateType(resultType)
+        var identifier = _context.Builder.CreateIdentifier();
+
+        return InterpolatedExpressionTree.Switch(
+            InterpolatedExpressionTree.InstanceCall(
+                _context.Builder.CreateTypeRef(evaluatedType),
+                InterpolatedExpressionTree.Verbatim("Coerce"),
+                [VisitEvaluatedSyntax(evaluatedNode)]
+            ),
+            [
+                InterpolatedExpressionTree.SwitchCase(
+                    InterpolatedExpressionTree.Concat(
+                        InterpolatedExpressionTree.Verbatim($"var {identifier} when "),
+                        _builder.CreateType(resultType),
+                        InterpolatedExpressionTree.Verbatim($" == {identifier}.Type")
+                    ),
+                    InterpolatedExpressionTree.Verbatim(identifier)
+                ),
+                InterpolatedExpressionTree.SwitchCase(
+                    InterpolatedExpressionTree.Verbatim($"var {identifier}"),
+                    _builder.CreateExpression(nameof(Expression.Convert),
+                        InterpolatedExpressionTree.Verbatim(identifier),
+                        _builder.CreateType(resultType)
+                    )
+                )
+            ]
         );
     }
 

@@ -129,13 +129,13 @@ public class InterpolatorInterceptorGenerator : IIncrementalGenerator {
         var typeParameters = TypeSymbolHelpers.GetInheritedTypeParameters(analysis.MethodSymbol.OriginalDefinition.ContainingType)
         .AddRange(analysis.MethodSymbol.OriginalDefinition.TypeParameters);
 
-        var returnStatement = InterpolatedExpressionTree.Concat(
-            InterpolatedExpressionTree.Verbatim("return "),
+        var returnStatement = InterpolatedTree.Concat(
+            InterpolatedTree.Verbatim("return "),
             analysis.Builder.CreateExpression(
                 $"{nameof(Expression.Lambda)}<{TypeSymbolHelpers.CreateReparametrizedTypeName(resultDelegateType, typeParameters, nullAnnotate: true)}>",
                 [analysis.BodyTree, ..analysis.ParameterTrees]
             ),
-            InterpolatedExpressionTree.Verbatim(";")
+            InterpolatedTree.Verbatim(";")
         );
 
         var filePath = analysis.Invocation.SyntaxTree.FilePath;
@@ -150,10 +150,10 @@ public class InterpolatorInterceptorGenerator : IIncrementalGenerator {
         sb.AppendLine($"        {{");
 
         foreach(var definition in analysis.Builder.ValueDefinitions) {
-            var definitionTree = InterpolatedExpressionTree.Concat(
-                InterpolatedExpressionTree.Verbatim($"var {definition.Identifier} = "),
+            var definitionTree = InterpolatedTree.Concat(
+                InterpolatedTree.Verbatim($"var {definition.Identifier} = "),
                 definition.Initializer,
-                InterpolatedExpressionTree.Verbatim(";")
+                InterpolatedTree.Verbatim(";")
             );
 
             sb.AppendLine(definitionTree.ToString(3));
@@ -170,7 +170,7 @@ public class InterpolatorInterceptorGenerator : IIncrementalGenerator {
         sb.AppendLine($"        }}");
     }
 
-    private InterpolatedExpressionTree GenerateInterpolatorDeclaration(
+    private InterpolatedTree GenerateInterpolatorDeclaration(
         InterpolatorAnalysisResults analysis
     ) {
         var typeParameters = TypeSymbolHelpers.GetInheritedTypeParameters(analysis.MethodSymbol.ContainingType.OriginalDefinition)
@@ -186,19 +186,19 @@ public class InterpolatorInterceptorGenerator : IIncrementalGenerator {
             false => TypeSymbolHelpers.CreateReparametrizedTypeName(analysis.MethodSymbol.OriginalDefinition.ReturnType, typeParameters)
         };
 
-        return InterpolatedExpressionTree.MethodDefinition(
+        return InterpolatedTree.MethodDefinition(
             $"internal static {returnType} Interpolate{analysis.InvocationId}{typeParameterDeclarations}",
             [..(
                 from parameter in (analysis.MethodSymbol.ReducedFrom ?? analysis.MethodSymbol).OriginalDefinition.Parameters
                 let parameterTypeName = TypeSymbolHelpers.CreateReparametrizedTypeName(parameter.Type, typeParameters)
-                select InterpolatedExpressionTree.Verbatim($"{parameterTypeName} {parameter.Name}")
+                select InterpolatedTree.Verbatim($"{parameterTypeName} {parameter.Name}")
             )],
             [..(
                 from constraint in TypeSymbolHelpers.GetReparametrizedTypeConstraints(typeParameters)
-                select InterpolatedExpressionTree.Verbatim(constraint)
+                select InterpolatedTree.Verbatim(constraint)
             )],
             // Use an empty body, as we will emit our own body elsewhere
-            InterpolatedExpressionTree.Verbatim("")
+            InterpolatedTree.Verbatim("")
         );
     }
 
@@ -298,7 +298,7 @@ public class InterpolatorInterceptorGenerator : IIncrementalGenerator {
         var delegateType = (INamedTypeSymbol)expressionType.TypeArguments[0];
 
         // Create trees for each parameter to the result expression
-        var parameterTrees = new List<InterpolatedExpressionTree>();
+        var parameterTrees = new List<InterpolatedTree>();
         foreach(var (parameterSyntax, parameterIndex) in interpolatedExpressionParameters.ZipWithIndex())
             parameterTrees.Add(builder.CreateParameter(
                 delegateType.TypeArguments[parameterIndex],

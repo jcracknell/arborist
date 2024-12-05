@@ -4,7 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Arborist.CodeGen;
 
-internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpressionTree> {
+internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
     private readonly InterpolatorInvocationContext _context;
     private readonly InterpolatedExpressionBuilder _builder;
     private ImmutableHashSet<string> _interpolatableParameters;
@@ -23,15 +23,15 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
         );
     }
 
-    public override InterpolatedExpressionTree Visit(SyntaxNode? node) {
+    public override InterpolatedTree Visit(SyntaxNode? node) {
         return base.Visit(node)!;
     }
 
-    public override InterpolatedExpressionTree DefaultVisit(SyntaxNode node) {
-        return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedExpressionTree.Unsupported);
+    public override InterpolatedTree DefaultVisit(SyntaxNode node) {
+        return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedTree.Unsupported);
     }
 
-    private InterpolatedExpressionTree VisitSplicingInvocation(InvocationExpressionSyntax node, IMethodSymbol method) {
+    private InterpolatedTree VisitSplicingInvocation(InvocationExpressionSyntax node, IMethodSymbol method) {
         _context.SpliceCount += 1;
 
         return method.Name switch {
@@ -39,38 +39,38 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
             "SpliceBody" => VisitSpliceBody(node, method),
             "SpliceValue" => VisitSpliceValue(node, method),
             "SpliceQuoted" => VisitSpliceQuoted(node, method),
-            _ => _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedExpressionTree.Unsupported)
+            _ => _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedTree.Unsupported)
         };
     }
 
-    private InterpolatedExpressionTree VisitSplice(InvocationExpressionSyntax node, IMethodSymbol method) {
+    private InterpolatedTree VisitSplice(InvocationExpressionSyntax node, IMethodSymbol method) {
         var resultType = method.TypeArguments[0];
         var evaluatedNode = node.ArgumentList.Arguments[0].Expression;
 
         if(_context.SemanticModel.GetTypeInfo(evaluatedNode).Type is not {} evaluatedType)
-            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedExpressionTree.Unsupported);
+            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedTree.Unsupported);
 
         var identifier = _context.Builder.CreateIdentifier();
 
-        return InterpolatedExpressionTree.Switch(
-            InterpolatedExpressionTree.InstanceCall(
+        return InterpolatedTree.Switch(
+            InterpolatedTree.InstanceCall(
                 _context.Builder.CreateTypeRef(evaluatedType),
-                InterpolatedExpressionTree.Verbatim("Coerce"),
+                InterpolatedTree.Verbatim("Coerce"),
                 [VisitEvaluatedSyntax(evaluatedNode)]
             ),
             [
-                InterpolatedExpressionTree.SwitchCase(
-                    InterpolatedExpressionTree.Concat(
-                        InterpolatedExpressionTree.Verbatim($"var {identifier} when "),
+                InterpolatedTree.SwitchCase(
+                    InterpolatedTree.Concat(
+                        InterpolatedTree.Verbatim($"var {identifier} when "),
                         _builder.CreateType(resultType),
-                        InterpolatedExpressionTree.Verbatim($" == {identifier}.Type")
+                        InterpolatedTree.Verbatim($" == {identifier}.Type")
                     ),
-                    InterpolatedExpressionTree.Verbatim(identifier)
+                    InterpolatedTree.Verbatim(identifier)
                 ),
-                InterpolatedExpressionTree.SwitchCase(
-                    InterpolatedExpressionTree.Verbatim($"var {identifier}"),
+                InterpolatedTree.SwitchCase(
+                    InterpolatedTree.Verbatim($"var {identifier}"),
                     _builder.CreateExpression(nameof(Expression.Convert),
-                        InterpolatedExpressionTree.Verbatim(identifier),
+                        InterpolatedTree.Verbatim(identifier),
                         _builder.CreateType(resultType)
                     )
                 )
@@ -78,7 +78,7 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
         );
     }
 
-    private InterpolatedExpressionTree VisitSpliceBody(InvocationExpressionSyntax node, IMethodSymbol method) {
+    private InterpolatedTree VisitSpliceBody(InvocationExpressionSyntax node, IMethodSymbol method) {
         var identifer = _builder.CreateIdentifier();
         var parameterCount = method.Parameters.Length - 1;
         var resultType = method.Parameters[parameterCount].Type;
@@ -87,28 +87,28 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
 
         // Generate the interpolated parameter trees so that the nodes are interpolated in
         // declaration order.
-        var parameterTrees = new List<InterpolatedExpressionTree>(parameterCount);
+        var parameterTrees = new List<InterpolatedTree>(parameterCount);
         for(var i = 0; i < parameterCount; i++)
             parameterTrees.Add(Visit(node.ArgumentList.Arguments[i].Expression));
 
         var expressionTree = VisitSpliceBodyExpression(expressionNode, method);
 
         // We'll use a switch expression with a single case to bind the evaluated expression tree
-        return InterpolatedExpressionTree.Switch(expressionTree, [
-            InterpolatedExpressionTree.SwitchCase(
-                InterpolatedExpressionTree.Verbatim($"var {identifer}"),
-                InterpolatedExpressionTree.StaticCall(
-                    InterpolatedExpressionTree.Verbatim("global::Arborist.ExpressionHelper.Replace"),
+        return InterpolatedTree.Switch(expressionTree, [
+            InterpolatedTree.SwitchCase(
+                InterpolatedTree.Verbatim($"var {identifer}"),
+                InterpolatedTree.StaticCall(
+                    InterpolatedTree.Verbatim("global::Arborist.ExpressionHelper.Replace"),
                     [
-                        InterpolatedExpressionTree.Verbatim($"{identifer}.Body"),
-                        InterpolatedExpressionTree.StaticCall(
-                            InterpolatedExpressionTree.Verbatim("global::Arborist.Internal.Collections.SmallDictionary.Create"),
+                        InterpolatedTree.Verbatim($"{identifer}.Body"),
+                        InterpolatedTree.StaticCall(
+                            InterpolatedTree.Verbatim("global::Arborist.Internal.Collections.SmallDictionary.Create"),
                             [..(
                                 from parameterIndex in Enumerable.Range(0, parameterCount)
-                                select InterpolatedExpressionTree.StaticCall(
-                                    InterpolatedExpressionTree.Verbatim($"new global::System.Collections.Generic.KeyValuePair<{_builder.ExpressionTypeName}, {_builder.ExpressionTypeName}>"),
+                                select InterpolatedTree.StaticCall(
+                                    InterpolatedTree.Verbatim($"new global::System.Collections.Generic.KeyValuePair<{_builder.ExpressionTypeName}, {_builder.ExpressionTypeName}>"),
                                     [
-                                        InterpolatedExpressionTree.Verbatim($"{identifer}.Parameters[{parameterIndex}]"),
+                                        InterpolatedTree.Verbatim($"{identifer}.Parameters[{parameterIndex}]"),
                                         parameterTrees[parameterIndex]
                                     ]
                                 )
@@ -120,7 +120,7 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
         ]);
     }
 
-    private InterpolatedExpressionTree VisitSpliceBodyExpression(ArgumentSyntax node, IMethodSymbol method) {
+    private InterpolatedTree VisitSpliceBodyExpression(ArgumentSyntax node, IMethodSymbol method) {
         // If this is not a lambda literal, we can return the resulting lambda directly
         if(node.Expression is not LambdaExpressionSyntax)
             return VisitEvaluatedSyntax(node.Expression);
@@ -128,14 +128,14 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
         // Otherwise we need to provide the target expression type for the lambda
         var expressionType = method.Parameters.Last().Type;
 
-        return InterpolatedExpressionTree.InstanceCall(
+        return InterpolatedTree.InstanceCall(
             _builder.CreateTypeRef(expressionType),
-            InterpolatedExpressionTree.Verbatim("Coerce"),
+            InterpolatedTree.Verbatim("Coerce"),
             [VisitEvaluatedSyntax(node.Expression)]
         );
     }
 
-    private InterpolatedExpressionTree VisitSpliceValue(InvocationExpressionSyntax node, IMethodSymbol method) {
+    private InterpolatedTree VisitSpliceValue(InvocationExpressionSyntax node, IMethodSymbol method) {
         var resultType = method.TypeArguments[0];
         var valueNode = node.ArgumentList.Arguments[0].Expression;
 
@@ -145,7 +145,7 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
         );
     }
 
-    private InterpolatedExpressionTree VisitSpliceQuoted(InvocationExpressionSyntax node, IMethodSymbol method) {
+    private InterpolatedTree VisitSpliceQuoted(InvocationExpressionSyntax node, IMethodSymbol method) {
         var expressionNode = node.ArgumentList.Arguments[0].Expression;
 
         return _builder.CreateExpression(nameof(Expression.Quote),
@@ -153,7 +153,7 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
         );
     }
 
-    private InterpolatedExpressionTree VisitEvaluatedSyntax(SyntaxNode node) =>
+    private InterpolatedTree VisitEvaluatedSyntax(SyntaxNode node) =>
         new EvaluatedSyntaxVisitor(_context, _builder, _interpolatableParameters).Visit(node);
 
     private bool TryGetSpliceMethod(InvocationExpressionSyntax node, out IMethodSymbol spliceMethod) {
@@ -168,23 +168,23 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
         return true;
     }
 
-    public override InterpolatedExpressionTree VisitIdentifierName(IdentifierNameSyntax node) {
+    public override InterpolatedTree VisitIdentifierName(IdentifierNameSyntax node) {
         var symbol = _context.SemanticModel.GetSymbolInfo(node).Symbol;
         if(symbol is not null && !TypeSymbolHelpers.IsAccessible(symbol))
-            return _context.Diagnostics.InaccesibleSymbol(symbol, InterpolatedExpressionTree.Unsupported);
+            return _context.Diagnostics.InaccesibleSymbol(symbol, InterpolatedTree.Unsupported);
 
         if(!_interpolatableParameters.Contains(node.Identifier.Text))
-            return _context.Diagnostics.Closure(node, InterpolatedExpressionTree.Unsupported);
+            return _context.Diagnostics.Closure(node, InterpolatedTree.Unsupported);
 
         if(_context.SemanticModel.GetTypeInfo(node).Type is not {} type)
-            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedExpressionTree.Unsupported);
+            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedTree.Unsupported);
 
         return _builder.CreateParameter(type, node.Identifier.Text);
     }
 
-    public override InterpolatedExpressionTree VisitImplicitArrayCreationExpression(ImplicitArrayCreationExpressionSyntax node) {
+    public override InterpolatedTree VisitImplicitArrayCreationExpression(ImplicitArrayCreationExpressionSyntax node) {
         if(_context.SemanticModel.GetTypeInfo(node).Type is not IArrayTypeSymbol arrayType)
-            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedExpressionTree.Unsupported);
+            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedTree.Unsupported);
 
         return _builder.CreateExpression(nameof(Expression.NewArrayInit), [
             _builder.CreateType(arrayType.ElementType),
@@ -192,7 +192,7 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
         ]);
     }
 
-    public override InterpolatedExpressionTree VisitInvocationExpression(InvocationExpressionSyntax node) {
+    public override InterpolatedTree VisitInvocationExpression(InvocationExpressionSyntax node) {
         if(TryGetSpliceMethod(node, out var spliceMethod)) {
             return VisitSplicingInvocation(node, spliceMethod);
         } else {
@@ -201,7 +201,7 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
     }
 
 
-    private InterpolatedExpressionTree VisitInvocation(InvocationExpressionSyntax node) {
+    private InterpolatedTree VisitInvocation(InvocationExpressionSyntax node) {
         switch(_context.SemanticModel.GetSymbolInfo(node).Symbol) {
             case IMethodSymbol { IsExtensionMethod: true, IsGenericMethod: true } method:
                 return _builder.CreateExpression(nameof(Expression.Call),
@@ -226,19 +226,19 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
                 );
 
             default:
-                return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedExpressionTree.Unsupported);
+                return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedTree.Unsupported);
         }
     }
 
-    public override InterpolatedExpressionTree VisitMemberAccessExpression(MemberAccessExpressionSyntax node) {
+    public override InterpolatedTree VisitMemberAccessExpression(MemberAccessExpressionSyntax node) {
         var symbol = _context.SemanticModel.GetSymbolInfo(node).Symbol;
         if(_context.IsInterpolationDataAccess(symbol))
-            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedExpressionTree.Unsupported);
+            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedTree.Unsupported);
 
         return VisitMemberAccess(node, symbol);
     }
 
-    private InterpolatedExpressionTree VisitMemberAccess(MemberAccessExpressionSyntax node, ISymbol? symbol) {
+    private InterpolatedTree VisitMemberAccess(MemberAccessExpressionSyntax node, ISymbol? symbol) {
         switch(symbol) {
             case IFieldSymbol field:
                 return _builder.CreateExpression(nameof(Expression.Field),
@@ -246,13 +246,13 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
                         true => _builder.CreateDefaultValue(_context.TypeSymbols.Expression.WithNullableAnnotation(NullableAnnotation.Annotated)),
                         false => Visit(node.Expression)
                     },
-                    InterpolatedExpressionTree.Concat(
-                        InterpolatedExpressionTree.InstanceCall(
+                    InterpolatedTree.Concat(
+                        InterpolatedTree.InstanceCall(
                             _builder.CreateType(field.ContainingType),
-                            InterpolatedExpressionTree.Verbatim(nameof(Type.GetField)),
-                            [InterpolatedExpressionTree.Verbatim($"\"{field.Name}\"")]
+                            InterpolatedTree.Verbatim(nameof(Type.GetField)),
+                            [InterpolatedTree.Verbatim($"\"{field.Name}\"")]
                         ),
-                        InterpolatedExpressionTree.Verbatim("!")
+                        InterpolatedTree.Verbatim("!")
                     )
                 );
 
@@ -262,13 +262,13 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
                         true => _builder.CreateDefaultValue(_context.TypeSymbols.Expression.WithNullableAnnotation(NullableAnnotation.Annotated)),
                         false => Visit(node.Expression)
                     },
-                    InterpolatedExpressionTree.Concat(
-                        InterpolatedExpressionTree.InstanceCall(
+                    InterpolatedTree.Concat(
+                        InterpolatedTree.InstanceCall(
                             _builder.CreateType(property.ContainingType),
-                            InterpolatedExpressionTree.Verbatim(nameof(Type.GetProperty)),
-                            [InterpolatedExpressionTree.Verbatim($"\"{property.Name}\"")]
+                            InterpolatedTree.Verbatim(nameof(Type.GetProperty)),
+                            [InterpolatedTree.Verbatim($"\"{property.Name}\"")]
                         ),
-                        InterpolatedExpressionTree.Verbatim("!")
+                        InterpolatedTree.Verbatim("!")
                     )
                 );
 
@@ -276,53 +276,53 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
                 return Visit(node.Expression);
 
             default:
-                return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedExpressionTree.Unsupported);
+                return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedTree.Unsupported);
         }
     }
 
-    public override InterpolatedExpressionTree VisitDefaultExpression(DefaultExpressionSyntax node) {
+    public override InterpolatedTree VisitDefaultExpression(DefaultExpressionSyntax node) {
         var typeInfo = _context.SemanticModel.GetTypeInfo(node);
         return _builder.CreateExpression(nameof(Expression.Default), _builder.CreateType(typeInfo.Type!));
     }
 
-    public override InterpolatedExpressionTree VisitAnonymousObjectCreationExpression(AnonymousObjectCreationExpressionSyntax node) {
+    public override InterpolatedTree VisitAnonymousObjectCreationExpression(AnonymousObjectCreationExpressionSyntax node) {
         // An anonymous type has a single constructor accepting each of its properties as arguments
         var typeSymbol = (ITypeSymbol)_context.SemanticModel.GetTypeInfo(node).Type!;
         return _builder.CreateExpression(nameof(Expression.New), [
-            InterpolatedExpressionTree.Indexer(
-                InterpolatedExpressionTree.InstanceCall(
+            InterpolatedTree.Indexer(
+                InterpolatedTree.InstanceCall(
                     _builder.CreateType(typeSymbol),
-                    InterpolatedExpressionTree.Verbatim(nameof(Type.GetConstructors)),
+                    InterpolatedTree.Verbatim(nameof(Type.GetConstructors)),
                     []
                 ),
-                InterpolatedExpressionTree.Verbatim("0")
+                InterpolatedTree.Verbatim("0")
             ),
             ..node.Initializers.Select(i => Visit(i.Expression))
         ]);
     }
 
-    public override InterpolatedExpressionTree VisitObjectCreationExpression(ObjectCreationExpressionSyntax node) =>
+    public override InterpolatedTree VisitObjectCreationExpression(ObjectCreationExpressionSyntax node) =>
         VisitBaseObjectCreationExpression(node);
 
-    public override InterpolatedExpressionTree VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node) =>
+    public override InterpolatedTree VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node) =>
         VisitBaseObjectCreationExpression(node);
 
-    private InterpolatedExpressionTree VisitBaseObjectCreationExpression(BaseObjectCreationExpressionSyntax node) {
+    private InterpolatedTree VisitBaseObjectCreationExpression(BaseObjectCreationExpressionSyntax node) {
         var methodSymbol = (IMethodSymbol)_context.SemanticModel.GetSymbolInfo(node).Symbol!;
 
-        var constructorInfo = InterpolatedExpressionTree.Concat(
-            InterpolatedExpressionTree.InstanceCall(
+        var constructorInfo = InterpolatedTree.Concat(
+            InterpolatedTree.InstanceCall(
                 _builder.CreateType(methodSymbol.ContainingType),
-                InterpolatedExpressionTree.Verbatim(nameof(Type.GetConstructor)),
+                InterpolatedTree.Verbatim(nameof(Type.GetConstructor)),
                 [_builder.CreateTypeArray(methodSymbol.Parameters.Select(p => p.Type))]
             ),
-            InterpolatedExpressionTree.Verbatim("!")
+            InterpolatedTree.Verbatim("!")
         );
 
         var newExpr = _builder.CreateExpression(nameof(Expression.New),
             constructorInfo,
             _builder.CreateExpressionArray(node.ArgumentList switch {
-                null => Array.Empty<InterpolatedExpressionTree>(),
+                null => Array.Empty<InterpolatedTree>(),
                 not null => node.ArgumentList.Arguments.Select(a => Visit(a.Expression))
             })
         );
@@ -335,67 +335,67 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
                 _builder.CreateExpression(nameof(Expression.MemberInit), newExpr, Visit(node.Initializer)),
             SyntaxKind.CollectionInitializerExpression =>
                 _builder.CreateExpression(nameof(Expression.ListInit), newExpr, Visit(node.Initializer)),
-            _ => _context.Diagnostics.UnsupportedInterpolatedSyntax(node.Initializer, InterpolatedExpressionTree.Unsupported)
+            _ => _context.Diagnostics.UnsupportedInterpolatedSyntax(node.Initializer, InterpolatedTree.Unsupported)
         };
     }
 
-    public override InterpolatedExpressionTree VisitInitializerExpression(InitializerExpressionSyntax node) =>
+    public override InterpolatedTree VisitInitializerExpression(InitializerExpressionSyntax node) =>
         // This is a pain in the butt because from a syntactical standpoint an initializer is a "bracketed list
         // of things" (e.g. a collection initializer is a bracketed list of bracketed lists), but we care very
         // much about the context in which the bracketed list and its elements occur.
         node.Kind() switch {
-            SyntaxKind.ObjectInitializerExpression => InterpolatedExpressionTree.Concat(
-                InterpolatedExpressionTree.Verbatim("new global::System.Linq.Expressions.MemberBinding[] "),
-                InterpolatedExpressionTree.Initializer([..node.Expressions.Select(VisitObjectInitializerElement)])
+            SyntaxKind.ObjectInitializerExpression => InterpolatedTree.Concat(
+                InterpolatedTree.Verbatim("new global::System.Linq.Expressions.MemberBinding[] "),
+                InterpolatedTree.Initializer([..node.Expressions.Select(VisitObjectInitializerElement)])
             ),
-            SyntaxKind.CollectionInitializerExpression => InterpolatedExpressionTree.Concat(
-                InterpolatedExpressionTree.Verbatim("new global::System.Linq.Expressions.ElementInit[] "),
-                InterpolatedExpressionTree.Initializer([..node.Expressions.Select(VisitCollectionInitializerElement)])
+            SyntaxKind.CollectionInitializerExpression => InterpolatedTree.Concat(
+                InterpolatedTree.Verbatim("new global::System.Linq.Expressions.ElementInit[] "),
+                InterpolatedTree.Initializer([..node.Expressions.Select(VisitCollectionInitializerElement)])
             ),
-            _ => _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedExpressionTree.Unsupported)
+            _ => _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedTree.Unsupported)
         };
 
-    private InterpolatedExpressionTree VisitObjectInitializerElement(ExpressionSyntax node) {
+    private InterpolatedTree VisitObjectInitializerElement(ExpressionSyntax node) {
         switch(node) {
             case AssignmentExpressionSyntax { Left: IdentifierNameSyntax identifier } assignment:
                 var identifierSymbol = _context.SemanticModel.GetSymbolInfo(identifier).Symbol;
                 if(identifierSymbol is null)
-                    return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedExpressionTree.Unsupported);
+                    return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedTree.Unsupported);
                 if(!TypeSymbolHelpers.IsAccessible(identifierSymbol))
-                    return _context.Diagnostics.InaccesibleSymbol(identifierSymbol, InterpolatedExpressionTree.Unsupported);
+                    return _context.Diagnostics.InaccesibleSymbol(identifierSymbol, InterpolatedTree.Unsupported);
 
                 return _builder.CreateExpression(nameof(Expression.Bind),
-                    InterpolatedExpressionTree.Concat(
-                        InterpolatedExpressionTree.InstanceCall(
+                    InterpolatedTree.Concat(
+                        InterpolatedTree.InstanceCall(
                             _builder.CreateType(identifierSymbol.ContainingType),
-                            InterpolatedExpressionTree.Verbatim(nameof(Type.GetMember)),
-                            [InterpolatedExpressionTree.Verbatim($"\"{identifier.Identifier.Text}\"")]
+                            InterpolatedTree.Verbatim(nameof(Type.GetMember)),
+                            [InterpolatedTree.Verbatim($"\"{identifier.Identifier.Text}\"")]
                         ),
-                        InterpolatedExpressionTree.Verbatim("!")
+                        InterpolatedTree.Verbatim("!")
                     ),
                     Visit(assignment.Right)
                 );
 
             default:
-                return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedExpressionTree.Unsupported);
+                return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedTree.Unsupported);
         }
     }
 
-    private InterpolatedExpressionTree VisitCollectionInitializerElement(ExpressionSyntax node) =>
+    private InterpolatedTree VisitCollectionInitializerElement(ExpressionSyntax node) =>
         node switch {
             InitializerExpressionSyntax initializer =>
                 VisitCollectionInitializerElement(initializer, initializer.Expressions),
             _ => VisitCollectionInitializerElement(node, new[] { node })
         };
 
-    private InterpolatedExpressionTree VisitCollectionInitializerElement(
+    private InterpolatedTree VisitCollectionInitializerElement(
         ExpressionSyntax node,
         IReadOnlyList<ExpressionSyntax> argumentExpressions
     ) {
         if(node.Parent?.Parent is not {} parentSymbol)
-            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedExpressionTree.Unsupported);
+            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedTree.Unsupported);
         if(_context.SemanticModel.GetTypeInfo(parentSymbol).Type is not {} parentType)
-            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedExpressionTree.Unsupported);
+            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedTree.Unsupported);
 
         // TODO: we should probably look into overload resolution, but this is good enough for the
         // vast majority of cases.
@@ -407,9 +407,9 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
         );
 
         if(methodSymbol is null)
-            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedExpressionTree.Unsupported);
+            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node, InterpolatedTree.Unsupported);
         if(!TypeSymbolHelpers.IsAccessible(methodSymbol))
-            return _context.Diagnostics.InaccesibleSymbol(methodSymbol, InterpolatedExpressionTree.Unsupported);
+            return _context.Diagnostics.InaccesibleSymbol(methodSymbol, InterpolatedTree.Unsupported);
 
         return _builder.CreateExpression(nameof(Expression.ElementInit), [
             _builder.CreateMethodInfo(methodSymbol, default),
@@ -417,10 +417,10 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
         ]);
     }
 
-    public override InterpolatedExpressionTree VisitParenthesizedExpression(ParenthesizedExpressionSyntax node) =>
+    public override InterpolatedTree VisitParenthesizedExpression(ParenthesizedExpressionSyntax node) =>
         Visit(node.Expression)!;
 
-    public override InterpolatedExpressionTree VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node) {
+    public override InterpolatedTree VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node) {
         var snapshot = _interpolatableParameters;
         _interpolatableParameters = _interpolatableParameters.Add(node.Parameter.Identifier.Text);
         try {
@@ -438,13 +438,13 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
         }
     }
 
-    public override InterpolatedExpressionTree VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node) {
+    public override InterpolatedTree VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node) {
         // Add any newly defined parameters to the set of interpolatable parameters
         var snapshot = _interpolatableParameters;
         _interpolatableParameters = _interpolatableParameters.Union(node.ParameterList.Parameters.Select(p => p.Identifier.Text));
         try {
             var lambdaType = (INamedTypeSymbol)_context.SemanticModel.GetTypeInfo(node).ConvertedType!;
-            var parameterList = new List<InterpolatedExpressionTree>(node.ParameterList.Parameters.Count);
+            var parameterList = new List<InterpolatedTree>(node.ParameterList.Parameters.Count);
             for(var i = 0; i < node.ParameterList.Parameters.Count; i++) {
                 var parameterType = lambdaType.TypeArguments[i].OriginalDefinition;
                 var parameterName = node.ParameterList.Parameters[i].Identifier.ValueText;
@@ -460,7 +460,7 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
         }
     }
 
-    public override InterpolatedExpressionTree VisitConditionalExpression(ConditionalExpressionSyntax node) {
+    public override InterpolatedTree VisitConditionalExpression(ConditionalExpressionSyntax node) {
         return _builder.CreateExpression(nameof(Expression.Condition),
             Visit(node.Condition),
             Visit(node.WhenTrue),
@@ -469,30 +469,30 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedExpre
         );
     }
 
-    public override InterpolatedExpressionTree VisitBinaryExpression(BinaryExpressionSyntax node) =>
+    public override InterpolatedTree VisitBinaryExpression(BinaryExpressionSyntax node) =>
         _builder.CreateExpression(nameof(Expression.MakeBinary),
             _builder.CreateExpressionType(node),
             Visit(node.Left),
             Visit(node.Right)
         );
 
-    public override InterpolatedExpressionTree VisitPrefixUnaryExpression(PrefixUnaryExpressionSyntax node) =>
+    public override InterpolatedTree VisitPrefixUnaryExpression(PrefixUnaryExpressionSyntax node) =>
         _builder.CreateExpression(nameof(Expression.MakeUnary),
             _builder.CreateExpressionType(node),
             Visit(node.Operand)
         );
 
-    public override InterpolatedExpressionTree VisitPostfixUnaryExpression(PostfixUnaryExpressionSyntax node) =>
+    public override InterpolatedTree VisitPostfixUnaryExpression(PostfixUnaryExpressionSyntax node) =>
         _builder.CreateExpression(nameof(Expression.MakeUnary),
             _builder.CreateExpressionType(node),
             Visit(node.Operand)
         );
 
-    public override InterpolatedExpressionTree VisitLiteralExpression(LiteralExpressionSyntax node) {
+    public override InterpolatedTree VisitLiteralExpression(LiteralExpressionSyntax node) {
         var type = _context.SemanticModel.GetTypeInfo(node).Type!;
 
         return _builder.CreateExpression(nameof(Expression.Constant),
-            InterpolatedExpressionTree.Verbatim(node.ToFullString()),
+            InterpolatedTree.Verbatim(node.ToFullString()),
             _builder.CreateType(type)
         );
     }

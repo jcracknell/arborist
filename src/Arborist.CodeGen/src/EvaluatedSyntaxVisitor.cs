@@ -8,7 +8,7 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
     private readonly InterpolatorInvocationContext _context;
     private readonly InterpolatedExpressionBuilder _builder;
     private readonly ImmutableHashSet<string> _interpolatableParameters;
-    private ImmutableHashSet<string> _evaluableParameters;
+    private ImmutableDictionary<string, InterpolatedTree> _evaluableParameters;
 
     public EvaluatedSyntaxVisitor(
         InterpolatorInvocationContext context,
@@ -18,7 +18,7 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
         _context = context;
         _builder = builder;
         _interpolatableParameters = interpolatableParameters;
-        _evaluableParameters = ImmutableHashSet<string>.Empty.WithComparer(IdentifierEqualityComparer.Instance);
+        _evaluableParameters = ImmutableDictionary.Create<string, InterpolatedTree>(IdentifierEqualityComparer.Instance);
     }
 
     public override InterpolatedTree Visit(SyntaxNode? node) {
@@ -239,7 +239,10 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
     public override InterpolatedTree VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node) {
         // Add parameters defined by this lambda expression to the set of evaluable parameters
         var evaluableSnapshot = _evaluableParameters;
-        _evaluableParameters = _evaluableParameters.Add(node.Parameter.Identifier.Text);
+        _evaluableParameters = _evaluableParameters.Add(
+            node.Parameter.Identifier.Text,
+            InterpolatedTree.Verbatim(node.Parameter.Identifier.Text)
+        );
         try {
             var lambda = InterpolatedTree.Lambda([Visit(node.Parameter)], Visit(node.Body));
 
@@ -258,7 +261,10 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
     public override InterpolatedTree VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node) {
         // Add parameters defined by this lambda expression to the set of evaluable parameters
         var evaluableSnapshot = _evaluableParameters;
-        _evaluableParameters = _evaluableParameters.Union(node.ParameterList.Parameters.Select(static p => p.Identifier.Text));
+        _evaluableParameters = _evaluableParameters.SetItems(
+            from p in node.ParameterList.Parameters
+            select new KeyValuePair<string, InterpolatedTree>(p.Identifier.Text, InterpolatedTree.Verbatim(p.Identifier.Text))
+        );
         try {
             var lambda = InterpolatedTree.Lambda(
                 node.ParameterList.Parameters.Select(Visit).ToList(),
@@ -281,14 +287,13 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
         if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not {} symbol)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node, InterpolatedTree.Unsupported);
 
-        if(!_evaluableParameters.Contains(node.Identifier.Text)) {
-            if(_interpolatableParameters.Contains(node.Identifier.Text))
-                return _context.Diagnostics.EvaluatedParameter(node, InterpolatedTree.Unsupported);
+        if(_evaluableParameters.TryGetValue(node.Identifier.Text, out var mappedTree))
+            return mappedTree;
 
-            return _context.Diagnostics.Closure(node, InterpolatedTree.Unsupported);
-        }
+        if(_interpolatableParameters.Contains(node.Identifier.Text))
+            return _context.Diagnostics.EvaluatedParameter(node, InterpolatedTree.Unsupported);
 
-        return InterpolatedTree.Verbatim(node.Identifier.Text);
+        return _context.Diagnostics.Closure(node, InterpolatedTree.Unsupported);
     }
 
     public override InterpolatedTree VisitParameter(ParameterSyntax node) {

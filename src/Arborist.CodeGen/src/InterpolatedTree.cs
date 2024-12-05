@@ -2,103 +2,103 @@ using System.Text;
 
 namespace Arborist.CodeGen;
 
-public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpressionTree> {
-    public static InterpolatedExpressionTree Unsupported { get; } = new UnsupportedNode();
+public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
+    public static InterpolatedTree Unsupported { get; } = new UnsupportedNode();
 
     /// <summary>
-    /// Singleton empty <see cref="InterpolatedExpressionTree"/> value.
+    /// Singleton empty <see cref="InterpolatedTree"/> value.
     /// </summary>
-    public static InterpolatedExpressionTree Empty { get; } = new VerbatimNode("");
+    public static InterpolatedTree Empty { get; } = new VerbatimNode("");
 
-    public static InterpolatedExpressionTree Verbatim(string value) =>
+    public static InterpolatedTree Verbatim(string value) =>
         value.Length == 0 ? Empty : new VerbatimNode(value);
 
-    public static InterpolatedExpressionTree ArrowBody(InterpolatedExpressionTree expression) =>
+    public static InterpolatedTree ArrowBody(InterpolatedTree expression) =>
         new ArrowBodyNode(expression);
 
-    public static InterpolatedExpressionTree Binary(
+    public static InterpolatedTree Binary(
         string @operator,
-        InterpolatedExpressionTree left,
-        InterpolatedExpressionTree right
+        InterpolatedTree left,
+        InterpolatedTree right
     ) =>
         new BinaryNode(@operator, left, right);
 
-    public static InterpolatedExpressionTree Concat(params InterpolatedExpressionTree[] nodes) =>
+    public static InterpolatedTree Concat(params InterpolatedTree[] nodes) =>
         new ConcatNode(nodes);
 
-    public static InterpolatedExpressionTree Concat(IReadOnlyList<InterpolatedExpressionTree> nodes) =>
+    public static InterpolatedTree Concat(IReadOnlyList<InterpolatedTree> nodes) =>
         new ConcatNode(nodes);
 
-    public static InterpolatedExpressionTree Indexer(
-        InterpolatedExpressionTree body,
-        InterpolatedExpressionTree index
+    public static InterpolatedTree Indexer(
+        InterpolatedTree body,
+        InterpolatedTree index
     ) =>
         new IndexerNode(body, index);
 
-    public static InterpolatedExpressionTree Initializer(IReadOnlyList<InterpolatedExpressionTree> elements) =>
+    public static InterpolatedTree Initializer(IReadOnlyList<InterpolatedTree> elements) =>
         new InitializerNode(elements);
 
-    public static InterpolatedExpressionTree InstanceCall(
-        InterpolatedExpressionTree expression,
-        InterpolatedExpressionTree method,
-        IReadOnlyList<InterpolatedExpressionTree> args
+    public static InterpolatedTree InstanceCall(
+        InterpolatedTree expression,
+        InterpolatedTree method,
+        IReadOnlyList<InterpolatedTree> args
     ) =>
         new InstanceCallNode(expression, method, args);
 
-    public static InterpolatedExpressionTree Lambda(
-        IReadOnlyList<InterpolatedExpressionTree> parameters,
-        InterpolatedExpressionTree body
+    public static InterpolatedTree Lambda(
+        IReadOnlyList<InterpolatedTree> parameters,
+        InterpolatedTree body
     ) =>
         new LambdaNode(parameters, body);
 
-    public static InterpolatedExpressionTree Member(
-        InterpolatedExpressionTree expression,
+    public static InterpolatedTree Member(
+        InterpolatedTree expression,
         string member
     ) =>
         Concat(expression, Verbatim("."), Verbatim(member));
 
-    public static InterpolatedExpressionTree MethodDefinition(
+    public static InterpolatedTree MethodDefinition(
         string method,
-        IReadOnlyList<InterpolatedExpressionTree> parameters,
-        IReadOnlyList<InterpolatedExpressionTree> typeConstraints,
-        InterpolatedExpressionTree body
+        IReadOnlyList<InterpolatedTree> parameters,
+        IReadOnlyList<InterpolatedTree> typeConstraints,
+        InterpolatedTree body
     ) =>
         new MethodDefinitionNode(method, parameters, typeConstraints, body);
 
-    public static InterpolatedExpressionTree StaticCall(
-        InterpolatedExpressionTree method,
-        IReadOnlyList<InterpolatedExpressionTree> args
+    public static InterpolatedTree StaticCall(
+        InterpolatedTree method,
+        IReadOnlyList<InterpolatedTree> args
     ) =>
         new StaticCallNode(method, args);
 
-    public static InterpolatedExpressionTree Switch(
-        InterpolatedExpressionTree subject,
-        IReadOnlyList<InterpolatedExpressionTree> cases
+    public static InterpolatedTree Switch(
+        InterpolatedTree subject,
+        IReadOnlyList<InterpolatedTree> cases
     ) =>
         new SwitchNode(subject, cases);
 
-    public static InterpolatedExpressionTree SwitchCase(
-        InterpolatedExpressionTree pattern,
-        InterpolatedExpressionTree body
+    public static InterpolatedTree SwitchCase(
+        InterpolatedTree pattern,
+        InterpolatedTree body
     ) =>
         new SwitchCaseNode(pattern, body);
 
-    public static InterpolatedExpressionTree Ternary(
-        InterpolatedExpressionTree condition,
-        InterpolatedExpressionTree thenNode,
-        InterpolatedExpressionTree elseNode
+    public static InterpolatedTree Ternary(
+        InterpolatedTree condition,
+        InterpolatedTree thenNode,
+        InterpolatedTree elseNode
     ) =>
         new TernaryNode(condition, thenNode, elseNode);
 
-    private InterpolatedExpressionTree() { }
+    private InterpolatedTree() { }
 
     public abstract bool IsSupported { get; }
     public abstract void Render(RenderingContext context);
     public abstract override int GetHashCode();
-    public abstract bool Equals(InterpolatedExpressionTree? obj);
+    public abstract bool Equals(InterpolatedTree? obj);
 
     public override bool Equals(object? obj) =>
-        Equals(obj as InterpolatedExpressionTree);
+        Equals(obj as InterpolatedTree);
 
     public override string ToString() =>
         ToString(0);
@@ -117,7 +117,7 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
             stringBuilder.Append(value);
         }
 
-        public void Append(InterpolatedExpressionTree node) {
+        public void Append(InterpolatedTree node) {
             node.Render(this);
         }
 
@@ -140,7 +140,7 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
             Append(value);
         }
 
-        public void Indent(InterpolatedExpressionTree node) {
+        public void Indent(InterpolatedTree node) {
             node.Render(new RenderingContext(stringBuilder, level + 1));
         }
 
@@ -149,7 +149,7 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
         }
     }
 
-    private class UnsupportedNode : InterpolatedExpressionTree {
+    private class UnsupportedNode : InterpolatedTree {
         public override bool IsSupported => false;
 
         public override void Render(RenderingContext context) {
@@ -159,11 +159,11 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
         public override int GetHashCode() =>
             "???".GetHashCode();
 
-        public override bool Equals(InterpolatedExpressionTree? obj) =>
+        public override bool Equals(InterpolatedTree? obj) =>
             obj is UnsupportedNode;
     }
 
-    private class VerbatimNode(string expr) : InterpolatedExpressionTree {
+    private class VerbatimNode(string expr) : InterpolatedTree {
         public string Expr { get; } = expr;
 
         public override bool IsSupported => true;
@@ -175,12 +175,12 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
         public override int GetHashCode() =>
             Expr.GetHashCode();
 
-        public override bool Equals(InterpolatedExpressionTree? obj) =>
+        public override bool Equals(InterpolatedTree? obj) =>
             obj is VerbatimNode that && this.Expr.Equals(that.Expr);
     }
 
-    private class ArrowBodyNode(InterpolatedExpressionTree expression) : InterpolatedExpressionTree {
-        public InterpolatedExpressionTree Expression { get; } = expression;
+    private class ArrowBodyNode(InterpolatedTree expression) : InterpolatedTree {
+        public InterpolatedTree Expression { get; } = expression;
 
         public override bool IsSupported =>
             Expression.IsSupported;
@@ -194,17 +194,17 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
         public override int GetHashCode() =>
             Expression.GetHashCode();
 
-        public override bool Equals(InterpolatedExpressionTree? obj) =>
+        public override bool Equals(InterpolatedTree? obj) =>
             obj is ArrowBodyNode that
             && this.Expression.Equals(that.Expression);
     }
 
-    private class BinaryNode(string @operator, InterpolatedExpressionTree left, InterpolatedExpressionTree right)
-        : InterpolatedExpressionTree
+    private class BinaryNode(string @operator, InterpolatedTree left, InterpolatedTree right)
+        : InterpolatedTree
     {
         public string Operator { get; } = @operator.Trim();
-        public InterpolatedExpressionTree Left { get; } = left;
-        public InterpolatedExpressionTree Right { get; } = right;
+        public InterpolatedTree Left { get; } = left;
+        public InterpolatedTree Right { get; } = right;
 
         public override bool IsSupported =>
             Left.IsSupported && Right.IsSupported;
@@ -222,17 +222,17 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
         public override int GetHashCode() =>
             Operator.GetHashCode() ^ Left.GetHashCode() ^ Right.GetHashCode();
 
-        public override bool Equals(InterpolatedExpressionTree? obj) =>
+        public override bool Equals(InterpolatedTree? obj) =>
             obj is BinaryNode that
             && this.Left.Equals(that.Left)
             && this.Right.Equals(that.Right);
     }
 
-    private class IndexerNode(InterpolatedExpressionTree body, InterpolatedExpressionTree index)
-        : InterpolatedExpressionTree
+    private class IndexerNode(InterpolatedTree body, InterpolatedTree index)
+        : InterpolatedTree
     {
-        public InterpolatedExpressionTree Body { get; } = body;
-        public InterpolatedExpressionTree Index { get; } = index;
+        public InterpolatedTree Body { get; } = body;
+        public InterpolatedTree Index { get; } = index;
 
         public override bool IsSupported =>
             Body.IsSupported && Index.IsSupported;
@@ -247,20 +247,20 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
         public override int GetHashCode() =>
             Body.GetHashCode() ^ Index.GetHashCode();
 
-        public override bool Equals(InterpolatedExpressionTree? obj) =>
+        public override bool Equals(InterpolatedTree? obj) =>
             obj is IndexerNode that
             && this.Body.Equals(that.Body)
             && this.Index.Equals(that.Index);
     }
 
     private class InstanceCallNode(
-        InterpolatedExpressionTree body,
-        InterpolatedExpressionTree method,
-        IReadOnlyList<InterpolatedExpressionTree> args
-    ) : InterpolatedExpressionTree {
-        public InterpolatedExpressionTree Body { get; } = body;
-        public InterpolatedExpressionTree Method { get; } = method;
-        public IReadOnlyList<InterpolatedExpressionTree> Args { get; } = args;
+        InterpolatedTree body,
+        InterpolatedTree method,
+        IReadOnlyList<InterpolatedTree> args
+    ) : InterpolatedTree {
+        public InterpolatedTree Body { get; } = body;
+        public InterpolatedTree Method { get; } = method;
+        public IReadOnlyList<InterpolatedTree> Args { get; } = args;
 
         public override bool IsSupported =>
             Body.IsSupported && Args.All(a => a.IsSupported);
@@ -286,18 +286,18 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
         public override int GetHashCode() =>
             Args.Aggregate(Body.GetHashCode() ^ Method.GetHashCode(), (h, a) => h ^ a.GetHashCode());
 
-        public override bool Equals(InterpolatedExpressionTree? obj) =>
+        public override bool Equals(InterpolatedTree? obj) =>
             obj is InstanceCallNode that
             && this.Body.Equals(that.Body)
             && this.Method.Equals(that.Method)
             && this.Args.SequenceEqual(that.Args);
     }
 
-    private class LambdaNode(IReadOnlyList<InterpolatedExpressionTree> args, InterpolatedExpressionTree body)
-        : InterpolatedExpressionTree
+    private class LambdaNode(IReadOnlyList<InterpolatedTree> args, InterpolatedTree body)
+        : InterpolatedTree
     {
-        public IReadOnlyList<InterpolatedExpressionTree> Args { get; } = args;
-        public InterpolatedExpressionTree Body { get; } = body;
+        public IReadOnlyList<InterpolatedTree> Args { get; } = args;
+        public InterpolatedTree Body { get; } = body;
 
         public override bool IsSupported =>
             Body.IsSupported && Args.All(a => a.IsSupported);
@@ -318,16 +318,16 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
         public override int GetHashCode() =>
             Args.Aggregate(Body.GetHashCode(), (h, a) => h ^ a.GetHashCode());
 
-        public override bool Equals(InterpolatedExpressionTree? obj) =>
+        public override bool Equals(InterpolatedTree? obj) =>
             obj is LambdaNode that
             && this.Body.Equals(that.Body)
             && this.Args.SequenceEqual(that.Args);
     }
 
-    private class InitializerNode(IReadOnlyList<InterpolatedExpressionTree> initializers)
-         : InterpolatedExpressionTree
+    private class InitializerNode(IReadOnlyList<InterpolatedTree> initializers)
+         : InterpolatedTree
     {
-        public IReadOnlyList<InterpolatedExpressionTree> Initializers { get; } = initializers;
+        public IReadOnlyList<InterpolatedTree> Initializers { get; } = initializers;
 
         public override bool IsSupported =>
             Initializers.All(static i => i.IsSupported);
@@ -350,16 +350,16 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
         public override int GetHashCode() =>
             Initializers.Aggregate(default(int), (h, i) => h ^ i.GetHashCode());
 
-        public override bool Equals(InterpolatedExpressionTree? obj) =>
+        public override bool Equals(InterpolatedTree? obj) =>
             obj is InitializerNode that
             && this.Initializers.SequenceEqual(that.Initializers);
     }
 
-    private class ConcatNode(IReadOnlyList<InterpolatedExpressionTree> nodes) : InterpolatedExpressionTree {
-        public IReadOnlyList<InterpolatedExpressionTree> Nodes { get; } = nodes;
+    private class ConcatNode(IReadOnlyList<InterpolatedTree> nodes) : InterpolatedTree {
+        public IReadOnlyList<InterpolatedTree> Nodes { get; } = nodes;
 
-        public ConcatNode(params InterpolatedExpressionTree[] nodes)
-            : this((IReadOnlyList<InterpolatedExpressionTree>)nodes)
+        public ConcatNode(params InterpolatedTree[] nodes)
+            : this((IReadOnlyList<InterpolatedTree>)nodes)
         { }
 
         public override bool IsSupported =>
@@ -373,21 +373,21 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
         public override int GetHashCode() =>
             Nodes.Aggregate(0, (h, n) => h ^ n.GetHashCode());
 
-        public override bool Equals(InterpolatedExpressionTree? obj) =>
+        public override bool Equals(InterpolatedTree? obj) =>
             obj is ConcatNode that
             && this.Nodes.SequenceEqual(that.Nodes);
     }
 
     private class MethodDefinitionNode(
         string method,
-        IReadOnlyList<InterpolatedExpressionTree> parameters,
-        IReadOnlyList<InterpolatedExpressionTree> typeConstraints,
-        InterpolatedExpressionTree body
-    ) : InterpolatedExpressionTree {
+        IReadOnlyList<InterpolatedTree> parameters,
+        IReadOnlyList<InterpolatedTree> typeConstraints,
+        InterpolatedTree body
+    ) : InterpolatedTree {
         public string Method { get; } = method;
-        public IReadOnlyList<InterpolatedExpressionTree> Parameters { get; } = parameters;
-        public IReadOnlyList<InterpolatedExpressionTree> TypeConstraints { get; } = typeConstraints;
-        public InterpolatedExpressionTree Body { get; } = body;
+        public IReadOnlyList<InterpolatedTree> Parameters { get; } = parameters;
+        public IReadOnlyList<InterpolatedTree> TypeConstraints { get; } = typeConstraints;
+        public InterpolatedTree Body { get; } = body;
 
         public override bool IsSupported =>
             Parameters.All(p => p.IsSupported)
@@ -430,7 +430,7 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
             return hash;
         }
 
-        public override bool Equals(InterpolatedExpressionTree? obj) =>
+        public override bool Equals(InterpolatedTree? obj) =>
             obj is MethodDefinitionNode that
             && this.Method.Equals(that.Method)
             && this.Parameters.SequenceEqual(that.Parameters)
@@ -438,9 +438,9 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
             && this.Body.Equals(that.Body);
     }
 
-    private class StaticCallNode(InterpolatedExpressionTree method, IReadOnlyList<InterpolatedExpressionTree> args) : InterpolatedExpressionTree {
-        public InterpolatedExpressionTree Method { get; } = method;
-        public IReadOnlyList<InterpolatedExpressionTree> Args { get; } = args;
+    private class StaticCallNode(InterpolatedTree method, IReadOnlyList<InterpolatedTree> args) : InterpolatedTree {
+        public InterpolatedTree Method { get; } = method;
+        public IReadOnlyList<InterpolatedTree> Args { get; } = args;
 
         public override bool IsSupported =>
             Args.All(a => a.IsSupported);
@@ -464,18 +464,18 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
         public override int GetHashCode() =>
             Args.Aggregate(Method.GetHashCode(), (h, a) => h ^ a.GetHashCode());
 
-        public override bool Equals(InterpolatedExpressionTree? obj) =>
+        public override bool Equals(InterpolatedTree? obj) =>
             obj is StaticCallNode that
             && this.Method.Equals(that.Method)
             && this.Args.SequenceEqual(that.Args);
     }
 
     private class SwitchNode(
-        InterpolatedExpressionTree subject,
-        IReadOnlyList<InterpolatedExpressionTree> cases
-    ) : InterpolatedExpressionTree {
-        public InterpolatedExpressionTree Subject { get; } = subject;
-        public IReadOnlyList<InterpolatedExpressionTree> Cases { get; } = cases;
+        InterpolatedTree subject,
+        IReadOnlyList<InterpolatedTree> cases
+    ) : InterpolatedTree {
+        public InterpolatedTree Subject { get; } = subject;
+        public IReadOnlyList<InterpolatedTree> Cases { get; } = cases;
 
         public override bool IsSupported =>
             Subject.IsSupported && Cases.All(n => n.IsSupported);
@@ -499,18 +499,18 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
         public override int GetHashCode() =>
             Cases.Aggregate(Subject.GetHashCode(), (h, n) => h ^ n.GetHashCode());
 
-        public override bool Equals(InterpolatedExpressionTree? obj) =>
+        public override bool Equals(InterpolatedTree? obj) =>
             obj is SwitchNode that
             && this.Subject.Equals(that.Subject)
             && this.Cases.SequenceEqual(that.Cases);
     }
 
     private class SwitchCaseNode(
-        InterpolatedExpressionTree pattern,
-        InterpolatedExpressionTree body
-    ) : InterpolatedExpressionTree {
-        public InterpolatedExpressionTree Pattern { get; } = pattern;
-        public InterpolatedExpressionTree Body { get; } = body;
+        InterpolatedTree pattern,
+        InterpolatedTree body
+    ) : InterpolatedTree {
+        public InterpolatedTree Pattern { get; } = pattern;
+        public InterpolatedTree Body { get; } = body;
 
         public override bool IsSupported =>
             Pattern.IsSupported && Body.IsSupported;
@@ -524,18 +524,18 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
         public override int GetHashCode() =>
             Pattern.GetHashCode() ^ Body.GetHashCode();
 
-        public override bool Equals(InterpolatedExpressionTree? obj) =>
+        public override bool Equals(InterpolatedTree? obj) =>
             obj is SwitchCaseNode that
             && this.Pattern.Equals(that.Pattern)
             && this.Body.Equals(that.Body);
     }
 
-    private class TernaryNode(InterpolatedExpressionTree condition, InterpolatedExpressionTree thenNode, InterpolatedExpressionTree elseNode)
-        : InterpolatedExpressionTree
+    private class TernaryNode(InterpolatedTree condition, InterpolatedTree thenNode, InterpolatedTree elseNode)
+        : InterpolatedTree
     {
-        public InterpolatedExpressionTree Condition { get; } = condition;
-        public InterpolatedExpressionTree ThenNode { get; } = thenNode;
-        public InterpolatedExpressionTree ElseNode { get; } = elseNode;
+        public InterpolatedTree Condition { get; } = condition;
+        public InterpolatedTree ThenNode { get; } = thenNode;
+        public InterpolatedTree ElseNode { get; } = elseNode;
 
         public override bool IsSupported =>
             Condition.IsSupported && ThenNode.IsSupported && ElseNode.IsSupported;
@@ -555,7 +555,7 @@ public abstract class InterpolatedExpressionTree : IEquatable<InterpolatedExpres
         public override int GetHashCode() =>
             Condition.GetHashCode() ^ ThenNode.GetHashCode() ^ ElseNode.GetHashCode();
 
-        public override bool Equals(InterpolatedExpressionTree? obj) =>
+        public override bool Equals(InterpolatedTree? obj) =>
             obj is TernaryNode that
             && this.Condition.Equals(that.Condition)
             && this.ThenNode.Equals(that.ThenNode)

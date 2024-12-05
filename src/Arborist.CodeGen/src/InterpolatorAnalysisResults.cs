@@ -8,16 +8,16 @@ namespace Arborist.CodeGen;
 
 public class InterpolatorAnalysisResults(
     InterpolatorInvocationContext invocationContext,
-    IReadOnlyList<InterpolatedExpressionTree> parameterTrees,
-    InterpolatedExpressionTree bodyTree
+    IReadOnlyList<InterpolatedTree> parameterTrees,
+    InterpolatedTree bodyTree
 ) {
     public InterpolatedExpressionBuilder Builder { get; } = invocationContext.Builder;
     public InvocationExpressionSyntax Invocation { get; } = invocationContext.InvocationSyntax;
     public IMethodSymbol MethodSymbol { get; } = invocationContext.MethodSymbol;
     public IParameterSymbol? DataParameter { get; } = invocationContext.DataParameter;
     public IParameterSymbol ExpressionParameter { get; } = invocationContext.ExpressionParameter;
-    public IReadOnlyList<InterpolatedExpressionTree> ParameterTrees { get; } = parameterTrees;
-    public InterpolatedExpressionTree BodyTree { get; } = bodyTree;
+    public IReadOnlyList<InterpolatedTree> ParameterTrees { get; } = parameterTrees;
+    public InterpolatedTree BodyTree { get; } = bodyTree;
 
     public bool IsSupported =>
         BodyTree.IsSupported

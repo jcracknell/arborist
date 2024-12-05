@@ -2,7 +2,7 @@ namespace Arborist.CodeGen;
 
 public class LocalDefinition {
     private readonly Func<int> _orderProvider;
-    private InterpolatedExpressionTree? _declaration;
+    private InterpolatedTree? _declaration;
 
     public LocalDefinition(string identifier, Func<int> orderProvider) {
         _orderProvider = orderProvider;
@@ -27,10 +27,10 @@ public class LocalDefinition {
     /// <summary>
     /// The expression used to initialize the value of this definition.
     /// </summary>
-    public InterpolatedExpressionTree Initializer =>
-        _declaration ?? InterpolatedExpressionTree.Unsupported;
+    public InterpolatedTree Initializer =>
+        _declaration ?? InterpolatedTree.Unsupported;
 
-    public void SetInitializer(InterpolatedExpressionTree value) {
+    public void SetInitializer(InterpolatedTree value) {
         _declaration = value;
         Order = _orderProvider();
         IsInitialized = true;

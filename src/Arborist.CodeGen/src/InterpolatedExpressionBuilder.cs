@@ -119,7 +119,7 @@ public class InterpolatedExpressionBuilder {
 
     public InterpolatedTree CreateDefaultValue(ITypeSymbol type) {
         var typeRef = CreateTypeRef(type);
-        return InterpolatedTree.Member(typeRef, "Default");
+        return InterpolatedTree.Member(typeRef, InterpolatedTree.Verbatim("Default"));
     }
 
     public InterpolatedTree CreateType(ITypeSymbol type) {
@@ -132,7 +132,7 @@ public class InterpolatedExpressionBuilder {
             return InterpolatedTree.Verbatim($"typeof({typeName})");
 
         var typeRef = CreateTypeRef(type);
-        return InterpolatedTree.Member(typeRef, "Type");
+        return InterpolatedTree.Member(typeRef, InterpolatedTree.Verbatim("Type"));
     }
 
     public InterpolatedTree CreateTypeRef(ITypeSymbol type) {

@@ -50,13 +50,13 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
 
                 return InterpolatedTree.Member(
                     InterpolatedTree.Verbatim(fieldContainingTypeName),
-                    node.Name.ToString()
+                    InterpolatedTree.Verbatim(node.Name.ToString())
                 );
 
             case IFieldSymbol field:
                 return InterpolatedTree.Member(
                     Visit(node.Expression),
-                    node.Name.ToString()
+                    InterpolatedTree.Verbatim(node.Name.ToString())
                 );
 
             case IPropertySymbol { IsStatic: true } property:
@@ -65,13 +65,13 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
 
                 return InterpolatedTree.Member(
                     InterpolatedTree.Verbatim(propertyContainingTypeName),
-                    node.Name.ToString()
+                    InterpolatedTree.Verbatim(node.Name.ToString())
                 );
 
             case IPropertySymbol property:
                 return InterpolatedTree.Member(
                     Visit(node.Expression),
-                    node.Name.ToString()
+                    InterpolatedTree.Verbatim(node.Name.ToString())
                 );
 
             case IMethodSymbol method:

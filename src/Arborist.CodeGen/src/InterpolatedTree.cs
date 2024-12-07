@@ -53,9 +53,9 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
 
     public static InterpolatedTree Member(
         InterpolatedTree expression,
-        string member
+        InterpolatedTree member
     ) =>
-        Concat(expression, Verbatim("."), Verbatim(member));
+        Concat(expression, Verbatim("."), member);
 
     public static InterpolatedTree MethodDefinition(
         string method,

@@ -75,10 +75,14 @@ public class InterpolatedExpressionBuilder {
             InterpolatedTree.Initializer(elements.ToList())
         );
 
-    public InterpolatedTree CreateExpressionType(SyntaxNode syntax) =>
-        InterpolatedTree.Verbatim($"global::System.Linq.Expressions.ExpressionType.{CreateExpressionTypeName(syntax)}");
+    public InterpolatedTree CreateExpressionType(SyntaxNode syntax) {
+        if(TryGetExpressionTypeName(syntax) is not {} name)
+            return _diagnostics.UnsupportedInterpolatedSyntax(syntax);
 
-    private string CreateExpressionTypeName(SyntaxNode syntax) => syntax.Kind() switch {
+        return InterpolatedTree.Verbatim($"global::System.Linq.Expressions.ExpressionType.{name}");
+    }
+
+    private string? TryGetExpressionTypeName(SyntaxNode syntax) => syntax.Kind() switch {
         SyntaxKind.CoalesceExpression => nameof(ExpressionType.Coalesce),
         // Logic
         SyntaxKind.LogicalNotExpression => nameof(ExpressionType.Not),
@@ -114,7 +118,7 @@ public class InterpolatedExpressionBuilder {
         SyntaxKind.LeftShiftAssignmentExpression => nameof(ExpressionType.LeftShiftAssign),
         SyntaxKind.RightShiftExpression => nameof(ExpressionType.RightShift),
         SyntaxKind.RightShiftAssignmentExpression => nameof(ExpressionType.RightShiftAssign),
-        _ => _diagnostics.UnsupportedInterpolatedSyntax(syntax, Unsupported)
+        _ => default
     };
 
     public InterpolatedTree CreateDefaultValue(ITypeSymbol type) {
@@ -124,7 +128,7 @@ public class InterpolatedExpressionBuilder {
 
     public InterpolatedTree CreateType(ITypeSymbol type) {
         if(!TypeSymbolHelpers.IsAccessible(type))
-            return _diagnostics.InaccesibleSymbol(type, InterpolatedTree.Unsupported);
+            return _diagnostics.InaccesibleSymbol(type);
 
         // If this is a static type, it is not possible to create a TypeRef (as it can't be
         // used as a type parameter)
@@ -137,7 +141,7 @@ public class InterpolatedExpressionBuilder {
 
     public InterpolatedTree CreateTypeRef(ITypeSymbol type) {
         if(!TypeSymbolHelpers.IsAccessible(type))
-            return _diagnostics.InaccesibleSymbol(type, InterpolatedTree.Unsupported);
+            return _diagnostics.InaccesibleSymbol(type);
 
         if(_typeRefs.TryGetValue(type, out var cached)) {
             // This shouldn't be possible, as it would require a self-referential generic type
@@ -267,7 +271,7 @@ public class InterpolatedExpressionBuilder {
 
         if(method.IsStatic) {
             if(!TypeSymbolHelpers.TryCreateTypeName(method.ContainingType, out var containingTypeName))
-                return _diagnostics.UnsupportedType(method.ContainingType, InterpolatedTree.Unsupported);
+                return _diagnostics.UnsupportedType(method.ContainingType);
 
             return InterpolatedTree.StaticCall(
                 InterpolatedTree.Concat(
@@ -298,7 +302,7 @@ public class InterpolatedExpressionBuilder {
                     if(TypeSymbolHelpers.TryCreateTypeName(typeArg, out var typeArgName)) {
                         typeArgNames.Add(typeArgName);
                     } else {
-                        return _diagnostics.UnsupportedType(typeArg, InterpolatedTree.Unsupported);
+                        return _diagnostics.UnsupportedType(typeArg);
                     }
                 }
 

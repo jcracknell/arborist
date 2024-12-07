@@ -26,7 +26,7 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
     }
 
     public override InterpolatedTree DefaultVisit(SyntaxNode node) {
-        return _context.Diagnostics.UnsupportedEvaluatedSyntax(node, InterpolatedTree.Unsupported);
+        return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
     }
 
     public override InterpolatedTree VisitConditionalExpression(ConditionalExpressionSyntax node) =>
@@ -39,14 +39,14 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
             return InterpolatedTree.Verbatim(_builder.DataIdentifier);
 
         if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not {} symbol)
-            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node, InterpolatedTree.Unsupported);
+            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
         if(!TypeSymbolHelpers.IsAccessible(symbol))
-            return _context.Diagnostics.InaccesibleSymbol(symbol, InterpolatedTree.Unsupported);
+            return _context.Diagnostics.InaccesibleSymbol(symbol);
 
         switch(_context.SemanticModel.GetSymbolInfo(node).Symbol) {
             case IFieldSymbol field when field.IsStatic || field.IsConst:
                 if(!TypeSymbolHelpers.TryCreateTypeName(symbol.ContainingType, out var fieldContainingTypeName))
-                    return _context.Diagnostics.UnsupportedType(field.ContainingType, InterpolatedTree.Unsupported);
+                    return _context.Diagnostics.UnsupportedType(field.ContainingType);
 
                 return InterpolatedTree.Member(
                     InterpolatedTree.Verbatim(fieldContainingTypeName),
@@ -61,7 +61,7 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
 
             case IPropertySymbol { IsStatic: true } property:
                 if(!TypeSymbolHelpers.TryCreateTypeName(property.ContainingType, out var propertyContainingTypeName))
-                    return _context.Diagnostics.UnsupportedType(property.ContainingType, InterpolatedTree.Unsupported);
+                    return _context.Diagnostics.UnsupportedType(property.ContainingType);
 
                 return InterpolatedTree.Member(
                     InterpolatedTree.Verbatim(propertyContainingTypeName),
@@ -78,18 +78,18 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
                 return Visit(node.Expression);
 
             default:
-                return _context.Diagnostics.UnsupportedEvaluatedSyntax(node, InterpolatedTree.Unsupported);
+                return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
         }
     }
 
     public override InterpolatedTree VisitInvocationExpression(InvocationExpressionSyntax node) {
         if(node.Expression is not MemberAccessExpressionSyntax memberAccess)
-            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node.Expression, InterpolatedTree.Unsupported);
+            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node.Expression);
 
         switch(_context.SemanticModel.GetSymbolInfo(node).Symbol) {
             case IMethodSymbol method when method.IsStatic || method.IsExtensionMethod:
                 if(!TypeSymbolHelpers.TryCreateTypeName(method.ContainingType, out var methodContainingTypeName))
-                    return _context.Diagnostics.UnsupportedType(method.ContainingType, InterpolatedTree.Unsupported);
+                    return _context.Diagnostics.UnsupportedType(method.ContainingType);
 
                 return InterpolatedTree.StaticCall(
                     InterpolatedTree.Concat(
@@ -107,7 +107,7 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
                 );
 
             default:
-                return _context.Diagnostics.UnsupportedEvaluatedSyntax(node, InterpolatedTree.Unsupported);
+                return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
         }
     }
 
@@ -119,11 +119,11 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
         var typeArgumentNames = new List<string>(generic.TypeArgumentList.Arguments.Count);
         foreach(var typeArgument in generic.TypeArgumentList.Arguments) {
             if(_context.SemanticModel.GetTypeInfo(typeArgument).Type is not {} typeArgumentSymbol)
-                return _context.Diagnostics.UnsupportedEvaluatedSyntax(typeArgument, InterpolatedTree.Unsupported);
+                return _context.Diagnostics.UnsupportedEvaluatedSyntax(typeArgument);
             if(!TypeSymbolHelpers.IsAccessible(typeArgumentSymbol))
-                return _context.Diagnostics.InaccesibleSymbol(typeArgumentSymbol, InterpolatedTree.Unsupported);
+                return _context.Diagnostics.InaccesibleSymbol(typeArgumentSymbol);
             if(!TypeSymbolHelpers.TryCreateTypeName(typeArgumentSymbol, out var typeArgumentName))
-                return _context.Diagnostics.UnsupportedType(typeArgumentSymbol, InterpolatedTree.Unsupported);
+                return _context.Diagnostics.UnsupportedType(typeArgumentSymbol);
 
             typeArgumentNames.Add(typeArgumentName);
         }
@@ -148,12 +148,12 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
 
     public override InterpolatedTree VisitCastExpression(CastExpressionSyntax node) {
         if(_context.SemanticModel.GetTypeInfo(node).Type is not {} nodeType)
-            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node, InterpolatedTree.Unsupported);
+            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
 
         if(!TypeSymbolHelpers.IsAccessible(nodeType))
-            return _context.Diagnostics.InaccesibleSymbol(nodeType, InterpolatedTree.Unsupported);
+            return _context.Diagnostics.InaccesibleSymbol(nodeType);
         if(!TypeSymbolHelpers.TryCreateTypeName(nodeType, out var nodeTypeName))
-            return _context.Diagnostics.UnsupportedType(nodeType, InterpolatedTree.Unsupported);
+            return _context.Diagnostics.UnsupportedType(nodeType);
 
         return InterpolatedTree.Concat(
             InterpolatedTree.Verbatim($"({nodeTypeName})"),
@@ -169,11 +169,11 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
 
     private InterpolatedTree VisitBaseObjectCreationExpression(BaseObjectCreationExpressionSyntax node) {
         if(_context.SemanticModel.GetTypeInfo(node).Type is not {} typeSymbol)
-            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node, InterpolatedTree.Unsupported);
+            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
         if(!TypeSymbolHelpers.IsAccessible(typeSymbol))
-            return _context.Diagnostics.InaccesibleSymbol(typeSymbol, InterpolatedTree.Unsupported);
+            return _context.Diagnostics.InaccesibleSymbol(typeSymbol);
         if(!TypeSymbolHelpers.TryCreateTypeName(typeSymbol, out var typeName))
-            return _context.Diagnostics.UnsupportedType(typeSymbol, InterpolatedTree.Unsupported);
+            return _context.Diagnostics.UnsupportedType(typeSymbol);
 
         var newExpr = InterpolatedTree.StaticCall(
             node switch {
@@ -200,9 +200,9 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
             // This requires handling as a special case of IdentifierNameSyntax
             case AssignmentExpressionSyntax assignment:
                 if(_context.SemanticModel.GetSymbolInfo(assignment.Left).Symbol is not {} leftSymbol)
-                    return _context.Diagnostics.UnsupportedEvaluatedSyntax(node, InterpolatedTree.Unsupported);
+                    return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
                 if(!TypeSymbolHelpers.IsAccessible(leftSymbol))
-                    return _context.Diagnostics.InaccesibleSymbol(leftSymbol, InterpolatedTree.Unsupported);
+                    return _context.Diagnostics.InaccesibleSymbol(leftSymbol);
 
                 return InterpolatedTree.Concat(
                     InterpolatedTree.Verbatim(assignment.Left.ToString()),
@@ -285,15 +285,15 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
 
     public override InterpolatedTree VisitIdentifierName(IdentifierNameSyntax node) {
         if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not {} symbol)
-            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node, InterpolatedTree.Unsupported);
+            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
 
         if(_evaluableParameters.TryGetValue(node.Identifier.Text, out var mappedTree))
             return mappedTree;
 
         if(_interpolatableParameters.Contains(node.Identifier.Text))
-            return _context.Diagnostics.EvaluatedParameter(node, InterpolatedTree.Unsupported);
+            return _context.Diagnostics.EvaluatedParameter(node);
 
-        return _context.Diagnostics.Closure(node, InterpolatedTree.Unsupported);
+        return _context.Diagnostics.Closure(node);
     }
 
     public override InterpolatedTree VisitParameter(ParameterSyntax node) {
@@ -301,11 +301,11 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
             return InterpolatedTree.Verbatim(node.Identifier.Text);
 
         if(_context.SemanticModel.GetTypeInfo(node.Type).Type is not {} parameterType)
-            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node, InterpolatedTree.Unsupported);
+            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
         if(!TypeSymbolHelpers.IsAccessible(parameterType))
-            return _context.Diagnostics.InaccesibleSymbol(parameterType, InterpolatedTree.Unsupported);
+            return _context.Diagnostics.InaccesibleSymbol(parameterType);
         if(!TypeSymbolHelpers.TryCreateTypeName(parameterType, out var parameterTypeName))
-            return _context.Diagnostics.UnsupportedType(parameterType, InterpolatedTree.Unsupported);
+            return _context.Diagnostics.UnsupportedType(parameterType);
 
         return InterpolatedTree.Verbatim($"{parameterTypeName} {node.Identifier.Text}");
     }

@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Arborist.CodeGen;
 
-public class DiagnosticFactory(
+public sealed class DiagnosticFactory(
     SourceProductionContext sourceProductionContext,
     InvocationExpressionSyntax invocationSyntax
 ) {
@@ -39,9 +39,9 @@ public class DiagnosticFactory(
         return result;
     }
 
-    public A UnsupportedInterpolatedSyntax<A>(SyntaxNode node, A result) =>
+    public InterpolatedTree UnsupportedInterpolatedSyntax(SyntaxNode node) =>
         Diagnostic(
-            result: result,
+            result: InterpolatedTree.Unsupported,
             code: ARB998_UnsupportedInterpolatedSyntax,
             severity: DiagnosticSeverity.Info,
             title: "Unsupported Syntax",
@@ -49,9 +49,9 @@ public class DiagnosticFactory(
             syntax: node
         );
 
-    public A UnsupportedEvaluatedSyntax<A>(SyntaxNode node, A result) =>
+    public InterpolatedTree UnsupportedEvaluatedSyntax(SyntaxNode node) =>
         Diagnostic(
-            result: result,
+            result: InterpolatedTree.Unsupported,
             code: ARB997_UnsupportedEvaluatedSyntax,
             severity: DiagnosticSeverity.Info,
             title: "Unsupported Syntax",
@@ -59,18 +59,18 @@ public class DiagnosticFactory(
             syntax: node
         );
 
-    public A UnsupportedType<A>(ITypeSymbol typeSymbol, A result) =>
+    public InterpolatedTree UnsupportedType(ITypeSymbol typeSymbol) =>
         Diagnostic(
-            result: result,
+            result: InterpolatedTree.Unsupported,
             code: ARB996_UnsupportedType,
             severity: DiagnosticSeverity.Info,
             title: "Unsupported Type",
             message: $"Interpolated expression contains unsupported type symbol {typeSymbol} and cannot be interpolated at compile time."
         );
 
-    public A Closure<A>(IdentifierNameSyntax node, A result) =>
+    public InterpolatedTree Closure(IdentifierNameSyntax node) =>
         Diagnostic(
-            result: result,
+            result: InterpolatedTree.Unsupported,
             code: ARB001_ClosureOverScopeReference,
             severity: DiagnosticSeverity.Warning,
             title: "Closure",
@@ -78,9 +78,9 @@ public class DiagnosticFactory(
             syntax: node
         );
 
-    public A EvaluatedParameter<A>(IdentifierNameSyntax node, A result) =>
+    public InterpolatedTree EvaluatedParameter(IdentifierNameSyntax node) =>
         Diagnostic(
-            result: result,
+            result: InterpolatedTree.Unsupported,
             code: ARB002_EvaluatedInterpolatedParameter,
             severity: DiagnosticSeverity.Error,
             title: "Evaluated Parameter",
@@ -88,9 +88,9 @@ public class DiagnosticFactory(
             syntax: node
         );
 
-    public A NoSplices<A>(SyntaxNode node, A result) =>
+    public InterpolatedTree NoSplices(SyntaxNode node) =>
         Diagnostic(
-            result: result,
+            result: InterpolatedTree.Unsupported,
             code: ARB003_NoSplices,
             severity: DiagnosticSeverity.Warning,
             title: "Interpolated expression contains no splices",
@@ -98,9 +98,9 @@ public class DiagnosticFactory(
             syntax: node
         );
 
-    public A InaccesibleSymbol<A>(ISymbol symbol, A result) =>
+    public InterpolatedTree InaccesibleSymbol(ISymbol symbol) =>
         Diagnostic(
-            result: result,
+            result: InterpolatedTree.Unsupported,
             code: ARB004_InaccessibleSymbolReference,
             severity: DiagnosticSeverity.Info,
             title: "Inaccesible Symbol Reference",

@@ -310,7 +310,7 @@ public class InterpolatorInterceptorGenerator : IIncrementalGenerator {
 
         // Report an interpolated expression containing no splices, which is completely useless
         if(context.SpliceCount == 0)
-            diagnostics.NoSplices(interpolatedExpression, 0);
+            diagnostics.NoSplices(interpolatedExpression);
 
         var analysisResults = new InterpolatorAnalysisResults(
             invocationContext: context,

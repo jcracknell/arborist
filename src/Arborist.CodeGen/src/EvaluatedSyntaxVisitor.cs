@@ -87,16 +87,31 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node.Expression);
 
         switch(_context.SemanticModel.GetSymbolInfo(node).Symbol) {
-            case IMethodSymbol method when method.IsStatic || method.IsExtensionMethod:
-                if(!TypeSymbolHelpers.TryCreateTypeName(method.ContainingType, out var methodContainingTypeName))
+            case IMethodSymbol { ReducedFrom: { IsStatic: true } } method:
+                if(!TypeSymbolHelpers.TryCreateTypeName(method.ContainingType, out var extensionTypeName))
                     return _context.Diagnostics.UnsupportedType(method.ContainingType);
 
                 return InterpolatedTree.StaticCall(
                     InterpolatedTree.Concat(
-                        InterpolatedTree.Verbatim($"{methodContainingTypeName}."),
+                        InterpolatedTree.Verbatim($"{extensionTypeName}."),
                         GetInvocationMethodName(memberAccess.Name)
                     ),
-                    node.ArgumentList.Arguments.Select(static a => a.Expression).Select(Visit).ToList()
+                    [
+                        Visit(node.Expression),
+                        ..node.ArgumentList.Arguments.Select(static a => a.Expression).Select(Visit)
+                    ]
+                );
+
+            case IMethodSymbol { IsStatic: true } method:
+                if(!TypeSymbolHelpers.TryCreateTypeName(method.ContainingType, out var staticTypeName))
+                    return _context.Diagnostics.UnsupportedType(method.ContainingType);
+
+                return InterpolatedTree.StaticCall(
+                    InterpolatedTree.Concat(
+                        InterpolatedTree.Verbatim($"{staticTypeName}."),
+                        GetInvocationMethodName(memberAccess.Name)
+                    ),
+                    [..node.ArgumentList.Arguments.Select(static a => a.Expression).Select(Visit)]
                 );
 
             case IMethodSymbol method:

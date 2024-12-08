@@ -4,11 +4,12 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Arborist.CodeGen;
 
-public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
+public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
     private readonly InterpolatorInvocationContext _context;
     private readonly InterpolatedExpressionBuilder _builder;
     private readonly ImmutableHashSet<string> _interpolatableParameters;
     private ImmutableDictionary<string, InterpolatedTree> _evaluableParameters;
+    private QueryContext _queryContext;
 
     public EvaluatedSyntaxVisitor(
         InterpolatorInvocationContext context,
@@ -19,6 +20,7 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
         _builder = builder;
         _interpolatableParameters = interpolatableParameters;
         _evaluableParameters = ImmutableDictionary.Create<string, InterpolatedTree>(IdentifierEqualityComparer.Instance);
+        _queryContext = QueryContext.Create(this);
     }
 
     public override InterpolatedTree Visit(SyntaxNode? node) {
@@ -147,10 +149,7 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
     }
 
     public override InterpolatedTree VisitAnonymousObjectCreationExpression(AnonymousObjectCreationExpressionSyntax node) =>
-        InterpolatedTree.Concat(
-            InterpolatedTree.Verbatim("new "),
-            InterpolatedTree.Initializer([..node.Initializers.Select(Visit)])
-        );
+        InterpolatedTree.AnonymousClass([..node.Initializers.Select(Visit)]);
 
     public override InterpolatedTree? VisitAnonymousObjectMemberDeclarator(AnonymousObjectMemberDeclaratorSyntax node) =>
         node.NameEquals switch {
@@ -340,6 +339,10 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
             InterpolatedTree.Verbatim(node.OperatorToken.ToString())
         );
 
+    public override InterpolatedTree VisitParenthesizedExpression(ParenthesizedExpressionSyntax node) =>
+        Visit(node.Expression);
+
     public override InterpolatedTree VisitLiteralExpression(LiteralExpressionSyntax node) =>
-        InterpolatedTree.Verbatim(node.ToFullString());
+        InterpolatedTree.Verbatim(node.ToString().Trim());
+
 }

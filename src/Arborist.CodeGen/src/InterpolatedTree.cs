@@ -13,6 +13,9 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
     public static InterpolatedTree Verbatim(string value) =>
         value.Length == 0 ? Empty : new VerbatimNode(value);
 
+    public static InterpolatedTree AnonymousClass(IReadOnlyList<InterpolatedTree> propertyInitializers) =>
+        Concat(Verbatim("new "), Initializer(propertyInitializers));
+
     public static InterpolatedTree ArrowBody(InterpolatedTree expression) =>
         new ArrowBodyNode(expression);
 

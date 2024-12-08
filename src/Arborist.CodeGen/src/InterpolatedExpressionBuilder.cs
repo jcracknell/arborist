@@ -169,9 +169,8 @@ public class InterpolatedExpressionBuilder {
         try {
             definition.SetInitializer(CreateTypeRefUncached(type));
             return InterpolatedTree.Verbatim(definition.Identifier);
-        } catch {
+        } finally {
             _typeRefs.Remove(type);
-            throw;
         }
     }
 

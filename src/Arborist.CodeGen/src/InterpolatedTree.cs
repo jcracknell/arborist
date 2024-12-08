@@ -13,6 +13,9 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
     public static InterpolatedTree Verbatim(string value) =>
         value.Length == 0 ? Empty : new VerbatimNode(value);
 
+    public static InterpolatedTree AnonymousClass(IReadOnlyList<InterpolatedTree> propertyInitializers) =>
+        Concat(Verbatim("new "), Initializer(propertyInitializers));
+
     public static InterpolatedTree ArrowBody(InterpolatedTree expression) =>
         new ArrowBodyNode(expression);
 
@@ -33,7 +36,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         InterpolatedTree body,
         InterpolatedTree index
     ) =>
-        new IndexerNode(body, index);
+        new ConcatNode(body, Verbatim("["), index, Verbatim("]"));
 
     public static InterpolatedTree Initializer(IReadOnlyList<InterpolatedTree> elements) =>
         new InitializerNode(elements);
@@ -65,6 +68,9 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
     ) =>
         new MethodDefinitionNode(method, parameters, typeConstraints, body);
 
+    public static InterpolatedTree Placeholder(string identifier) =>
+        new PlaceholderNode(identifier);
+
     public static InterpolatedTree StaticCall(
         InterpolatedTree method,
         IReadOnlyList<InterpolatedTree> args
@@ -94,6 +100,19 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
 
     public abstract bool IsSupported { get; }
     public abstract void Render(RenderingContext context);
+
+    protected abstract InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer);
+
+    public InterpolatedTree Replace(InterpolatedTree search, InterpolatedTree replacement) {
+        return Replacer(this);
+
+        InterpolatedTree Replacer(InterpolatedTree node) =>
+            ReplaceImpl(node, search, replacement, Replacer);
+
+        static InterpolatedTree ReplaceImpl(InterpolatedTree node, InterpolatedTree search, InterpolatedTree replacement, Func<InterpolatedTree, InterpolatedTree> replacer) =>
+            node.Equals(search) ? replacement : node.Replace(replacer);
+    }
+
     public abstract override int GetHashCode();
     public abstract bool Equals(InterpolatedTree? obj);
 
@@ -156,6 +175,9 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             context.AppendIndent("???");
         }
 
+        protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>
+            this;
+
         public override int GetHashCode() =>
             "???".GetHashCode();
 
@@ -172,11 +194,33 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             context.AppendIndent(Expr);
         }
 
+        protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>
+            this;
+
         public override int GetHashCode() =>
             Expr.GetHashCode();
 
         public override bool Equals(InterpolatedTree? obj) =>
             obj is VerbatimNode that && this.Expr.Equals(that.Expr);
+    }
+
+    private class PlaceholderNode(string identifier) : InterpolatedTree {
+        public string Identifier { get; } = identifier;
+        public override bool IsSupported => false;
+
+        public override void Render(RenderingContext context) {
+            context.Append($"<{Identifier}>");
+        }
+
+        protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>
+            this;
+
+        public override int GetHashCode() =>
+            IdentifierEqualityComparer.Instance.GetHashCode(Identifier);
+
+        public override bool Equals(InterpolatedTree? obj) =>
+            obj is PlaceholderNode that
+            && IdentifierEqualityComparer.Instance.Equals(this.Identifier, that.Identifier);
     }
 
     private class ArrowBodyNode(InterpolatedTree expression) : InterpolatedTree {
@@ -186,10 +230,13 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             Expression.IsSupported;
 
         public override void Render(RenderingContext context) {
-            context.AppendIndent();
+            context.Append(" =>");
             context.AppendNewLine();
             context.Indent(Expression);
         }
+
+        protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>
+            new ArrowBodyNode(replacer(Expression));
 
         public override int GetHashCode() =>
             Expression.GetHashCode();
@@ -219,6 +266,9 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             context.Append(")");
         }
 
+        protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>
+            new BinaryNode(Operator, replacer(Left), replacer(Right));
+
         public override int GetHashCode() =>
             Operator.GetHashCode() ^ Left.GetHashCode() ^ Right.GetHashCode();
 
@@ -226,31 +276,6 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             obj is BinaryNode that
             && this.Left.Equals(that.Left)
             && this.Right.Equals(that.Right);
-    }
-
-    private class IndexerNode(InterpolatedTree body, InterpolatedTree index)
-        : InterpolatedTree
-    {
-        public InterpolatedTree Body { get; } = body;
-        public InterpolatedTree Index { get; } = index;
-
-        public override bool IsSupported =>
-            Body.IsSupported && Index.IsSupported;
-
-        public override void Render(RenderingContext context) {
-            context.Append(Body);
-            context.Append("[");
-            context.Append(Index);
-            context.Append("]");
-        }
-
-        public override int GetHashCode() =>
-            Body.GetHashCode() ^ Index.GetHashCode();
-
-        public override bool Equals(InterpolatedTree? obj) =>
-            obj is IndexerNode that
-            && this.Body.Equals(that.Body)
-            && this.Index.Equals(that.Index);
     }
 
     private class InstanceCallNode(
@@ -282,6 +307,13 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             }
             context.AppendIndent(")");
         }
+
+        protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>
+            new InstanceCallNode(
+                replacer(Body),
+                replacer(Method),
+                [..Args.Select(replacer)]
+            );
 
         public override int GetHashCode() =>
             Args.Aggregate(Body.GetHashCode() ^ Method.GetHashCode(), (h, a) => h ^ a.GetHashCode());
@@ -315,6 +347,12 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             context.Append(Body);
         }
 
+        protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>
+            new LambdaNode(
+                [..Args.Select(replacer)],
+                replacer(Body)
+            );
+
         public override int GetHashCode() =>
             Args.Aggregate(Body.GetHashCode(), (h, a) => h ^ a.GetHashCode());
 
@@ -347,6 +385,9 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             context.AppendIndent("}");
         }
 
+        protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>
+            new InitializerNode([..Initializers.Select(replacer)]);
+
         public override int GetHashCode() =>
             Initializers.Aggregate(default(int), (h, i) => h ^ i.GetHashCode());
 
@@ -369,6 +410,9 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             for(var i = 0; i < Nodes.Count; i++)
                 context.Append(Nodes[i]);
         }
+
+        protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>
+            new ConcatNode([..Nodes.Select(replacer)]);
 
         public override int GetHashCode() =>
             Nodes.Aggregate(0, (h, n) => h ^ n.GetHashCode());
@@ -422,6 +466,14 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             context.Append(Body);
         }
 
+        protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>
+            new MethodDefinitionNode(
+                Method,
+                [..Parameters.Select(replacer)],
+                [..TypeConstraints.Select(replacer)],
+                replacer(Body)
+            );
+
         public override int GetHashCode() {
             var hash = Method.GetHashCode();
             hash = Parameters.Aggregate(hash, (h, p) => h ^ p.GetHashCode());
@@ -461,6 +513,9 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             context.AppendIndent(")");
         }
 
+        protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>
+            new StaticCallNode(replacer(Method), [..Args.Select(replacer)]);
+
         public override int GetHashCode() =>
             Args.Aggregate(Method.GetHashCode(), (h, a) => h ^ a.GetHashCode());
 
@@ -496,6 +551,9 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             context.AppendIndent("}");
         }
 
+        protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>
+            new SwitchNode(replacer(Subject), [..Cases.Select(replacer)]);
+
         public override int GetHashCode() =>
             Cases.Aggregate(Subject.GetHashCode(), (h, n) => h ^ n.GetHashCode());
 
@@ -520,6 +578,9 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             context.Append(" => ");
             context.Append(Body);
         }
+
+        protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>
+            new SwitchCaseNode(replacer(Pattern), replacer(Body));
 
         public override int GetHashCode() =>
             Pattern.GetHashCode() ^ Body.GetHashCode();
@@ -551,6 +612,9 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             context.Indent(ElseNode);
             context.Append(")");
         }
+
+        protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>
+            new TernaryNode(replacer(Condition), replacer(ThenNode), replacer(ElseNode));
 
         public override int GetHashCode() =>
             Condition.GetHashCode() ^ ThenNode.GetHashCode() ^ ElseNode.GetHashCode();

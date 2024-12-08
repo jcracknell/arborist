@@ -1,3 +1,4 @@
+using Arborist.CodeGen.Fixtures;
 using Xunit;
 
 namespace Arborist.CodeGen;
@@ -359,6 +360,243 @@ public class EvaluatedSyntaxVisitorTests {
             expected: @"
                 global::System.Linq.Expressions.Expression.Constant(
                     new { foo = ""foo"", bar = 42, global::System.String.Empty },
+                    __t0.Type
+                )
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
+    public void Should_handle_select_clause() {
+        var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceValue(
+                from c in x.Data.Cats
+                select c.Name
+            ));
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                global::System.Linq.Expressions.Expression.Constant(
+                    global::System.Linq.Enumerable.Select(
+                        __data.Cats,
+                        (c) => c.Name
+                    ),
+                    __t0.Type
+                )
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
+    public void Should_handle_group_clause() {
+        var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceValue(
+                from c in x.Data.Cats
+                group c by c.Age
+            ));
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                global::System.Linq.Expressions.Expression.Constant(
+                    global::System.Linq.Enumerable.GroupBy(
+                        __data.Cats,
+                        (c) => c.Age
+                    ),
+                    __t0.Type
+                )
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
+    public void Should_handle_group_into() {
+        var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceValue(
+                from c in x.Data.Cats
+                group c by c.Age
+                into ageGroup
+                select ageGroup.Count()
+            ));
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                global::System.Linq.Expressions.Expression.Constant(
+                    global::System.Linq.Enumerable.Select(
+                        global::System.Linq.Enumerable.GroupBy(
+                            __data.Cats,
+                            (c) => c.Age
+                        ),
+                        (ageGroup) => global::System.Linq.Enumerable.Count(ageGroup)
+                    ),
+                    __t0.Type
+                )
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
+    public void Should_handle_join_clause() {
+        var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceValue(
+                from c in x.Data.Cats
+                join c1 in x.Data.Cats on c.Id equals c1.Id
+                select c1.Name
+            ));
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                global::System.Linq.Expressions.Expression.Constant(
+                    global::System.Linq.Enumerable.Join(
+                        __data.Cats,
+                        (c) => __data.Cats,
+                        (c) => c.Id,
+                        (c1) => c1.Id,
+                        (c, c1) => c1.Name
+                    ),
+                    __t0.Type
+                )
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
+    public void Should_handle_non_final_join_clause() {
+        var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceValue(
+                from c in x.Data.Cats
+                join c1 in x.Data.Cats on c.Id equals c1.Id
+                where c.Age == 8
+                select c1.Name
+            ));
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                global::System.Linq.Expressions.Expression.Constant(
+                    global::System.Linq.Enumerable.Select(
+                        global::System.Linq.Enumerable.Where(
+                            global::System.Linq.Enumerable.Join(
+                                __data.Cats,
+                                (c) => __data.Cats,
+                                (c) => c.Id,
+                                (c1) => c1.Id,
+                                (c, c1) => new { c, c1 }
+                            ),
+                            (__v0) => (__v0.c.Age == 8)
+                        ),
+                        (__v0) => __v0.c1.Name
+                    ),
+                    __t0.Type
+                )
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
+    public void Should_handle_join_into_clause() {
+        var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceValue(
+                from c in x.Data.Cats
+                join c1 in x.Data.Cats on c.Id equals c1.Id into cs
+                from cc in cs
+                select cc.Age
+            ));
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                global::System.Linq.Expressions.Expression.Constant(
+                    global::System.Linq.Enumerable.SelectMany(
+                        global::System.Linq.Enumerable.GroupJoin(
+                            __data.Cats,
+                            (c) => __data.Cats,
+                            (c) => c.Id,
+                            (c1) => c1.Id,
+                            (c, cs) => new { c, cs }
+                        ),
+                        (__v0) => __v0.cs,
+                        (__v0, cc) => cc.Age
+                    ),
+                    __t0.Type
+                )
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
+    public void Should_handle_let_clause() {
+        var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceValue(
+                from c in x.Data.Cats
+                let name = c.Name
+                select name
+            ));
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                global::System.Linq.Expressions.Expression.Constant(
+                    global::System.Linq.Enumerable.Select(
+                        global::System.Linq.Enumerable.Select(
+                            __data.Cats,
+                            (c) => new { c, name = c.Name }
+                        ),
+                        (__v0) => __v0.name
+                    ),
+                    __t0.Type
+                )
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
+    public void Should_handle_where_clause() {
+        var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceValue(
+                from c in x.Data.Cats
+                where c.Age == 8
+                select c.Name
+            ));
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                global::System.Linq.Expressions.Expression.Constant(
+                    global::System.Linq.Enumerable.Select(
+                        global::System.Linq.Enumerable.Where(
+                            __data.Cats,
+                            (c) => (c.Age == 8)
+                        ),
+                        (c) => c.Name
+                    ),
                     __t0.Type
                 )
             ",

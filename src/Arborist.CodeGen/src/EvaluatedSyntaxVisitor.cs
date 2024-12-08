@@ -4,21 +4,23 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Arborist.CodeGen;
 
-public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
+public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
     private readonly InterpolatorInvocationContext _context;
     private readonly InterpolatedExpressionBuilder _builder;
-    private readonly ImmutableHashSet<string> _interpolatableParameters;
-    private ImmutableDictionary<string, InterpolatedTree> _evaluableParameters;
+    private readonly ImmutableDictionary<string, InterpolatedTree> _interpolatableParameters;
+    private ImmutableDictionary<string, InterpolatedTree> _evaluableIdentifiers;
+    private QueryContext _queryContext;
 
     public EvaluatedSyntaxVisitor(
         InterpolatorInvocationContext context,
         InterpolatedExpressionBuilder builder,
-        ImmutableHashSet<string> interpolatableParameters
+        ImmutableDictionary<string, InterpolatedTree> interpolatableParameters
     ) {
         _context = context;
         _builder = builder;
         _interpolatableParameters = interpolatableParameters;
-        _evaluableParameters = ImmutableDictionary.Create<string, InterpolatedTree>(IdentifierEqualityComparer.Instance);
+        _evaluableIdentifiers = ImmutableDictionary.Create<string, InterpolatedTree>(IdentifierEqualityComparer.Instance);
+        _queryContext = QueryContext.Create(this);
     }
 
     public override InterpolatedTree Visit(SyntaxNode? node) {
@@ -147,10 +149,7 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
     }
 
     public override InterpolatedTree VisitAnonymousObjectCreationExpression(AnonymousObjectCreationExpressionSyntax node) =>
-        InterpolatedTree.Concat(
-            InterpolatedTree.Verbatim("new "),
-            InterpolatedTree.Initializer([..node.Initializers.Select(Visit)])
-        );
+        InterpolatedTree.AnonymousClass([..node.Initializers.Select(Visit)]);
 
     public override InterpolatedTree? VisitAnonymousObjectMemberDeclarator(AnonymousObjectMemberDeclaratorSyntax node) =>
         node.NameEquals switch {
@@ -253,8 +252,8 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
 
     public override InterpolatedTree VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node) {
         // Add parameters defined by this lambda expression to the set of evaluable parameters
-        var evaluableSnapshot = _evaluableParameters;
-        _evaluableParameters = _evaluableParameters.Add(
+        var evaluableSnapshot = _evaluableIdentifiers;
+        _evaluableIdentifiers = _evaluableIdentifiers.Add(
             node.Parameter.Identifier.Text,
             InterpolatedTree.Verbatim(node.Parameter.Identifier.Text)
         );
@@ -269,14 +268,14 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
                 lambda
             );
         } finally {
-            _evaluableParameters = evaluableSnapshot;
+            _evaluableIdentifiers = evaluableSnapshot;
         }
     }
 
     public override InterpolatedTree VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node) {
         // Add parameters defined by this lambda expression to the set of evaluable parameters
-        var evaluableSnapshot = _evaluableParameters;
-        _evaluableParameters = _evaluableParameters.SetItems(
+        var evaluableSnapshot = _evaluableIdentifiers;
+        _evaluableIdentifiers = _evaluableIdentifiers.SetItems(
             from p in node.ParameterList.Parameters
             select new KeyValuePair<string, InterpolatedTree>(p.Identifier.Text, InterpolatedTree.Verbatim(p.Identifier.Text))
         );
@@ -294,7 +293,7 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
                 lambda
             );
         } finally {
-            _evaluableParameters = evaluableSnapshot;
+            _evaluableIdentifiers = evaluableSnapshot;
         }
     }
 
@@ -302,10 +301,10 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
         if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not {} symbol)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
 
-        if(_evaluableParameters.TryGetValue(node.Identifier.Text, out var mappedTree))
+        if(_evaluableIdentifiers.TryGetValue(node.Identifier.Text, out var mappedTree))
             return mappedTree;
 
-        if(_interpolatableParameters.Contains(node.Identifier.Text))
+        if(_interpolatableParameters.ContainsKey(node.Identifier.Text))
             return _context.Diagnostics.EvaluatedParameter(node);
 
         return _context.Diagnostics.Closure(node);
@@ -340,6 +339,10 @@ public class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
             InterpolatedTree.Verbatim(node.OperatorToken.ToString())
         );
 
+    public override InterpolatedTree VisitParenthesizedExpression(ParenthesizedExpressionSyntax node) =>
+        Visit(node.Expression);
+
     public override InterpolatedTree VisitLiteralExpression(LiteralExpressionSyntax node) =>
-        InterpolatedTree.Verbatim(node.ToFullString());
+        InterpolatedTree.Verbatim(node.ToString().Trim());
+
 }

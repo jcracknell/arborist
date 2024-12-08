@@ -4,10 +4,11 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Arborist.CodeGen;
 
-internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
+public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
     private readonly InterpolatorInvocationContext _context;
     private readonly InterpolatedExpressionBuilder _builder;
-    private ImmutableHashSet<string> _interpolatableParameters;
+    private ImmutableDictionary<string, InterpolatedTree> _interpolatableIdentifiers;
+    private QueryContext _queryContext;
 
     public InterpolatedSyntaxVisitor(
         InterpolatorInvocationContext context,
@@ -16,11 +17,47 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree>
         _context = context;
         _builder = builder;
 
-        _interpolatableParameters = ImmutableHashSet.CreateRange(
-            IdentifierEqualityComparer.Instance,
-            from parameter in context.InterpolatedExpressionParameters
-            select parameter.Identifier.Text
+        _interpolatableIdentifiers = ImmutableDictionary<string, InterpolatedTree>.Empty
+        .WithComparers(IdentifierEqualityComparer.Instance)
+        .SetItems(
+            // Register the identifiers of the parameters to the interpolated expression, less
+            // the initial IInterpolationContext parameter
+            from tup in GetLambdaParameters(context.InterpolatedExpression).Skip(1)
+            select new KeyValuePair<string, InterpolatedTree>(
+                tup.Parameter.Identifier.Text,
+                _builder.CreateParameter(tup.ParameterType, tup.Parameter.Identifier.Text)
+            )
         );
+
+        _queryContext = QueryContext.Create(this);
+    }
+
+    private IEnumerable<(ParameterSyntax Parameter, ITypeSymbol ParameterType)> GetLambdaParameters(
+        LambdaExpressionSyntax node
+    ) {
+        var lambdaType = (INamedTypeSymbol)_context.SemanticModel.GetTypeInfo(node).ConvertedType!;
+        var delegateType = TypeSymbolHelpers.IsSubtype(lambdaType.ConstructUnboundGenericType(), _context.TypeSymbols.Expression1) switch {
+            true => (INamedTypeSymbol)lambdaType.TypeArguments[0],
+            false => lambdaType
+        };
+
+        var parameterTypes = delegateType.TypeArguments;
+
+        switch(node) {
+            case SimpleLambdaExpressionSyntax simple:
+                yield return (simple.Parameter, parameterTypes[0]);
+                break;
+
+            case ParenthesizedLambdaExpressionSyntax parenthesized:
+                var parameters = parenthesized.ParameterList.Parameters;
+                foreach(var (parameter, parameterType) in parameters.Zip(parameterTypes.Take(parameters.Count)))
+                    yield return (parameter, parameterType);
+
+                break;
+
+            default:
+                throw new NotImplementedException();
+        }
     }
 
     public override InterpolatedTree Visit(SyntaxNode? node) {
@@ -154,7 +191,8 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree>
     }
 
     private InterpolatedTree VisitEvaluatedSyntax(SyntaxNode node) =>
-        new EvaluatedSyntaxVisitor(_context, _builder, _interpolatableParameters).Visit(node);
+        new EvaluatedSyntaxVisitor(_context, _builder, _interpolatableIdentifiers)
+        .Visit(node);
 
     private bool TryGetSpliceMethod(InvocationExpressionSyntax node, out IMethodSymbol spliceMethod) {
         spliceMethod = default!;
@@ -173,13 +211,13 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree>
         if(symbol is not null && !TypeSymbolHelpers.IsAccessible(symbol))
             return _context.Diagnostics.InaccesibleSymbol(symbol);
 
-        if(!_interpolatableParameters.Contains(node.Identifier.Text))
+        if(!_interpolatableIdentifiers.TryGetValue(node.Identifier.Text, out var identifierTree))
             return _context.Diagnostics.Closure(node);
 
         if(_context.SemanticModel.GetTypeInfo(node).Type is not {} type)
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
 
-        return _builder.CreateParameter(type, node.Identifier.Text);
+        return identifierTree;
     }
 
     public override InterpolatedTree VisitImplicitArrayCreationExpression(ImplicitArrayCreationExpressionSyntax node) {
@@ -200,10 +238,9 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree>
         }
     }
 
-
     private InterpolatedTree VisitInvocation(InvocationExpressionSyntax node) {
         switch(_context.SemanticModel.GetSymbolInfo(node).Symbol) {
-            case IMethodSymbol { IsExtensionMethod: true, IsGenericMethod: true } method:
+            case IMethodSymbol { ReducedFrom: {} } method:
                 return _builder.CreateExpression(nameof(Expression.Call),
                     _builder.CreateMethodInfo(method, node),
                     _builder.CreateExpressionArray([
@@ -415,34 +452,13 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree>
         Visit(node.Expression)!;
 
     public override InterpolatedTree VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node) {
-        var snapshot = _interpolatableParameters;
-        _interpolatableParameters = _interpolatableParameters.Add(node.Parameter.Identifier.Text);
+        var snapshot = _interpolatableIdentifiers;
         try {
-            var lambdaType = (INamedTypeSymbol)_context.SemanticModel.GetTypeInfo(node).ConvertedType!;
-            var parameterType = lambdaType.TypeArguments[0].OriginalDefinition;
-            var parameterName = node.Parameter.Identifier.ValueText;
-            var parameter = _builder.CreateParameter(parameterType, parameterName);
-
-            return _builder.CreateExpression(nameof(Expression.Lambda), [
-                Visit(node.Body),
-                parameter
-            ]);
-        } finally {
-            _interpolatableParameters = snapshot;
-        }
-    }
-
-    public override InterpolatedTree VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node) {
-        // Add any newly defined parameters to the set of interpolatable parameters
-        var snapshot = _interpolatableParameters;
-        _interpolatableParameters = _interpolatableParameters.Union(node.ParameterList.Parameters.Select(p => p.Identifier.Text));
-        try {
-            var lambdaType = (INamedTypeSymbol)_context.SemanticModel.GetTypeInfo(node).ConvertedType!;
-            var parameterList = new List<InterpolatedTree>(node.ParameterList.Parameters.Count);
-            for(var i = 0; i < node.ParameterList.Parameters.Count; i++) {
-                var parameterType = lambdaType.TypeArguments[i].OriginalDefinition;
-                var parameterName = node.ParameterList.Parameters[i].Identifier.ValueText;
-                parameterList.Add(_builder.CreateParameter(parameterType, parameterName));
+            var parameterList = new List<InterpolatedTree>();
+            foreach(var (parameter, parameterType) in GetLambdaParameters(node)) {
+                var parameterTree = _builder.CreateParameter(parameterType, parameter.Identifier.Text);
+                parameterList.Add(parameterTree);
+                _interpolatableIdentifiers = _interpolatableIdentifiers.SetItem(parameter.Identifier.Text, parameterTree);
             }
 
             return _builder.CreateExpression(nameof(Expression.Lambda), [
@@ -450,7 +466,27 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree>
                 ..parameterList
             ]);
         } finally {
-            _interpolatableParameters = snapshot;
+            _interpolatableIdentifiers = snapshot;
+        }
+    }
+
+    public override InterpolatedTree VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node) {
+        // Add any newly defined parameters to the set of interpolatable parameters
+        var snapshot = _interpolatableIdentifiers;
+        try {
+            var parameterList = new List<InterpolatedTree>(node.ParameterList.Parameters.Count);
+            foreach(var (parameter, parameterType) in GetLambdaParameters(node)) {
+                var parameterTree = _builder.CreateParameter(parameterType, parameter.Identifier.Text);
+                parameterList.Add(parameterTree);
+                _interpolatableIdentifiers = _interpolatableIdentifiers.SetItem(parameter.Identifier.Text, parameterTree);
+            }
+
+            return _builder.CreateExpression(nameof(Expression.Lambda), [
+                Visit(node.Body),
+                ..parameterList
+            ]);
+        } finally {
+            _interpolatableIdentifiers = snapshot;
         }
     }
 
@@ -486,7 +522,7 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree>
         var type = _context.SemanticModel.GetTypeInfo(node).Type!;
 
         return _builder.CreateExpression(nameof(Expression.Constant),
-            InterpolatedTree.Verbatim(node.ToFullString()),
+            InterpolatedTree.Verbatim(node.ToString().Trim()),
             _builder.CreateType(type)
         );
     }

@@ -57,6 +57,19 @@ public class InterpolatedExpressionBuilder {
         return identifier;
     }
 
+    public InterpolatedTree CreateAnonymousClassExpression(ITypeSymbol type, IReadOnlyList<InterpolatedTree> parameters) =>
+        CreateExpression(nameof(Expression.New), [
+            InterpolatedTree.Indexer(
+                InterpolatedTree.InstanceCall(
+                    CreateType(type),
+                    InterpolatedTree.Verbatim("GetConstructors"),
+                    []
+                ),
+                InterpolatedTree.Verbatim("0")
+            ),
+            ..parameters
+        ]);
+
     public InterpolatedTree CreateExpression(string factoryName, params InterpolatedTree[] args) =>
         InterpolatedTree.StaticCall(
             InterpolatedTree.Verbatim($"{ExpressionTypeName}.{factoryName}"),

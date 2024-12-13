@@ -286,19 +286,13 @@ internal class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree>
     }
 
     public override InterpolatedTree VisitAnonymousObjectCreationExpression(AnonymousObjectCreationExpressionSyntax node) {
-        // An anonymous type has a single constructor accepting each of its properties as arguments
-        var typeSymbol = (ITypeSymbol)_context.SemanticModel.GetTypeInfo(node).Type!;
-        return _builder.CreateExpression(nameof(Expression.New), [
-            InterpolatedTree.Indexer(
-                InterpolatedTree.InstanceCall(
-                    _builder.CreateType(typeSymbol),
-                    InterpolatedTree.Verbatim(nameof(Type.GetConstructors)),
-                    []
-                ),
-                InterpolatedTree.Verbatim("0")
-            ),
-            ..node.Initializers.Select(i => Visit(i.Expression))
-        ]);
+        if(_context.SemanticModel.GetTypeInfo(node).Type is not {} typeSymbol)
+            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
+
+        return _builder.CreateAnonymousClassExpression(
+            typeSymbol,
+            [..node.Initializers.Select(i => Visit(i.Expression))]
+        );
     }
 
     public override InterpolatedTree VisitObjectCreationExpression(ObjectCreationExpressionSyntax node) =>

@@ -5,13 +5,12 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Arborist.CodeGen;
 
 public class InterpolatedExpressionBuilder {
-    private const string Unsupported = "???";
-
     private int _identifierCount;
     private readonly DiagnosticFactory _diagnostics;
     private readonly Dictionary<IMethodSymbol, LocalDefinition> _methodInfos;
     private readonly Dictionary<(string, ITypeSymbol), LocalDefinition> _parameters;
     private readonly Dictionary<ITypeSymbol, LocalDefinition> _typeRefs;
+    private readonly Dictionary<ITypeSymbol, string> _typeRefFactories;
     private readonly IReadOnlyList<IReadOnlyCollection<LocalDefinition>> _valueDefinitionCollections;
     private readonly List<InterpolatedTree> _methodDefinitions;
     private readonly LocalDefinition.Factory _definitionFactory;
@@ -22,6 +21,7 @@ public class InterpolatedExpressionBuilder {
         _methodInfos = new(SymbolEqualityComparer.Default);
         _parameters = new(ParameterDefinitionsKeyEqualityComparer.Instance);
         _typeRefs = new(SymbolEqualityComparer.IncludeNullability);
+        _typeRefFactories = new(SymbolEqualityComparer.IncludeNullability);
         _methodDefinitions = new();
 
         _valueDefinitionCollections = [
@@ -45,9 +45,6 @@ public class InterpolatedExpressionBuilder {
 
     public IEnumerable<InterpolatedTree> MethodDefinitions =>
         _methodDefinitions;
-
-    private A UnsupportedSymbol<A>(ISymbol symbol, A result) =>
-        result;
 
     public string ExpressionTypeName { get; } = "global::System.Linq.Expressions.Expression";
 
@@ -159,7 +156,7 @@ public class InterpolatedExpressionBuilder {
         if(_typeRefs.TryGetValue(type, out var cached)) {
             // This shouldn't be possible, as it would require a self-referential generic type
             if(!cached.IsInitialized)
-                return UnsupportedSymbol(type, InterpolatedTree.Unsupported);
+                return _diagnostics.UnsupportedType(type);
 
             return InterpolatedTree.Verbatim(cached.Identifier);
         }
@@ -169,8 +166,9 @@ public class InterpolatedExpressionBuilder {
         try {
             definition.SetInitializer(CreateTypeRefUncached(type));
             return InterpolatedTree.Verbatim(definition.Identifier);
-        } finally {
+        } catch {
             _typeRefs.Remove(type);
+            throw;
         }
     }
 
@@ -193,33 +191,37 @@ public class InterpolatedExpressionBuilder {
             // If we have a generic type containing an anonymous type, we can generate a static local
             // function to construct the required typeref from other typeref instances
             case INamedTypeSymbol { IsGenericType: true } named:
-                return CreateGenericTypeRefFactory(named);
+                return CreateTypeRefFactory(named);
 
             default:
-                return UnsupportedSymbol(type, InterpolatedTree.Unsupported);
+                return _diagnostics.UnsupportedType(type);
         }
     }
 
-    private InterpolatedTree CreateGenericTypeRefFactory(INamedTypeSymbol type) {
-        var typeParameters = TypeSymbolHelpers.GetInheritedTypeParameters(type);
+    private InterpolatedTree CreateTypeRefFactory(INamedTypeSymbol type) {
+        var constructedFrom = type.ConstructedFrom.WithNullableAnnotation(type.NullableAnnotation);
+        if(!_typeRefFactories.TryGetValue(constructedFrom, out var methodName)) {
+            methodName = $"TypeRefFactory{_typeRefFactories.Count}";
+            _typeRefFactories[constructedFrom] = methodName;
 
-        var reparametrized = TypeSymbolHelpers.CreateReparametrizedTypeName(type, typeParameters, nullAnnotate: true);
-        var methodName = $"CreateTypeRef{_typeRefs.Count - 1}";
-        var typeArguments = Enumerable.Range(0, typeParameters.Count).MkString("<", i => $"T{i}", ", ", ">");
+            var typeParameters = TypeSymbolHelpers.GetInheritedTypeParameters(type);
+            var reparametrizedTypeName = TypeSymbolHelpers.CreateReparametrizedTypeName(constructedFrom, typeParameters, nullAnnotate: true);
+            var typeArguments = Enumerable.Range(0, typeParameters.Count).MkString("<", i => $"T{i}", ", ", ">");
 
-        _methodDefinitions.Add(InterpolatedTree.MethodDefinition(
-            $"static global::Arborist.Internal.TypeRef<{reparametrized}> {methodName}{typeArguments}",
-            [..(
-                from i in Enumerable.Range(0, typeParameters.Count)
-                let typeParameter = typeParameters[i]
-                select InterpolatedTree.Verbatim($"global::Arborist.Interpolation.Internal.TypeRef<T{i}> t{i}")
-            )],
-            [..(
-                from constraint in TypeSymbolHelpers.GetReparametrizedTypeConstraints(typeParameters)
-                select InterpolatedTree.Verbatim(constraint)
-            )],
-            InterpolatedTree.ArrowBody(InterpolatedTree.Verbatim("default!"))
-        ));
+            _methodDefinitions.Add(InterpolatedTree.MethodDefinition(
+                $"static global::Arborist.Internal.TypeRef<{reparametrizedTypeName}> {methodName}{typeArguments}",
+                [..(
+                    from i in Enumerable.Range(0, typeParameters.Count)
+                    let typeParameter = typeParameters[i]
+                    select InterpolatedTree.Verbatim($"global::Arborist.Interpolation.Internal.TypeRef<T{i}> t{i}")
+                )],
+                [..(
+                    from constraint in TypeSymbolHelpers.GetReparametrizedTypeConstraints(typeParameters)
+                    select InterpolatedTree.Verbatim(constraint)
+                )],
+                InterpolatedTree.ArrowBody(InterpolatedTree.Verbatim("default!"))
+            ));
+        }
 
         return InterpolatedTree.StaticCall(
             InterpolatedTree.Verbatim(methodName),

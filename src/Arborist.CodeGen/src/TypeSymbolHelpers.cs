@@ -4,7 +4,7 @@ namespace Arborist.CodeGen;
 
 internal static class TypeSymbolHelpers {
     public static bool TryCreateTypeName(ITypeSymbol type, out string typeName) {
-        var nullAnnotation = NullableAnnotation.Annotated == type.NullableAnnotation ? "?" : "";
+        var nullAnnotation = NullableAnnotation.Annotated == type.NullableAnnotation && !type.IsValueType ? "?" : "";
 
         if(type is ITypeParameterSymbol) {
             typeName = string.Concat(type.Name, nullAnnotation);
@@ -91,20 +91,25 @@ internal static class TypeSymbolHelpers {
             _ => $"{CreateNamespaceName(type.ContainingNamespace)}."
         };
 
+        var nullAnnotation = nullAnnotate switch {
+            true when NullableAnnotation.Annotated == type.NullableAnnotation && !type.IsValueType => "?",
+            _ => ""
+        };
+
         switch(type) {
             case INamedTypeSymbol { IsGenericType: true } generic:
                 return string.Concat(
                     containingName,
                     type.Name,
                     generic.TypeArguments.MkString("<", a => CreateReparametrizedTypeName(a, typeParameters, nullAnnotate: true), ", ", ">"),
-                    NullableAnnotation.Annotated == generic.NullableAnnotation && nullAnnotate ? "?" : ""
+                    nullAnnotation
                 );
 
             case INamedTypeSymbol named:
                 return string.Concat(
                     containingName,
                     named.Name,
-                    NullableAnnotation.Annotated == type.NullableAnnotation && nullAnnotate ? "?" : ""
+                    nullAnnotation
                 );
 
             default:

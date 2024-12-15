@@ -25,7 +25,7 @@ public class SpliceBodyTests {
                                 __v0.Parameters[0],
                                 global::System.Linq.Expressions.Expression.Property(
                                     __p0,
-                                    __t0.Type.GetProperty(""Owner"")!
+                                    typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Owner"")!
                                 )
                             )
                         )
@@ -48,7 +48,7 @@ public class SpliceBodyTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                __t1.Coerce((o) => (o.Name == ""Jon"")) switch {
+                __t0.Coerce((o) => (o.Name == ""Jon"")) switch {
                     var __v0 => global::Arborist.ExpressionHelper.Replace(
                         __v0.Body,
                         global::Arborist.Internal.Collections.SmallDictionary.Create(
@@ -56,7 +56,7 @@ public class SpliceBodyTests {
                                 __v0.Parameters[0],
                                 global::System.Linq.Expressions.Expression.Property(
                                     __p0,
-                                    __t0.Type.GetProperty(""Owner"")!
+                                    typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Owner"")!
                                 )
                             )
                         )

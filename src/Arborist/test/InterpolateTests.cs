@@ -161,6 +161,7 @@ public class InterpolateTests {
 
     [Fact]
     public void Interpolate_SpliceValue_should_embed_constants() {
+        ExpressionOn<Owner>.Interpolate(3, (x, o) => from c in o.CatsQueryable where c.Age == x.SpliceValue(x.Data) select c.Name);
         var interpolated = ExpressionOnNone.Interpolate(x => x.SpliceValue("foo"));
 
         var expected = Expression.Lambda<Func<string>>(Expression.Constant("foo"));

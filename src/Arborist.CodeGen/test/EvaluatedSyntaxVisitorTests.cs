@@ -16,7 +16,7 @@ public class EvaluatedSyntaxVisitorTests {
             expected: @"
                 global::System.Linq.Expressions.Expression.Constant(
                     42,
-                    __t0.Type
+                    typeof(global::System.Int32)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -35,7 +35,7 @@ public class EvaluatedSyntaxVisitorTests {
             expected: @"
                 global::System.Linq.Expressions.Expression.Constant(
                     new global::System.String('0', 3),
-                    __t0.Type
+                    typeof(global::System.String)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -54,7 +54,7 @@ public class EvaluatedSyntaxVisitorTests {
             expected: @"
                 global::System.Linq.Expressions.Expression.Constant(
                     ???.InstanceMethod(new('0', 3)),
-                    __t1.Type
+                    typeof(global::System.Int32)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -75,7 +75,7 @@ public class EvaluatedSyntaxVisitorTests {
                     new global::Arborist.CodeGen.Fixtures.Cat() {
                         Name = ""Garfield""
                     },
-                    __t0.Type
+                    typeof(global::Arborist.CodeGen.Fixtures.Cat)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -97,7 +97,7 @@ public class EvaluatedSyntaxVisitorTests {
                         ""foo"",
                         ""bar""
                     },
-                    __t0.Type
+                    typeof(global::System.Collections.Generic.List<global::System.String>)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -122,7 +122,7 @@ public class EvaluatedSyntaxVisitorTests {
                         { ""foo"", 1 },
                         { ""bar"", 2 }
                     },
-                    __t0.Type
+                    typeof(global::System.Collections.Generic.Dictionary<global::System.String, global::System.Int32>)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -144,7 +144,7 @@ public class EvaluatedSyntaxVisitorTests {
             expected: @"
                 global::System.Linq.Expressions.Expression.Constant(
                     !__data.Cat.IsAlive,
-                    __t0.Type
+                    typeof(global::System.Boolean)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -166,7 +166,7 @@ public class EvaluatedSyntaxVisitorTests {
             expected: @"
                 global::System.Linq.Expressions.Expression.Constant(
                     (__data.Cat.Name + ""foo""),
-                    __t0.Type
+                    typeof(global::System.String)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -188,7 +188,7 @@ public class EvaluatedSyntaxVisitorTests {
             expected: @"
                 global::System.Linq.Expressions.Expression.Constant(
                     (__data.Cat.IsAlive ? ""foo"" : ""bar""),
-                    __t0.Type
+                    typeof(global::System.String)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -210,7 +210,7 @@ public class EvaluatedSyntaxVisitorTests {
             expected: @"
                 global::System.Linq.Expressions.Expression.Constant(
                     (global::System.Object)__data.Cat,
-                    __t0.Type
+                    typeof(global::System.Object)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -232,7 +232,7 @@ public class EvaluatedSyntaxVisitorTests {
             expected: @"
                 global::System.Linq.Expressions.Expression.Constant(
                     __data.InstanceMethod(""foo""),
-                    __t0.Type
+                    typeof(global::System.Int32)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -253,7 +253,7 @@ public class EvaluatedSyntaxVisitorTests {
             expected: @"
                 global::System.Linq.Expressions.Expression.Constant(
                     global::Arborist.CodeGen.Fixtures.MemberFixture.StaticMethod(""foo""),
-                    __t0.Type
+                    typeof(global::System.Int32)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -274,7 +274,7 @@ public class EvaluatedSyntaxVisitorTests {
             expected: @"
                 global::System.Linq.Expressions.Expression.Constant(
                     global::Arborist.CodeGen.Fixtures.MemberFixture.GenericStaticMethod(42),
-                    __t0.Type
+                    typeof(global::System.Int32)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -296,7 +296,7 @@ public class EvaluatedSyntaxVisitorTests {
             expected: @"
                 global::System.Linq.Expressions.Expression.Constant(
                     __data.GenericInstanceMethod(""foo""),
-                    __t0.Type
+                    typeof(global::System.String)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -318,7 +318,7 @@ public class EvaluatedSyntaxVisitorTests {
             expected: @"
                 global::System.Linq.Expressions.Expression.Constant(
                     __data.GenericInstanceMethod<global::System.Collections.Generic.IEnumerable<global::System.Char>>(""foo""),
-                    __t0.Type
+                    typeof(global::System.Collections.Generic.IEnumerable<global::System.Char>)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -339,7 +339,7 @@ public class EvaluatedSyntaxVisitorTests {
             expected: @"
                 global::System.Linq.Expressions.Expression.Constant(
                     global::Arborist.CodeGen.Fixtures.MemberFixture.GenericStaticMethod<global::System.Collections.Generic.IEnumerable<global::System.Char>>(""foo""),
-                    __t0.Type
+                    typeof(global::System.Collections.Generic.IEnumerable<global::System.Char>)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -385,7 +385,7 @@ public class EvaluatedSyntaxVisitorTests {
                         __data.Cats,
                         (c) => c.Name
                     ),
-                    __t0.Type
+                    typeof(global::System.Collections.Generic.IEnumerable<global::System.String>)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -410,7 +410,12 @@ public class EvaluatedSyntaxVisitorTests {
                         __data.Cats,
                         (c) => c.Age
                     ),
-                    __t0.Type
+                    typeof(global::System.Collections.Generic.IEnumerable<
+                        global::System.Linq.IGrouping<
+                            global::System.Nullable<global::System.Int32>,
+                            global::Arborist.CodeGen.Fixtures.Cat
+                        >
+                    >)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -440,7 +445,7 @@ public class EvaluatedSyntaxVisitorTests {
                         ),
                         (ageGroup) => global::System.Linq.Enumerable.Count(ageGroup)
                     ),
-                    __t0.Type
+                    typeof(global::System.Collections.Generic.IEnumerable<global::System.Int32>)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -469,7 +474,7 @@ public class EvaluatedSyntaxVisitorTests {
                         (c1) => c1.Id,
                         (c, c1) => c1.Name
                     ),
-                    __t0.Type
+                    typeof(global::System.Collections.Generic.IEnumerable<global::System.String>)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -505,7 +510,7 @@ public class EvaluatedSyntaxVisitorTests {
                         ),
                         (__v0) => __v0.c1.Name
                     ),
-                    __t0.Type
+                    typeof(global::System.Collections.Generic.IEnumerable<global::System.String>)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -539,7 +544,7 @@ public class EvaluatedSyntaxVisitorTests {
                         (__v0) => __v0.cs,
                         (__v0, cc) => cc.Age
                     ),
-                    __t0.Type
+                    typeof(global::System.Collections.Generic.IEnumerable<global::System.Nullable<global::System.Int32>>)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -568,7 +573,7 @@ public class EvaluatedSyntaxVisitorTests {
                         ),
                         (__v0) => __v0.name
                     ),
-                    __t0.Type
+                    typeof(global::System.Collections.Generic.IEnumerable<global::System.String>)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -597,7 +602,7 @@ public class EvaluatedSyntaxVisitorTests {
                         ),
                         (c) => c.Name
                     ),
-                    __t0.Type
+                    typeof(global::System.Collections.Generic.IEnumerable<global::System.String>)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()

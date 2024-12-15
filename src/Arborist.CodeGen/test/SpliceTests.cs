@@ -15,10 +15,10 @@ public class SpliceTests {
         CodeGenAssert.CodeEqual(
             expected: @"
                 __t0.Coerce(global::System.Linq.Expressions.Expression.Constant(3)) switch {
-                    var __v0 when __t1.Type == __v0.Type => __v0,
+                    var __v0 when typeof(global::System.Int32) == __v0.Type => __v0,
                     var __v0 => global::System.Linq.Expressions.Expression.Convert(
                         __v0,
-                        __t1.Type
+                        typeof(global::System.Int32)
                     )
                 }
             ",
@@ -38,10 +38,10 @@ public class SpliceTests {
         CodeGenAssert.CodeEqual(
             expected: @"
                 __t0.Coerce(__data) switch {
-                    var __v0 when __t1.Type == __v0.Type => __v0,
+                    var __v0 when typeof(global::System.Int32) == __v0.Type => __v0,
                     var __v0 => global::System.Linq.Expressions.Expression.Convert(
                         __v0,
-                        __t1.Type
+                        typeof(global::System.Int32)
                     )
                 }
             ",

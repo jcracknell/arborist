@@ -132,6 +132,11 @@ public class InterpolatedExpressionBuilder {
     };
 
     public InterpolatedTree CreateDefaultValue(ITypeSymbol type) {
+        if(TypeSymbolHelpers.TryCreateTypeName(type.WithNullableAnnotation(NullableAnnotation.None), out var typeName))
+            return type.IsValueType || NullableAnnotation.Annotated == type.NullableAnnotation
+            ? InterpolatedTree.Verbatim($"default({typeName})")
+            : InterpolatedTree.Verbatim($"default({typeName})!");
+
         var typeRef = CreateTypeRef(type);
         return InterpolatedTree.Member(typeRef, InterpolatedTree.Verbatim("Default"));
     }
@@ -140,9 +145,8 @@ public class InterpolatedExpressionBuilder {
         if(!TypeSymbolHelpers.IsAccessible(type))
             return _diagnostics.InaccesibleSymbol(type);
 
-        // If this is a static type, it is not possible to create a TypeRef (as it can't be
-        // used as a type parameter)
-        if(type.IsStatic && TypeSymbolHelpers.TryCreateTypeName(type, out var typeName))
+        // If this is a nameable type, then return an inline type reference
+        if(TypeSymbolHelpers.TryCreateTypeName(type, out var typeName))
             return InterpolatedTree.Verbatim($"typeof({typeName})");
 
         var typeRef = CreateTypeRef(type);

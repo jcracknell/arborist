@@ -43,7 +43,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
         if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not {} symbol)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
         if(!TypeSymbolHelpers.IsAccessible(symbol))
-            return _context.Diagnostics.InaccesibleSymbol(symbol);
+            return _context.Diagnostics.InaccesibleSymbol(symbol, node);
 
         switch(_context.SemanticModel.GetSymbolInfo(node).Symbol) {
             case IFieldSymbol field when field.IsStatic || field.IsConst:
@@ -96,7 +96,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
                 return InterpolatedTree.StaticCall(
                     InterpolatedTree.Concat(
                         InterpolatedTree.Verbatim($"{extensionTypeName}."),
-                        GetInvocationMethodName(memberAccess.Name)
+                        GetInvocationMethodName(node, memberAccess.Name)
                     ),
                     [
                         Visit(node.Expression),
@@ -111,7 +111,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
                 return InterpolatedTree.StaticCall(
                     InterpolatedTree.Concat(
                         InterpolatedTree.Verbatim($"{staticTypeName}."),
-                        GetInvocationMethodName(memberAccess.Name)
+                        GetInvocationMethodName(node, memberAccess.Name)
                     ),
                     [..node.ArgumentList.Arguments.Select(static a => a.Expression).Select(Visit)]
                 );
@@ -119,7 +119,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
             case IMethodSymbol method:
                 return InterpolatedTree.InstanceCall(
                     Visit(memberAccess.Expression),
-                    GetInvocationMethodName(memberAccess.Name),
+                    GetInvocationMethodName(node, memberAccess.Name),
                     node.ArgumentList.Arguments.Select(static a => a.Expression).Select(Visit).ToList()
                 );
 
@@ -128,7 +128,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
         }
     }
 
-    private InterpolatedTree GetInvocationMethodName(SimpleNameSyntax methodName) {
+    private InterpolatedTree GetInvocationMethodName(InvocationExpressionSyntax node, SimpleNameSyntax methodName) {
         // Emit explicitly passed type arguments
         if(methodName is not GenericNameSyntax generic)
             return InterpolatedTree.Verbatim(methodName.Identifier.Text);
@@ -138,7 +138,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
             if(_context.SemanticModel.GetTypeInfo(typeArgument).Type is not {} typeArgumentSymbol)
                 return _context.Diagnostics.UnsupportedEvaluatedSyntax(typeArgument);
             if(!TypeSymbolHelpers.IsAccessible(typeArgumentSymbol))
-                return _context.Diagnostics.InaccesibleSymbol(typeArgumentSymbol);
+                return _context.Diagnostics.InaccesibleSymbol(typeArgumentSymbol, node);
             if(!TypeSymbolHelpers.TryCreateTypeName(typeArgumentSymbol, out var typeArgumentName))
                 return _context.Diagnostics.UnsupportedType(typeArgumentSymbol);
 
@@ -165,7 +165,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
 
         if(!TypeSymbolHelpers.IsAccessible(nodeType))
-            return _context.Diagnostics.InaccesibleSymbol(nodeType);
+            return _context.Diagnostics.InaccesibleSymbol(nodeType, node);
         if(!TypeSymbolHelpers.TryCreateTypeName(nodeType, out var nodeTypeName))
             return _context.Diagnostics.UnsupportedType(nodeType);
 
@@ -185,7 +185,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
         if(_context.SemanticModel.GetTypeInfo(node).Type is not {} typeSymbol)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
         if(!TypeSymbolHelpers.IsAccessible(typeSymbol))
-            return _context.Diagnostics.InaccesibleSymbol(typeSymbol);
+            return _context.Diagnostics.InaccesibleSymbol(typeSymbol, node);
         if(!TypeSymbolHelpers.TryCreateTypeName(typeSymbol, out var typeName))
             return _context.Diagnostics.UnsupportedType(typeSymbol);
 
@@ -216,7 +216,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
                 if(_context.SemanticModel.GetSymbolInfo(assignment.Left).Symbol is not {} leftSymbol)
                     return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
                 if(!TypeSymbolHelpers.IsAccessible(leftSymbol))
-                    return _context.Diagnostics.InaccesibleSymbol(leftSymbol);
+                    return _context.Diagnostics.InaccesibleSymbol(leftSymbol, assignment.Left);
 
                 return InterpolatedTree.Concat(
                     InterpolatedTree.Verbatim(assignment.Left.ToString()),
@@ -317,7 +317,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
         if(_context.SemanticModel.GetTypeInfo(node.Type).Type is not {} parameterType)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
         if(!TypeSymbolHelpers.IsAccessible(parameterType))
-            return _context.Diagnostics.InaccesibleSymbol(parameterType);
+            return _context.Diagnostics.InaccesibleSymbol(parameterType, node.Type);
         if(!TypeSymbolHelpers.TryCreateTypeName(parameterType, out var parameterTypeName))
             return _context.Diagnostics.UnsupportedType(parameterType);
 

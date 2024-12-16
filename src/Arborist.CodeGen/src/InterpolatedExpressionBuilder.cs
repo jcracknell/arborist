@@ -143,7 +143,7 @@ public class InterpolatedExpressionBuilder {
 
     public InterpolatedTree CreateType(ITypeSymbol type) {
         if(!TypeSymbolHelpers.IsAccessible(type))
-            return _diagnostics.InaccesibleSymbol(type);
+            return _diagnostics.InaccesibleSymbol(type, default);
 
         // If this is a nameable type, then return an inline type reference
         if(TypeSymbolHelpers.TryCreateTypeName(type, out var typeName))
@@ -155,7 +155,7 @@ public class InterpolatedExpressionBuilder {
 
     public InterpolatedTree CreateTypeRef(ITypeSymbol type) {
         if(!TypeSymbolHelpers.IsAccessible(type))
-            return _diagnostics.InaccesibleSymbol(type);
+            return _diagnostics.InaccesibleSymbol(type, default);
 
         if(_typeRefs.TryGetValue(type, out var cached)) {
             // This shouldn't be possible, as it would require a self-referential generic type

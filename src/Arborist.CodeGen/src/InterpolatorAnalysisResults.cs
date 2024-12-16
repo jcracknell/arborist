@@ -11,7 +11,7 @@ public class InterpolatorAnalysisResults(
     IReadOnlyList<InterpolatedTree> parameterTrees,
     InterpolatedTree bodyTree
 ) {
-    public InterpolatedExpressionBuilder Builder { get; } = invocationContext.Builder;
+    public InterpolatedTreeBuilder Builder { get; } = invocationContext.Builder;
     public InvocationExpressionSyntax Invocation { get; } = invocationContext.InvocationSyntax;
     public IMethodSymbol MethodSymbol { get; } = invocationContext.MethodSymbol;
     public IParameterSymbol? DataParameter { get; } = invocationContext.DataParameter;

@@ -6,14 +6,14 @@ namespace Arborist.CodeGen;
 
 public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
     private readonly InterpolatorInvocationContext _context;
-    private readonly InterpolatedExpressionBuilder _builder;
+    private readonly InterpolatedTreeBuilder _builder;
     private readonly ImmutableDictionary<string, InterpolatedTree> _interpolatableParameters;
     private ImmutableDictionary<string, InterpolatedTree> _evaluableIdentifiers;
     private QueryContext _queryContext;
 
     public EvaluatedSyntaxVisitor(
         InterpolatorInvocationContext context,
-        InterpolatedExpressionBuilder builder,
+        InterpolatedTreeBuilder builder,
         ImmutableDictionary<string, InterpolatedTree> interpolatableParameters
     ) {
         _context = context;

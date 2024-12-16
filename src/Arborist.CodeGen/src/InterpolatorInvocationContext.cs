@@ -8,7 +8,7 @@ public class InterpolatorInvocationContext(
     Compilation compilation,
     InterpolatorTypeSymbols typeSymbols,
     DiagnosticFactory diagnostics,
-    InterpolatedExpressionBuilder builder,
+    InterpolatedTreeBuilder builder,
     InvocationExpressionSyntax invocationSyntax,
     IMethodSymbol methodSymbol,
     IParameterSymbol? dataParameter,
@@ -20,7 +20,7 @@ public class InterpolatorInvocationContext(
     public Compilation Compilation { get; } = compilation;
     public InterpolatorTypeSymbols TypeSymbols { get; } = typeSymbols;
     public DiagnosticFactory Diagnostics { get; } = diagnostics;
-    public InterpolatedExpressionBuilder Builder { get; } = builder;
+    public InterpolatedTreeBuilder Builder { get; } = builder;
     public SemanticModel SemanticModel { get; } = compilation.GetSemanticModel(invocationSyntax.SyntaxTree);
     public InvocationExpressionSyntax InvocationSyntax { get; } = invocationSyntax;
     public IMethodSymbol MethodSymbol { get; } = methodSymbol;

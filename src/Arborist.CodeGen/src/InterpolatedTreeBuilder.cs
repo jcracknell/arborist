@@ -4,7 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Arborist.CodeGen;
 
-public class InterpolatedExpressionBuilder {
+public class InterpolatedTreeBuilder {
     private int _identifierCount;
     private readonly DiagnosticFactory _diagnostics;
     private readonly Dictionary<IMethodSymbol, LocalDefinition> _methodInfos;
@@ -15,7 +15,7 @@ public class InterpolatedExpressionBuilder {
     private readonly List<InterpolatedTree> _methodDefinitions;
     private readonly LocalDefinition.Factory _definitionFactory;
 
-    public InterpolatedExpressionBuilder(DiagnosticFactory diagnostics) {
+    public InterpolatedTreeBuilder(DiagnosticFactory diagnostics) {
         _identifierCount = 0;
         _diagnostics = diagnostics;
         _methodInfos = new(SymbolEqualityComparer.Default);

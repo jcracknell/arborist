@@ -374,7 +374,7 @@ public partial class InterpolatedSyntaxVisitor {
 
         private readonly QueryContext? _parentContext;
         private readonly InterpolatedSyntaxVisitor _visitor;
-        private readonly InterpolatedExpressionBuilder _builder;
+        private readonly InterpolatedTreeBuilder _builder;
         private readonly ImmutableDictionary<string, InterpolatedTree> _interpolatableIdentifiersSnapshot;
         public string InputIdentifier { get; private set; }
         public string? JoinedIdentifier { get; private set; }

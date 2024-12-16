@@ -268,7 +268,7 @@ public class InterpolatorInterceptorGenerator : IIncrementalGenerator {
         InterpolatorTypeSymbols typeSymbols
     ) {
         var diagnostics = new DiagnosticFactory(sourceProductionContext, invocation);
-        var builder = new InterpolatedExpressionBuilder(diagnostics);
+        var builder = new InterpolatedTreeBuilder(diagnostics);
 
         // Get the syntax node for the lambda expression to be interpolated
         var interpolatedExpression = (LambdaExpressionSyntax)invocation.ArgumentList.Arguments[expressionParameter.Ordinal].Expression;

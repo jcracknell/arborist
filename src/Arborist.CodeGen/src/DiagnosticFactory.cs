@@ -31,7 +31,7 @@ public sealed class DiagnosticFactory(
                 title: title,
                 messageFormat: message,
                 category: "ExpressionInterpolation",
-                defaultSeverity: DiagnosticSeverity.Warning,
+                defaultSeverity: severity,
                 isEnabledByDefault: true
             ),
             location: (syntax ?? invocationSyntax).GetLocation()

@@ -87,7 +87,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         InterpolatedTree pattern,
         InterpolatedTree body
     ) =>
-        new SwitchCaseNode(pattern, body);
+        Concat(pattern, Verbatim(" => "), body);
 
     public static InterpolatedTree Ternary(
         InterpolatedTree condition,
@@ -514,34 +514,6 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             obj is SwitchNode that
             && this.Subject.Equals(that.Subject)
             && this.Cases.SequenceEqual(that.Cases);
-    }
-
-    private class SwitchCaseNode(
-        InterpolatedTree pattern,
-        InterpolatedTree body
-    ) : InterpolatedTree {
-        public InterpolatedTree Pattern { get; } = pattern;
-        public InterpolatedTree Body { get; } = body;
-
-        public override bool IsSupported =>
-            Pattern.IsSupported && Body.IsSupported;
-
-        public override void Render(RenderingContext context) {
-            context.Append(Pattern);
-            context.Append(" => ");
-            context.Append(Body);
-        }
-
-        protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>
-            new SwitchCaseNode(replacer(Pattern), replacer(Body));
-
-        public override int GetHashCode() =>
-            Pattern.GetHashCode() ^ Body.GetHashCode();
-
-        public override bool Equals(InterpolatedTree? obj) =>
-            obj is SwitchCaseNode that
-            && this.Pattern.Equals(that.Pattern)
-            && this.Body.Equals(that.Body);
     }
 
     private class TernaryNode(InterpolatedTree condition, InterpolatedTree thenNode, InterpolatedTree elseNode)

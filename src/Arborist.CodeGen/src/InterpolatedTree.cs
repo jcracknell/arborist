@@ -46,7 +46,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         InterpolatedTree method,
         IReadOnlyList<InterpolatedTree> args
     ) =>
-        new InstanceCallNode(expression, method, args);
+        new CallNode(Concat(expression, Verbatim("."), method), args);
 
     public static InterpolatedTree Lambda(
         IReadOnlyList<InterpolatedTree> parameters,
@@ -75,7 +75,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         InterpolatedTree method,
         IReadOnlyList<InterpolatedTree> args
     ) =>
-        new StaticCallNode(method, args);
+        new CallNode(method, args);
 
     public static InterpolatedTree Switch(
         InterpolatedTree subject,
@@ -278,53 +278,6 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             && this.Right.Equals(that.Right);
     }
 
-    private class InstanceCallNode(
-        InterpolatedTree body,
-        InterpolatedTree method,
-        IReadOnlyList<InterpolatedTree> args
-    ) : InterpolatedTree {
-        public InterpolatedTree Body { get; } = body;
-        public InterpolatedTree Method { get; } = method;
-        public IReadOnlyList<InterpolatedTree> Args { get; } = args;
-
-        public override bool IsSupported =>
-            Body.IsSupported && Args.All(a => a.IsSupported);
-
-        public override void Render(RenderingContext context) {
-            context.Append(Body);
-            context.Append(".");
-            context.Append(Method);
-            context.Append("(");
-            if(Args.Count != 0) {
-                context.AppendNewLine();
-                context.Indent(Args[0]);
-                for(var i = 1; i < Args.Count; i++) {
-                    context.Append(",");
-                    context.AppendNewLine();
-                    context.Indent(Args[i]);
-                }
-                context.AppendNewLine();
-            }
-            context.AppendIndent(")");
-        }
-
-        protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>
-            new InstanceCallNode(
-                replacer(Body),
-                replacer(Method),
-                [..Args.Select(replacer)]
-            );
-
-        public override int GetHashCode() =>
-            Args.Aggregate(Body.GetHashCode() ^ Method.GetHashCode(), (h, a) => h ^ a.GetHashCode());
-
-        public override bool Equals(InterpolatedTree? obj) =>
-            obj is InstanceCallNode that
-            && this.Body.Equals(that.Body)
-            && this.Method.Equals(that.Method)
-            && this.Args.SequenceEqual(that.Args);
-    }
-
     private class LambdaNode(IReadOnlyList<InterpolatedTree> args, InterpolatedTree body)
         : InterpolatedTree
     {
@@ -394,6 +347,41 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         public override bool Equals(InterpolatedTree? obj) =>
             obj is InitializerNode that
             && this.Initializers.SequenceEqual(that.Initializers);
+    }
+
+    private class CallNode(InterpolatedTree expression, IReadOnlyList<InterpolatedTree> args) : InterpolatedTree {
+        public InterpolatedTree Expression { get; } = expression;
+        public IReadOnlyList<InterpolatedTree> Args { get; } = args;
+
+        public override bool IsSupported =>
+            Args.All(a => a.IsSupported);
+
+        public override void Render(RenderingContext context) {
+            context.Append(Expression);
+            context.Append("(");
+            if(Args.Count != 0) {
+                context.AppendNewLine();
+                context.Indent(Args[0]);
+                for(var i = 1; i < Args.Count; i++) {
+                    context.Append(",");
+                    context.AppendNewLine();
+                    context.Indent(Args[i]);
+                }
+                context.AppendNewLine();
+            }
+            context.AppendIndent(")");
+        }
+
+        protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>
+            new CallNode(replacer(Expression), [..Args.Select(replacer)]);
+
+        public override int GetHashCode() =>
+            Args.Aggregate(Expression.GetHashCode(), (h, a) => h ^ a.GetHashCode());
+
+        public override bool Equals(InterpolatedTree? obj) =>
+            obj is CallNode that
+            && this.Expression.Equals(that.Expression)
+            && this.Args.SequenceEqual(that.Args);
     }
 
     private class ConcatNode(IReadOnlyList<InterpolatedTree> nodes) : InterpolatedTree {
@@ -488,41 +476,6 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             && this.Parameters.SequenceEqual(that.Parameters)
             && this.TypeConstraints.SequenceEqual(that.TypeConstraints)
             && this.Body.Equals(that.Body);
-    }
-
-    private class StaticCallNode(InterpolatedTree method, IReadOnlyList<InterpolatedTree> args) : InterpolatedTree {
-        public InterpolatedTree Method { get; } = method;
-        public IReadOnlyList<InterpolatedTree> Args { get; } = args;
-
-        public override bool IsSupported =>
-            Args.All(a => a.IsSupported);
-
-        public override void Render(RenderingContext context) {
-            context.Append(Method);
-            context.Append("(");
-            if(Args.Count != 0) {
-                context.AppendNewLine();
-                context.Indent(Args[0]);
-                for(var i = 1; i < Args.Count; i++) {
-                    context.Append(",");
-                    context.AppendNewLine();
-                    context.Indent(Args[i]);
-                }
-                context.AppendNewLine();
-            }
-            context.AppendIndent(")");
-        }
-
-        protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>
-            new StaticCallNode(replacer(Method), [..Args.Select(replacer)]);
-
-        public override int GetHashCode() =>
-            Args.Aggregate(Method.GetHashCode(), (h, a) => h ^ a.GetHashCode());
-
-        public override bool Equals(InterpolatedTree? obj) =>
-            obj is StaticCallNode that
-            && this.Method.Equals(that.Method)
-            && this.Args.SequenceEqual(that.Args);
     }
 
     private class SwitchNode(

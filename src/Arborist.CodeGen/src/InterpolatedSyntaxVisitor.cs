@@ -209,7 +209,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
     public override InterpolatedTree VisitIdentifierName(IdentifierNameSyntax node) {
         var symbol = _context.SemanticModel.GetSymbolInfo(node).Symbol;
         if(symbol is not null && !TypeSymbolHelpers.IsAccessible(symbol))
-            return _context.Diagnostics.InaccesibleSymbol(symbol);
+            return _context.Diagnostics.InaccesibleSymbol(symbol, node);
 
         if(!_interpolatableIdentifiers.TryGetValue(node.Identifier.Text, out var identifierTree))
             return _context.Diagnostics.Closure(node);
@@ -393,7 +393,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
                 if(identifierSymbol is null)
                     return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
                 if(!TypeSymbolHelpers.IsAccessible(identifierSymbol))
-                    return _context.Diagnostics.InaccesibleSymbol(identifierSymbol);
+                    return _context.Diagnostics.InaccesibleSymbol(identifierSymbol, identifier);
 
                 return _builder.CreateExpression(nameof(Expression.Bind),
                     InterpolatedTree.Concat(
@@ -440,7 +440,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         if(methodSymbol is null)
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
         if(!TypeSymbolHelpers.IsAccessible(methodSymbol))
-            return _context.Diagnostics.InaccesibleSymbol(methodSymbol);
+            return _context.Diagnostics.InaccesibleSymbol(methodSymbol, node);
 
         return _builder.CreateExpression(nameof(Expression.ElementInit), [
             _builder.CreateMethodInfo(methodSymbol, default),

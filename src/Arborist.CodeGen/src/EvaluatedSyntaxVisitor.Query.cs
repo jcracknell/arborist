@@ -32,7 +32,7 @@ public partial class EvaluatedSyntaxVisitor {
         if(qci.OperationInfo.Symbol is not IMethodSymbol method)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
         if(!TypeSymbolHelpers.IsAccessible(method))
-            return _context.Diagnostics.InaccesibleSymbol(method);
+            return _context.Diagnostics.InaccesibleSymbol(method, node);
 
         return CreateQueryOperationCall(method, [
             _queryContext.Tree,
@@ -76,7 +76,7 @@ public partial class EvaluatedSyntaxVisitor {
         if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not IMethodSymbol method)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
         if(!TypeSymbolHelpers.IsAccessible(method))
-            return _context.Diagnostics.InaccesibleSymbol(method);
+            return _context.Diagnostics.InaccesibleSymbol(method, node);
 
         return CreateQueryOperationCall(method, [
             _queryContext.Tree,
@@ -92,7 +92,7 @@ public partial class EvaluatedSyntaxVisitor {
         if(qci.OperationInfo.Symbol is not IMethodSymbol method)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
         if(!TypeSymbolHelpers.IsAccessible(method))
-            return _context.Diagnostics.InaccesibleSymbol(method);
+            return _context.Diagnostics.InaccesibleSymbol(method, node);
 
         var inTree = InterpolatedTree.Lambda(
             [InterpolatedTree.Verbatim(_queryContext.InputIdentifier)],
@@ -169,7 +169,7 @@ public partial class EvaluatedSyntaxVisitor {
         if(qci.OperationInfo.Symbol is not IMethodSymbol method)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
         if(!TypeSymbolHelpers.IsAccessible(method))
-            return _context.Diagnostics.InaccesibleSymbol(method);
+            return _context.Diagnostics.InaccesibleSymbol(method, node);
 
         // query.Select(x => new { x, id = <expr> })
         var resultTree = CreateQueryOperationCall(method, [
@@ -203,7 +203,7 @@ public partial class EvaluatedSyntaxVisitor {
         if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not IMethodSymbol method)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
         if(!TypeSymbolHelpers.IsAccessible(method))
-            return _context.Diagnostics.InaccesibleSymbol(method);
+            return _context.Diagnostics.InaccesibleSymbol(method, node);
 
         return CreateQueryOperationCall(method, [
             _queryContext.Tree,
@@ -218,7 +218,7 @@ public partial class EvaluatedSyntaxVisitor {
         if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not IMethodSymbol method)
             return _queryContext.Tree;
         if(!TypeSymbolHelpers.IsAccessible(method))
-            return _context.Diagnostics.InaccesibleSymbol(method);
+            return _context.Diagnostics.InaccesibleSymbol(method, node);
 
         return CreateQueryOperationCall(method, [
             _queryContext.Tree,
@@ -234,7 +234,7 @@ public partial class EvaluatedSyntaxVisitor {
         if(qci.OperationInfo.Symbol is not IMethodSymbol method)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
         if(!TypeSymbolHelpers.IsAccessible(method))
-            return _context.Diagnostics.InaccesibleSymbol(method);
+            return _context.Diagnostics.InaccesibleSymbol(method, node);
 
         return CreateQueryOperationCall(method, [
             _queryContext.Tree,
@@ -273,7 +273,7 @@ public partial class EvaluatedSyntaxVisitor {
         if(castSymbol is not IMethodSymbol castMethod)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(clause);
         if(!TypeSymbolHelpers.IsAccessible(castMethod))
-            return _context.Diagnostics.InaccesibleSymbol(castMethod);
+            return _context.Diagnostics.InaccesibleSymbol(castMethod, clause);
         if(castMethod is not { IsGenericMethod: true, TypeArguments.Length: 1 })
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(clause);
         if(!TypeSymbolHelpers.TryCreateTypeName(castMethod.TypeArguments[0], out var castTypeName))

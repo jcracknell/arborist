@@ -98,12 +98,13 @@ public sealed class DiagnosticFactory(
             syntax: node
         );
 
-    public InterpolatedTree InaccesibleSymbol(ISymbol symbol) =>
+    public InterpolatedTree InaccesibleSymbol(ISymbol symbol, SyntaxNode? node) =>
         Diagnostic(
             result: InterpolatedTree.Unsupported,
             code: ARB004_InaccessibleSymbolReference,
             severity: DiagnosticSeverity.Info,
             title: "Inaccesible Symbol Reference",
-            message: $"Interpolated expression references inaccessible symbol {symbol} and cannot be interpolated at compile time."
+            message: $"Interpolated expression references inaccessible symbol {symbol} and cannot be interpolated at compile time.",
+            syntax: node
         );
 }

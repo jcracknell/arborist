@@ -179,12 +179,18 @@ public class InterpolatedExpressionBuilder {
     private InterpolatedTree CreateTypeRefUncached(ITypeSymbol type) {
         switch(type) {
             case { IsAnonymousType: true }:
-                var anonymousProperties = type.GetMembers().OfType<IPropertySymbol>()
-                .MkString(p => $"{p.Name} = {CreateDefaultValue(p.Type)}", ", ");
-
                 return InterpolatedTree.StaticCall(
                     InterpolatedTree.Verbatim("global::Arborist.Interpolation.Internal.TypeRef.Create"),
-                    [InterpolatedTree.Verbatim($"new {{ {anonymousProperties} }}")]
+                    [InterpolatedTree.Concat(
+                        InterpolatedTree.Verbatim("new "),
+                        InterpolatedTree.Initializer([..(
+                            from property in type.GetMembers().OfType<IPropertySymbol>()
+                            select InterpolatedTree.Concat(
+                                InterpolatedTree.Verbatim($"{property.Name} = "),
+                                CreateDefaultValue(property.Type)
+                            )
+                        )])
+                    )]
                 );
 
             case INamedTypeSymbol named when TypeSymbolHelpers.TryCreateTypeName(named, out var typeName):

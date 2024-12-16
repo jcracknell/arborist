@@ -59,13 +59,14 @@ public sealed class DiagnosticFactory(
             syntax: node
         );
 
-    public InterpolatedTree UnsupportedType(ITypeSymbol typeSymbol) =>
+    public InterpolatedTree UnsupportedType(ITypeSymbol typeSymbol, SyntaxNode? syntax) =>
         Diagnostic(
             result: InterpolatedTree.Unsupported,
             code: ARB996_UnsupportedType,
             severity: DiagnosticSeverity.Info,
             title: "Unsupported Type",
-            message: $"Interpolated expression contains unsupported type symbol {typeSymbol} and cannot be interpolated at compile time."
+            message: $"Interpolated expression contains unsupported type symbol {typeSymbol} and cannot be interpolated at compile time.",
+            syntax: syntax
         );
 
     public InterpolatedTree Closure(IdentifierNameSyntax node) =>

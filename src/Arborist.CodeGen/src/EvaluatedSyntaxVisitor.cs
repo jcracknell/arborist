@@ -48,7 +48,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
         switch(_context.SemanticModel.GetSymbolInfo(node).Symbol) {
             case IFieldSymbol field when field.IsStatic || field.IsConst:
                 if(!TypeSymbolHelpers.TryCreateTypeName(symbol.ContainingType, out var fieldContainingTypeName))
-                    return _context.Diagnostics.UnsupportedType(field.ContainingType);
+                    return _context.Diagnostics.UnsupportedType(field.ContainingType, node);
 
                 return InterpolatedTree.Member(
                     InterpolatedTree.Verbatim(fieldContainingTypeName),
@@ -63,7 +63,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
 
             case IPropertySymbol { IsStatic: true } property:
                 if(!TypeSymbolHelpers.TryCreateTypeName(property.ContainingType, out var propertyContainingTypeName))
-                    return _context.Diagnostics.UnsupportedType(property.ContainingType);
+                    return _context.Diagnostics.UnsupportedType(property.ContainingType, node);
 
                 return InterpolatedTree.Member(
                     InterpolatedTree.Verbatim(propertyContainingTypeName),
@@ -91,7 +91,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
         switch(_context.SemanticModel.GetSymbolInfo(node).Symbol) {
             case IMethodSymbol { ReducedFrom: { IsStatic: true } } method:
                 if(!TypeSymbolHelpers.TryCreateTypeName(method.ContainingType, out var extensionTypeName))
-                    return _context.Diagnostics.UnsupportedType(method.ContainingType);
+                    return _context.Diagnostics.UnsupportedType(method.ContainingType, node);
 
                 return InterpolatedTree.StaticCall(
                     InterpolatedTree.Concat(
@@ -106,7 +106,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
 
             case IMethodSymbol { IsStatic: true } method:
                 if(!TypeSymbolHelpers.TryCreateTypeName(method.ContainingType, out var staticTypeName))
-                    return _context.Diagnostics.UnsupportedType(method.ContainingType);
+                    return _context.Diagnostics.UnsupportedType(method.ContainingType, node);
 
                 return InterpolatedTree.StaticCall(
                     InterpolatedTree.Concat(
@@ -140,7 +140,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
             if(!TypeSymbolHelpers.IsAccessible(typeArgumentSymbol))
                 return _context.Diagnostics.InaccesibleSymbol(typeArgumentSymbol, node);
             if(!TypeSymbolHelpers.TryCreateTypeName(typeArgumentSymbol, out var typeArgumentName))
-                return _context.Diagnostics.UnsupportedType(typeArgumentSymbol);
+                return _context.Diagnostics.UnsupportedType(typeArgumentSymbol, node);
 
             typeArgumentNames.Add(typeArgumentName);
         }
@@ -167,7 +167,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
         if(!TypeSymbolHelpers.IsAccessible(nodeType))
             return _context.Diagnostics.InaccesibleSymbol(nodeType, node);
         if(!TypeSymbolHelpers.TryCreateTypeName(nodeType, out var nodeTypeName))
-            return _context.Diagnostics.UnsupportedType(nodeType);
+            return _context.Diagnostics.UnsupportedType(nodeType, node);
 
         return InterpolatedTree.Concat(
             InterpolatedTree.Verbatim($"({nodeTypeName})"),
@@ -187,7 +187,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
         if(!TypeSymbolHelpers.IsAccessible(typeSymbol))
             return _context.Diagnostics.InaccesibleSymbol(typeSymbol, node);
         if(!TypeSymbolHelpers.TryCreateTypeName(typeSymbol, out var typeName))
-            return _context.Diagnostics.UnsupportedType(typeSymbol);
+            return _context.Diagnostics.UnsupportedType(typeSymbol, node);
 
         var newExpr = InterpolatedTree.StaticCall(
             node switch {
@@ -319,7 +319,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
         if(!TypeSymbolHelpers.IsAccessible(parameterType))
             return _context.Diagnostics.InaccesibleSymbol(parameterType, node.Type);
         if(!TypeSymbolHelpers.TryCreateTypeName(parameterType, out var parameterTypeName))
-            return _context.Diagnostics.UnsupportedType(parameterType);
+            return _context.Diagnostics.UnsupportedType(parameterType, node.Type);
 
         return InterpolatedTree.Verbatim($"{parameterTypeName} {node.Identifier.Text}");
     }

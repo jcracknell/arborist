@@ -160,7 +160,7 @@ public class InterpolatedExpressionBuilder {
         if(_typeRefs.TryGetValue(type, out var cached)) {
             // This shouldn't be possible, as it would require a self-referential generic type
             if(!cached.IsInitialized)
-                return _diagnostics.UnsupportedType(type);
+                return _diagnostics.UnsupportedType(type, default);
 
             return InterpolatedTree.Verbatim(cached.Identifier);
         }
@@ -204,7 +204,7 @@ public class InterpolatedExpressionBuilder {
                 return CreateTypeRefFactory(named);
 
             default:
-                return _diagnostics.UnsupportedType(type);
+                return _diagnostics.UnsupportedType(type, default);
         }
     }
 
@@ -295,7 +295,7 @@ public class InterpolatedExpressionBuilder {
 
         if(method.IsStatic) {
             if(!TypeSymbolHelpers.TryCreateTypeName(method.ContainingType, out var containingTypeName))
-                return _diagnostics.UnsupportedType(method.ContainingType);
+                return _diagnostics.UnsupportedType(method.ContainingType, node);
 
             return InterpolatedTree.StaticCall(
                 InterpolatedTree.Concat(
@@ -326,7 +326,7 @@ public class InterpolatedExpressionBuilder {
                     if(TypeSymbolHelpers.TryCreateTypeName(typeArg, out var typeArgName)) {
                         typeArgNames.Add(typeArgName);
                     } else {
-                        return _diagnostics.UnsupportedType(typeArg);
+                        return _diagnostics.UnsupportedType(typeArg, node);
                     }
                 }
 

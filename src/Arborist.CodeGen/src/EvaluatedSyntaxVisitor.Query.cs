@@ -34,7 +34,7 @@ public partial class EvaluatedSyntaxVisitor {
         if(!TypeSymbolHelpers.IsAccessible(method))
             return _context.Diagnostics.InaccesibleSymbol(method, node);
 
-        return CreateQueryOperationCall(method, [
+        return CreateQueryOperationCall(node, method, [
             _queryContext.Tree,
             InterpolatedTree.Lambda(
                 [InterpolatedTree.Verbatim(_queryContext.InputIdentifier)],
@@ -78,7 +78,7 @@ public partial class EvaluatedSyntaxVisitor {
         if(!TypeSymbolHelpers.IsAccessible(method))
             return _context.Diagnostics.InaccesibleSymbol(method, node);
 
-        return CreateQueryOperationCall(method, [
+        return CreateQueryOperationCall(node, method, [
             _queryContext.Tree,
             InterpolatedTree.Lambda(
                 [InterpolatedTree.Verbatim(_queryContext.InputIdentifier)],
@@ -114,7 +114,7 @@ public partial class EvaluatedSyntaxVisitor {
 
         _queryContext.RebindInput();
 
-        return CreateQueryOperationCall(method, [
+        return CreateQueryOperationCall(node, method, [
             _queryContext.Tree,
             inTree,
             leftTree,
@@ -172,15 +172,14 @@ public partial class EvaluatedSyntaxVisitor {
             return _context.Diagnostics.InaccesibleSymbol(method, node);
 
         // query.Select(x => new { x, id = <expr> })
-        var resultTree = CreateQueryOperationCall(method, [
+        var resultTree = CreateQueryOperationCall(node, method, [
             _queryContext.Tree,
             InterpolatedTree.Lambda(
                 [InterpolatedTree.Verbatim(_queryContext.InputIdentifier)],
                 InterpolatedTree.AnonymousClass([
                     InterpolatedTree.Verbatim(_queryContext.InputIdentifier),
                     InterpolatedTree.Concat(
-                        InterpolatedTree.Verbatim(node.Identifier.Text),
-                        InterpolatedTree.Verbatim(" = "),
+                        InterpolatedTree.Verbatim($"{node.Identifier.Text} = "),
                         Visit(node.Expression)
                     )
                 ])
@@ -205,7 +204,7 @@ public partial class EvaluatedSyntaxVisitor {
         if(!TypeSymbolHelpers.IsAccessible(method))
             return _context.Diagnostics.InaccesibleSymbol(method, node);
 
-        return CreateQueryOperationCall(method, [
+        return CreateQueryOperationCall(node, method, [
             _queryContext.Tree,
             InterpolatedTree.Lambda(
                 [InterpolatedTree.Verbatim(_queryContext.InputIdentifier)],
@@ -220,7 +219,7 @@ public partial class EvaluatedSyntaxVisitor {
         if(!TypeSymbolHelpers.IsAccessible(method))
             return _context.Diagnostics.InaccesibleSymbol(method, node);
 
-        return CreateQueryOperationCall(method, [
+        return CreateQueryOperationCall(node, method, [
             _queryContext.Tree,
             InterpolatedTree.Lambda(
                 [InterpolatedTree.Verbatim(_queryContext.InputIdentifier)],
@@ -236,7 +235,7 @@ public partial class EvaluatedSyntaxVisitor {
         if(!TypeSymbolHelpers.IsAccessible(method))
             return _context.Diagnostics.InaccesibleSymbol(method, node);
 
-        return CreateQueryOperationCall(method, [
+        return CreateQueryOperationCall(node, method, [
             _queryContext.Tree,
             InterpolatedTree.Lambda(
                 [InterpolatedTree.Verbatim(_queryContext.InputIdentifier)],
@@ -245,12 +244,12 @@ public partial class EvaluatedSyntaxVisitor {
         ]);
     }
 
-    private InterpolatedTree CreateQueryOperationCall(IMethodSymbol method, IReadOnlyList<InterpolatedTree> arguments) {
+    private InterpolatedTree CreateQueryOperationCall(SyntaxNode clause, IMethodSymbol method, IReadOnlyList<InterpolatedTree> arguments) {
         // Static extension method wherein we know that any type arguments are inferrable (because
         // it was implicitly called by query syntax)
         if(method is { ReducedFrom: {} }) {
             if(!TypeSymbolHelpers.TryCreateTypeName(method.ContainingType, out var typeName))
-                return _context.Diagnostics.UnsupportedType(method.ContainingType);
+                return _context.Diagnostics.UnsupportedType(method.ContainingType, clause);
 
             return InterpolatedTree.StaticCall(
                 InterpolatedTree.Verbatim($"{typeName}.{method.Name}"),
@@ -277,11 +276,11 @@ public partial class EvaluatedSyntaxVisitor {
         if(castMethod is not { IsGenericMethod: true, TypeArguments.Length: 1 })
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(clause);
         if(!TypeSymbolHelpers.TryCreateTypeName(castMethod.TypeArguments[0], out var castTypeName))
-            return _context.Diagnostics.UnsupportedType(castMethod.TypeArguments[0]);
+            return _context.Diagnostics.UnsupportedType(castMethod.TypeArguments[0], clause);
 
         if(castMethod is { ReducedFrom: {} }) {
             if(!TypeSymbolHelpers.TryCreateTypeName(castMethod.ContainingType, out var typeName))
-                return _context.Diagnostics.UnsupportedType(castMethod.ContainingType);
+                return _context.Diagnostics.UnsupportedType(castMethod.ContainingType, clause);
 
             return InterpolatedTree.StaticCall(
                 InterpolatedTree.Verbatim($"{typeName}.{castMethod.Name}<{castTypeName}>"),

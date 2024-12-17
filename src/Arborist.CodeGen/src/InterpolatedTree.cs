@@ -354,7 +354,8 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         public IReadOnlyList<InterpolatedTree> Args { get; } = args;
 
         public override bool IsSupported =>
-            Args.All(a => a.IsSupported);
+            Expression.IsSupported
+            && Args.All(a => a.IsSupported);
 
         public override void Render(RenderingContext context) {
             context.Append(Expression);

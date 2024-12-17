@@ -72,7 +72,10 @@ public sealed class InterpolatorInterceptorGeneratorTestBuilder {
             select MetadataReference.CreateFromFile(assemblyPath)
         )
         .AddSyntaxTrees(CSharpSyntaxTree.ParseText(inputSource))
-        .WithOptions(new CSharpCompilationOptions(OutputKind.ConsoleApplication));
+        .WithOptions(new CSharpCompilationOptions(
+            outputKind: OutputKind.ConsoleApplication,
+            generalDiagnosticOption: ReportDiagnostic.Info
+        ));
 
         var analysisResults = new List<InterpolatorAnalysisResults>();
         var generator = new InterpolatorInterceptorGenerator {
@@ -82,12 +85,16 @@ public sealed class InterpolatorInterceptorGeneratorTestBuilder {
         };
 
         var driver = CSharpGeneratorDriver.Create(generator)
-        .RunGeneratorsAndUpdateCompilation(compilation, out _, out _);
+        .RunGeneratorsAndUpdateCompilation(compilation, out _, out var generatorDiagnostics);
 
         return new InterpolatorInterceptorGeneratorTestResults(
             compilation: compilation,
             analysisResults: analysisResults,
-            generatedTrees: driver.GetRunResult().GeneratedTrees
+            generatedTrees: driver.GetRunResult().GeneratedTrees,
+            diagnostics: [
+                ..compilation.GetDiagnostics(),
+                ..generatorDiagnostics
+            ]
         );
     }
 

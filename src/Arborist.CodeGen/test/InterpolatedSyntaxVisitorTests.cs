@@ -491,6 +491,28 @@ public class InterpolatedSyntaxVisitorTests {
     }
 
     [Fact]
+    public void Should_handle_cast() {
+        var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOn<Cat>.Interpolate((x, c) => (decimal)42);
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                global::System.Linq.Expressions.Expression.Convert(
+                    global::System.Linq.Expressions.Expression.Constant(
+                        42,
+                        typeof(global::System.Int32)
+                    ),
+                    typeof(global::System.Decimal)
+                )
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
     public void Should_handle_binary() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"

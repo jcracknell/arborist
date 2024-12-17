@@ -317,6 +317,16 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         }
     }
 
+    public override InterpolatedTree VisitCastExpression(CastExpressionSyntax node) {
+        if(_context.SemanticModel.GetTypeInfo(node).Type is not {} type)
+            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
+
+        return _builder.CreateExpression(nameof(Expression.Convert), [
+            Visit(node.Expression),
+            _builder.CreateType(type)
+        ]);
+    }
+
     public override InterpolatedTree VisitDefaultExpression(DefaultExpressionSyntax node) {
         var typeInfo = _context.SemanticModel.GetTypeInfo(node);
         return _builder.CreateExpression(nameof(Expression.Default), _builder.CreateType(typeInfo.Type!));

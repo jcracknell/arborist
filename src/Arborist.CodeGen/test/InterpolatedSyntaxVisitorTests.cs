@@ -600,6 +600,58 @@ public class InterpolatedSyntaxVisitorTests {
     }
 
     [Fact]
+    public void Should_handle_default_value_type() {
+        var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOn<Cat>.Interpolate((x, c) => c.Id == default);
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                global::System.Linq.Expressions.Expression.MakeBinary(
+                    global::System.Linq.Expressions.ExpressionType.Equal,
+                    global::System.Linq.Expressions.Expression.Property(
+                        __p0,
+                        typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Id"")!
+                    ),
+                    global::System.Linq.Expressions.Expression.Constant(
+                        default(global::System.Int32),
+                        typeof(global::System.Int32)
+                    )
+                )
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
+    public void Should_handle_default_reference_type() {
+        var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOn<Cat>.Interpolate((x, c) => c.Name == default);
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                global::System.Linq.Expressions.Expression.MakeBinary(
+                    global::System.Linq.Expressions.ExpressionType.Equal,
+                    global::System.Linq.Expressions.Expression.Property(
+                        __p0,
+                        typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Name"")!
+                    ),
+                    global::System.Linq.Expressions.Expression.Constant(
+                        default(global::System.String)!,
+                        typeof(global::System.String)
+                    )
+                )
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
     public void Should_handle_anonymous_type() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"

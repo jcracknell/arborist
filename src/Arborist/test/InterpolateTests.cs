@@ -3,7 +3,29 @@ using Arborist.Interpolation;
 
 namespace Arborist;
 
-public class InterpolateTests {
+public partial class InterpolateTests {
+    [Fact]
+    public void Should_handle_default_expression() {
+        var interpolated = ExpressionOn<Owner>.Interpolate(
+            new Cat { Id = 42 },
+            (x, o) => x.SpliceValue(x.Data.Id) == default
+        );
+
+        var ownerParameter = Expression.Parameter(typeof(Owner), "o");
+
+        Assert.Equivalent(
+            expected: Expression.Lambda<Func<Owner, bool>>(
+                Expression.MakeBinary(
+                    ExpressionType.Equal,
+                    Expression.Constant(42, typeof(int)),
+                    Expression.Constant(default(int), typeof(int))
+                ),
+                ownerParameter
+            ),
+            actual: interpolated
+        );
+    }
+
     [Fact]
     public void Interpolate_should_throw_InterpolatedParameterCaptureException() {
         var spliceBodyMethod = typeof(IInterpolationContext).GetMethods().Single(m => m.GetParameters().Length == 2);

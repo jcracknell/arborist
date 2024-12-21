@@ -529,11 +529,22 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         );
 
     public override InterpolatedTree VisitLiteralExpression(LiteralExpressionSyntax node) {
-        var type = _context.SemanticModel.GetTypeInfo(node).Type!;
+        if(_context.SemanticModel.GetTypeInfo(node).Type is not {} type)
+            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
 
-        return _builder.CreateExpression(nameof(Expression.Constant),
-            InterpolatedTree.Verbatim(node.ToString().Trim()),
-            _builder.CreateType(type)
-        );
+        switch(node.Kind()) {
+            case SyntaxKind.DefaultExpression:
+            case SyntaxKind.DefaultLiteralExpression:
+                return _builder.CreateExpression(nameof(Expression.Constant), [
+                    _builder.CreateDefaultValue(type),
+                    _builder.CreateType(type)
+                ]);
+
+            default:
+                return _builder.CreateExpression(nameof(Expression.Constant), [
+                    InterpolatedTree.Verbatim(node.ToString().Trim()),
+                    _builder.CreateType(type)
+                ]);
+        }
     }
 }

@@ -64,7 +64,18 @@ public class InterpolatedTreeBuilder {
                 ),
                 InterpolatedTree.Verbatim("0")
             ),
-            ..parameters
+            CreateExpressionArray(parameters),
+            // Bind the properties of the anonymous type in the order they are declared
+            InterpolatedTree.Concat(
+                InterpolatedTree.Verbatim("new global::System.Reflection.MemberInfo[] "),
+                InterpolatedTree.Initializer([..(
+                    from property in type.GetMembers().OfType<IPropertySymbol>()
+                    select InterpolatedTree.Concat(
+                        CreateType(type),
+                        InterpolatedTree.Verbatim($".GetProperty(\"{property.Name}\")!")
+                    )
+                )])
+            )
         ]);
 
     public InterpolatedTree CreateExpression(string factoryName, params InterpolatedTree[] args) =>

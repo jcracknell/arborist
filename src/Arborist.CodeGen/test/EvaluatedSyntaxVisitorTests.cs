@@ -469,7 +469,7 @@ public class EvaluatedSyntaxVisitorTests {
                 global::System.Linq.Expressions.Expression.Constant(
                     global::System.Linq.Enumerable.Join(
                         __data.Cats,
-                        (c) => __data.Cats,
+                        __data.Cats,
                         (c) => c.Id,
                         (c1) => c1.Id,
                         (c, c1) => c1.Name
@@ -501,7 +501,7 @@ public class EvaluatedSyntaxVisitorTests {
                         global::System.Linq.Enumerable.Where(
                             global::System.Linq.Enumerable.Join(
                                 __data.Cats,
-                                (c) => __data.Cats,
+                                __data.Cats,
                                 (c) => c.Id,
                                 (c1) => c1.Id,
                                 (c, c1) => new { c, c1 }
@@ -536,7 +536,7 @@ public class EvaluatedSyntaxVisitorTests {
                     global::System.Linq.Enumerable.SelectMany(
                         global::System.Linq.Enumerable.GroupJoin(
                             __data.Cats,
-                            (c) => __data.Cats,
+                            __data.Cats,
                             (c) => c.Id,
                             (c1) => c1.Id,
                             (c, cs) => new { c, cs }

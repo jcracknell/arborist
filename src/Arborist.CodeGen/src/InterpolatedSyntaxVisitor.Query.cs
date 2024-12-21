@@ -127,16 +127,13 @@ public partial class InterpolatedSyntaxVisitor {
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
 
         var argumentTypes = GetQueryMethodArgumentTypes(method);
-        if(!TryGetQueryDelegateTypeArgs(argumentTypes[0], out var expressionTypeArgs))
+        if(!TryGetQueryDelegateTypeArgs(argumentTypes[1], out var leftExpressionTypeArgs))
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
 
-        var inputType = expressionTypeArgs[0];
+        var inputType = leftExpressionTypeArgs[0];
         var inputParameter = _queryContext.BindInput(inputType);
 
-        var inTree = _builder.CreateExpression(nameof(Expression.Lambda), [
-            CreateQueryInput(node, node.InExpression, qci.CastInfo.Symbol),
-            inputParameter
-        ]);
+        var inTree = CreateQueryInput(node, node.InExpression, qci.CastInfo.Symbol);
 
         var leftTree = _builder.CreateExpression(nameof(Expression.Lambda), [
             Visit(node.LeftExpression),

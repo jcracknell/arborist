@@ -94,10 +94,7 @@ public partial class EvaluatedSyntaxVisitor {
         if(!TypeSymbolHelpers.IsAccessible(method))
             return _context.Diagnostics.InaccesibleSymbol(method, node);
 
-        var inTree = InterpolatedTree.Lambda(
-            [InterpolatedTree.Verbatim(_queryContext.InputIdentifier)],
-            CreateQueryInput(node, node.InExpression, qci.CastInfo.Symbol)
-        );
+        var inTree = CreateQueryInput(node, node.InExpression, qci.CastInfo.Symbol);
 
         var leftTree = InterpolatedTree.Lambda(
             [InterpolatedTree.Verbatim(_queryContext.InputIdentifier)],

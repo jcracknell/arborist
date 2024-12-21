@@ -25,7 +25,7 @@ public class SpliceBodyTests {
                                 __v0.Parameters[0],
                                 global::System.Linq.Expressions.Expression.Property(
                                     __p0,
-                                    typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Owner"")!
+                                    typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Owner"")!
                                 )
                             )
                         )
@@ -56,7 +56,7 @@ public class SpliceBodyTests {
                                 __v0.Parameters[0],
                                 global::System.Linq.Expressions.Expression.Property(
                                     __p0,
-                                    typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Owner"")!
+                                    typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Owner"")!
                                 )
                             )
                         )

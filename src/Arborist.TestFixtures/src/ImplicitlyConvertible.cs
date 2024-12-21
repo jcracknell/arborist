@@ -1,4 +1,4 @@
-namespace Arborist.CodeGen.Fixtures;
+namespace Arborist.TestFixtures;
 
 public readonly struct ImplicitlyConvertible<T>(T value) {
     public static implicit operator ImplicitlyConvertible<T>(T value) =>

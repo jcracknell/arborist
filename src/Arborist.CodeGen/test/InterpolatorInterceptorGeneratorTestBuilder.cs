@@ -35,7 +35,7 @@ public sealed class InterpolatorInterceptorGeneratorTestBuilder {
         Using(typeof(System.Collections.Immutable.ImmutableList<>));
         Using(typeof(System.Linq.Enumerable));
         Using(typeof(Arborist.ExpressionHelper));
-        Using(typeof(Arborist.CodeGen.Fixtures.Cat));
+        Using(typeof(Arborist.TestFixtures.Cat));
     }
 
     public InterpolatorInterceptorGeneratorTestBuilder AddAssembly(string assemblyName) {

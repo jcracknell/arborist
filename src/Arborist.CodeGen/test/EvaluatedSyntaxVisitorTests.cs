@@ -1,4 +1,4 @@
-using Arborist.CodeGen.Fixtures;
+using Arborist.TestFixtures;
 using Xunit;
 
 namespace Arborist.CodeGen;
@@ -72,10 +72,10 @@ public class EvaluatedSyntaxVisitorTests {
         CodeGenAssert.CodeEqual(
             expected: @"
                 global::System.Linq.Expressions.Expression.Constant(
-                    new global::Arborist.CodeGen.Fixtures.Cat() {
+                    new global::Arborist.TestFixtures.Cat() {
                         Name = ""Garfield""
                     },
-                    typeof(global::Arborist.CodeGen.Fixtures.Cat)
+                    typeof(global::Arborist.TestFixtures.Cat)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -252,7 +252,7 @@ public class EvaluatedSyntaxVisitorTests {
         CodeGenAssert.CodeEqual(
             expected: @"
                 global::System.Linq.Expressions.Expression.Constant(
-                    global::Arborist.CodeGen.Fixtures.MemberFixture.StaticMethod(""foo""),
+                    global::Arborist.TestFixtures.MemberFixture.StaticMethod(""foo""),
                     typeof(global::System.Int32)
                 )
             ",
@@ -273,7 +273,7 @@ public class EvaluatedSyntaxVisitorTests {
         CodeGenAssert.CodeEqual(
             expected: @"
                 global::System.Linq.Expressions.Expression.Constant(
-                    global::Arborist.CodeGen.Fixtures.MemberFixture.GenericStaticMethod(42),
+                    global::Arborist.TestFixtures.MemberFixture.GenericStaticMethod(42),
                     typeof(global::System.Int32)
                 )
             ",
@@ -338,7 +338,7 @@ public class EvaluatedSyntaxVisitorTests {
         CodeGenAssert.CodeEqual(
             expected: @"
                 global::System.Linq.Expressions.Expression.Constant(
-                    global::Arborist.CodeGen.Fixtures.MemberFixture.GenericStaticMethod<global::System.Collections.Generic.IEnumerable<global::System.Char>>(""foo""),
+                    global::Arborist.TestFixtures.MemberFixture.GenericStaticMethod<global::System.Collections.Generic.IEnumerable<global::System.Char>>(""foo""),
                     typeof(global::System.Collections.Generic.IEnumerable<global::System.Char>)
                 )
             ",
@@ -413,7 +413,7 @@ public class EvaluatedSyntaxVisitorTests {
                     typeof(global::System.Collections.Generic.IEnumerable<
                         global::System.Linq.IGrouping<
                             global::System.Nullable<global::System.Int32>,
-                            global::Arborist.CodeGen.Fixtures.Cat
+                            global::Arborist.TestFixtures.Cat
                         >
                     >)
                 )

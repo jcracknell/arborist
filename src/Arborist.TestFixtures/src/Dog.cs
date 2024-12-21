@@ -1,4 +1,4 @@
-namespace Arborist.Fixtures;
+namespace Arborist.TestFixtures;
 
 public class Dog {
     public int Id { get; set; }

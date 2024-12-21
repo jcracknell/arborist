@@ -90,12 +90,12 @@ public partial class InterpolatedSyntaxVisitorTests {
             expected: @"
                 global::System.Linq.Expressions.Expression.MemberInit(
                     global::System.Linq.Expressions.Expression.New(
-                        typeof(global::Arborist.CodeGen.Fixtures.Cat).GetConstructor(global::System.Type.EmptyTypes)!,
+                        typeof(global::Arborist.TestFixtures.Cat).GetConstructor(global::System.Type.EmptyTypes)!,
                         new global::System.Linq.Expressions.Expression[] { }
                     ),
                     new global::System.Linq.Expressions.MemberBinding[] {
                         global::System.Linq.Expressions.Expression.Bind(
-                            typeof(global::Arborist.CodeGen.Fixtures.Cat).GetMember(""Name"")!,
+                            typeof(global::Arborist.TestFixtures.Cat).GetMember(""Name"")!,
                             global::System.Linq.Expressions.Expression.Constant(
                                 ""Garfield"",
                                 typeof(global::System.String)
@@ -203,7 +203,7 @@ public partial class InterpolatedSyntaxVisitorTests {
             expected: @"
                 global::System.Linq.Expressions.Expression.Field(
                     __p0,
-                    typeof(global::Arborist.CodeGen.Fixtures.MemberFixture).GetField(""InstanceField"")!
+                    typeof(global::Arborist.TestFixtures.MemberFixture).GetField(""InstanceField"")!
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -222,7 +222,7 @@ public partial class InterpolatedSyntaxVisitorTests {
             expected: @"
                 global::System.Linq.Expressions.Expression.Property(
                     __p0,
-                    typeof(global::Arborist.CodeGen.Fixtures.MemberFixture).GetProperty(""InstanceProperty"")!
+                    typeof(global::Arborist.TestFixtures.MemberFixture).GetProperty(""InstanceProperty"")!
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -242,7 +242,7 @@ public partial class InterpolatedSyntaxVisitorTests {
             expected: @"
                 global::System.Linq.Expressions.Expression.Field(
                     default(global::System.Linq.Expressions.Expression),
-                    typeof(global::Arborist.CodeGen.Fixtures.MemberFixture).GetField(""StaticField"")!
+                    typeof(global::Arborist.TestFixtures.MemberFixture).GetField(""StaticField"")!
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -261,7 +261,7 @@ public partial class InterpolatedSyntaxVisitorTests {
             expected: @"
                 global::System.Linq.Expressions.Expression.Property(
                     default(global::System.Linq.Expressions.Expression),
-                    typeof(global::Arborist.CodeGen.Fixtures.MemberFixture).GetProperty(""StaticProperty"")!
+                    typeof(global::Arborist.TestFixtures.MemberFixture).GetProperty(""StaticProperty"")!
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -307,7 +307,7 @@ public partial class InterpolatedSyntaxVisitorTests {
         CodeGenAssert.CodeEqual(
             expected: @"
                 global::Arborist.ExpressionOnNone.GetMethodInfo(
-                    () => default(global::Arborist.CodeGen.Fixtures.MemberFixture)!.GenericInstanceMethod(default(global::System.String)!)
+                    () => default(global::Arborist.TestFixtures.MemberFixture)!.GenericInstanceMethod(default(global::System.String)!)
                 )
             ",
             actual: m0Definition.Initializer.ToString()
@@ -344,7 +344,7 @@ public partial class InterpolatedSyntaxVisitorTests {
         CodeGenAssert.CodeEqual(
             expected: @"
                 global::Arborist.ExpressionOnNone.GetMethodInfo(
-                    () => default(global::Arborist.CodeGen.Fixtures.MemberFixture)!.GenericInstanceMethod<global::System.Collections.Generic.IEnumerable<global::System.Char>>(
+                    () => default(global::Arborist.TestFixtures.MemberFixture)!.GenericInstanceMethod<global::System.Collections.Generic.IEnumerable<global::System.Char>>(
                         default(global::System.Collections.Generic.IEnumerable<global::System.Char>)!
                     )
                 )
@@ -407,7 +407,7 @@ public partial class InterpolatedSyntaxVisitorTests {
         CodeGenAssert.CodeEqual(
             expected: @"
                 global::Arborist.ExpressionOnNone.GetMethodInfo(
-                    () => global::Arborist.CodeGen.Fixtures.MemberFixture.GenericStaticMethod(default(global::System.String)!)
+                    () => global::Arborist.TestFixtures.MemberFixture.GenericStaticMethod(default(global::System.String)!)
                 )
             ",
             actual: m0Definition.Initializer.ToString()
@@ -433,7 +433,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_generic_static_method_with_type_params() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(x => global::Arborist.CodeGen.Fixtures.MemberFixture.GenericStaticMethod<IEnumerable<char>>(""foo""));
+            ExpressionOnNone.Interpolate(x => global::Arborist.TestFixtures.MemberFixture.GenericStaticMethod<IEnumerable<char>>(""foo""));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -443,7 +443,7 @@ public partial class InterpolatedSyntaxVisitorTests {
         CodeGenAssert.CodeEqual(
             expected: @"
                 global::Arborist.ExpressionOnNone.GetMethodInfo(
-                    () => global::Arborist.CodeGen.Fixtures.MemberFixture.GenericStaticMethod<global::System.Collections.Generic.IEnumerable<global::System.Char>>(
+                    () => global::Arborist.TestFixtures.MemberFixture.GenericStaticMethod<global::System.Collections.Generic.IEnumerable<global::System.Char>>(
                         default(global::System.Collections.Generic.IEnumerable<global::System.Char>)!
                     )
                 )
@@ -482,7 +482,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                     global::System.Linq.Expressions.ExpressionType.Not,
                     global::System.Linq.Expressions.Expression.Property(
                         __p0,
-                        typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""IsAlive"")!
+                        typeof(global::Arborist.TestFixtures.Cat).GetProperty(""IsAlive"")!
                     )
                 )
             ",
@@ -526,7 +526,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                     global::System.Linq.Expressions.ExpressionType.Add,
                     global::System.Linq.Expressions.Expression.Property(
                         __p0,
-                        typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Name"")!
+                        typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Name"")!
                     ),
                     global::System.Linq.Expressions.Expression.Constant(
                         ""foo"",
@@ -551,11 +551,11 @@ public partial class InterpolatedSyntaxVisitorTests {
                 global::System.Linq.Expressions.Expression.Condition(
                     global::System.Linq.Expressions.Expression.Property(
                         __p0,
-                        typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""IsAlive"")!
+                        typeof(global::Arborist.TestFixtures.Cat).GetProperty(""IsAlive"")!
                     ),
                     global::System.Linq.Expressions.Expression.Property(
                         __p0,
-                        typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Name"")!
+                        typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Name"")!
                     ),
                     global::System.Linq.Expressions.Expression.Constant(
                         ""(Deceased)"",
@@ -583,12 +583,12 @@ public partial class InterpolatedSyntaxVisitorTests {
                     new global::System.Linq.Expressions.Expression[] {
                         global::System.Linq.Expressions.Expression.Property(
                             __p0,
-                            typeof(global::Arborist.CodeGen.Fixtures.Owner).GetProperty(""Cats"")!
+                            typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
                         ),
                         global::System.Linq.Expressions.Expression.Lambda(
                             global::System.Linq.Expressions.Expression.Property(
                                 __p1,
-                                typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""IsAlive"")!
+                                typeof(global::Arborist.TestFixtures.Cat).GetProperty(""IsAlive"")!
                             ),
                             __p1
                         )
@@ -613,7 +613,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                     global::System.Linq.Expressions.ExpressionType.Equal,
                     global::System.Linq.Expressions.Expression.Property(
                         __p0,
-                        typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Id"")!
+                        typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Id"")!
                     ),
                     global::System.Linq.Expressions.Expression.Constant(
                         default(global::System.Int32),
@@ -639,7 +639,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                     global::System.Linq.Expressions.ExpressionType.Equal,
                     global::System.Linq.Expressions.Expression.Property(
                         __p0,
-                        typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Name"")!
+                        typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Name"")!
                     ),
                     global::System.Linq.Expressions.Expression.Constant(
                         default(global::System.String)!,
@@ -679,11 +679,11 @@ public partial class InterpolatedSyntaxVisitorTests {
                     __t0.Type.GetConstructors()[0],
                     global::System.Linq.Expressions.Expression.Property(
                         __p0,
-                        typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Name"")!
+                        typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Name"")!
                     ),
                     global::System.Linq.Expressions.Expression.Property(
                         __p0,
-                        typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Age"")!
+                        typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Age"")!
                     )
                 )
             ",
@@ -708,12 +708,12 @@ public partial class InterpolatedSyntaxVisitorTests {
                     __m0,
                     global::System.Linq.Expressions.Expression.Property(
                         __p0,
-                        typeof(global::Arborist.CodeGen.Fixtures.Owner).GetProperty(""Cats"")!
+                        typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
                     ),
                     global::System.Linq.Expressions.Expression.Lambda(
                         global::System.Linq.Expressions.Expression.Property(
                             __p1,
-                            typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Name"")!
+                            typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Name"")!
                         ),
                         __p1
                     )
@@ -741,33 +741,33 @@ public partial class InterpolatedSyntaxVisitorTests {
                     __m0,
                     global::System.Linq.Expressions.Expression.Property(
                         __p0,
-                        typeof(global::Arborist.CodeGen.Fixtures.Owner).GetProperty(""Cats"")!
+                        typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
                     ),
                     global::System.Linq.Expressions.Expression.Lambda(
                         global::System.Linq.Expressions.Expression.Property(
                             __p0,
-                            typeof(global::Arborist.CodeGen.Fixtures.Owner).GetProperty(""Cats"")!
+                            typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
                         ),
                         __p1
                     ),
                     global::System.Linq.Expressions.Expression.Lambda(
                         global::System.Linq.Expressions.Expression.Property(
                             __p1,
-                            typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Id"")!
+                            typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Id"")!
                         ),
                         __p1
                     ),
                     global::System.Linq.Expressions.Expression.Lambda(
                         global::System.Linq.Expressions.Expression.Property(
                             __p2,
-                            typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Id"")!
+                            typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Id"")!
                         ),
                         __p2
                     ),
                     global::System.Linq.Expressions.Expression.Lambda(
                         global::System.Linq.Expressions.Expression.Property(
                             __p2,
-                            typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Name"")!
+                            typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Name"")!
                         ),
                         __p1,
                         __p2
@@ -796,14 +796,14 @@ public partial class InterpolatedSyntaxVisitorTests {
                     __m2,
                     global::System.Linq.Expressions.Expression.Property(
                         __p0,
-                        typeof(global::Arborist.CodeGen.Fixtures.Owner).GetProperty(""Cats"")!
+                        typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
                     ),
                     global::System.Linq.Expressions.Expression.Lambda(
                         global::System.Linq.Expressions.Expression.Call(
                             __m0,
                             global::System.Linq.Expressions.Expression.Property(
                                 __p0,
-                                typeof(global::Arborist.CodeGen.Fixtures.Owner).GetProperty(""Cats"")!
+                                typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
                             )
                         ),
                         __p1
@@ -811,7 +811,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                     global::System.Linq.Expressions.Expression.Lambda(
                         global::System.Linq.Expressions.Expression.Property(
                             __p1,
-                            typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Id"")!
+                            typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Id"")!
                         ),
                         __p1
                     ),
@@ -859,26 +859,26 @@ public partial class InterpolatedSyntaxVisitorTests {
                         __m0,
                         global::System.Linq.Expressions.Expression.Property(
                             __p0,
-                            typeof(global::Arborist.CodeGen.Fixtures.Owner).GetProperty(""Cats"")!
+                            typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
                         ),
                         global::System.Linq.Expressions.Expression.Lambda(
                             global::System.Linq.Expressions.Expression.Property(
                                 __p0,
-                                typeof(global::Arborist.CodeGen.Fixtures.Owner).GetProperty(""Cats"")!
+                                typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
                             ),
                             __p1
                         ),
                         global::System.Linq.Expressions.Expression.Lambda(
                             global::System.Linq.Expressions.Expression.Property(
                                 __p1,
-                                typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Id"")!
+                                typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Id"")!
                             ),
                             __p1
                         ),
                         global::System.Linq.Expressions.Expression.Lambda(
                             global::System.Linq.Expressions.Expression.Property(
                                 __p2,
-                                typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Id"")!
+                                typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Id"")!
                             ),
                             __p2
                         ),
@@ -902,7 +902,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                     global::System.Linq.Expressions.Expression.Lambda(
                         global::System.Linq.Expressions.Expression.Property(
                             __p5,
-                            typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Age"")!
+                            typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Age"")!
                         ),
                         __p4,
                         __p5
@@ -933,7 +933,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                         __m0,
                         global::System.Linq.Expressions.Expression.Property(
                             __p0,
-                            typeof(global::Arborist.CodeGen.Fixtures.Owner).GetProperty(""Cats"")!
+                            typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
                         ),
                         global::System.Linq.Expressions.Expression.Lambda(
                             global::System.Linq.Expressions.Expression.New(
@@ -941,7 +941,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                                 __p1,
                                 global::System.Linq.Expressions.Expression.Property(
                                     __p0,
-                                    typeof(global::Arborist.CodeGen.Fixtures.Owner).GetProperty(""Name"")!
+                                    typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Name"")!
                                 )
                             ),
                             __p1
@@ -955,7 +955,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                                     __p2,
                                     __t0.Type.GetProperty(""c"")!
                                 ),
-                                typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Name"")!
+                                typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Name"")!
                             ),
                             global::System.Linq.Expressions.Expression.Property(
                                 __p2,
@@ -992,12 +992,12 @@ public partial class InterpolatedSyntaxVisitorTests {
                             __m0,
                             global::System.Linq.Expressions.Expression.Property(
                                 __p0,
-                                typeof(global::Arborist.CodeGen.Fixtures.Owner).GetProperty(""Cats"")!
+                                typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
                             ),
                             global::System.Linq.Expressions.Expression.Lambda(
                                 global::System.Linq.Expressions.Expression.Property(
                                     __p1,
-                                    typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Name"")!
+                                    typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Name"")!
                                 ),
                                 __p1
                             )
@@ -1005,7 +1005,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                         global::System.Linq.Expressions.Expression.Lambda(
                             global::System.Linq.Expressions.Expression.Property(
                                 __p1,
-                                typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Age"")!
+                                typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Age"")!
                             ),
                             __p1
                         )
@@ -1013,7 +1013,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                     global::System.Linq.Expressions.Expression.Lambda(
                         global::System.Linq.Expressions.Expression.Property(
                             __p1,
-                            typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Name"")!
+                            typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Name"")!
                         ),
                         __p1
                     )
@@ -1043,14 +1043,14 @@ public partial class InterpolatedSyntaxVisitorTests {
                         __m0,
                         global::System.Linq.Expressions.Expression.Property(
                             __p0,
-                            typeof(global::Arborist.CodeGen.Fixtures.Owner).GetProperty(""Cats"")!
+                            typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
                         ),
                         global::System.Linq.Expressions.Expression.Lambda(
                             global::System.Linq.Expressions.Expression.MakeBinary(
                                 global::System.Linq.Expressions.ExpressionType.Equal,
                                 global::System.Linq.Expressions.Expression.Property(
                                     __p1,
-                                    typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Age"")!
+                                    typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Age"")!
                                 ),
                                 global::System.Linq.Expressions.Expression.Convert(
                                     global::System.Linq.Expressions.Expression.Constant(
@@ -1066,7 +1066,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                     global::System.Linq.Expressions.Expression.Lambda(
                         global::System.Linq.Expressions.Expression.Property(
                             __p1,
-                            typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Name"")!
+                            typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Name"")!
                         ),
                         __p1
                     )

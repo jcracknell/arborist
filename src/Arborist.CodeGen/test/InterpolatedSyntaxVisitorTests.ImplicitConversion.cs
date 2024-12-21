@@ -38,7 +38,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                 global::System.Linq.Expressions.Expression.Convert(
                     global::System.Linq.Expressions.Expression.Property(
                         __p0,
-                        typeof(global::Arborist.CodeGen.Fixtures.Owner).GetProperty(""Id"")!
+                        typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Id"")!
                     ),
                     typeof(global::System.Decimal)
                 )
@@ -60,9 +60,9 @@ public partial class InterpolatedSyntaxVisitorTests {
                 global::System.Linq.Expressions.Expression.Convert(
                     global::System.Linq.Expressions.Expression.Property(
                         __p0,
-                        typeof(global::Arborist.CodeGen.Fixtures.Owner).GetProperty(""Name"")!
+                        typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Name"")!
                     ),
-                    typeof(global::Arborist.CodeGen.Fixtures.ImplicitlyConvertible<global::System.String>)
+                    typeof(global::Arborist.TestFixtures.ImplicitlyConvertible<global::System.String>)
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()

@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Arborist.TestFixtures\src\Arborist.TestFixtures.csproj" />
     <ProjectReference Include="..\..\Arborist\src\Arborist.csproj" />
     <ProjectReference Include="..\src\Arborist.CodeGen.csproj" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all"/>

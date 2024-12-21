@@ -1,4 +1,4 @@
-using Arborist.Fixtures;
+using Arborist.TestFixtures;
 using Arborist.Interpolation;
 
 namespace Arborist;

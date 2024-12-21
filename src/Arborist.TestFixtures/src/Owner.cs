@@ -1,4 +1,4 @@
-namespace Arborist.Fixtures;
+namespace Arborist.TestFixtures;
 
 public class Owner {
     public int Id { get; init; } = default!;

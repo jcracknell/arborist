@@ -2,7 +2,7 @@ using Xunit;
 
 namespace Arborist.CodeGen;
 
-public class InterpolatedSyntaxVisitorTests {
+public partial class InterpolatedSyntaxVisitorTests {
     [Fact]
     public void Should_handle_constant() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
@@ -1052,9 +1052,12 @@ public class InterpolatedSyntaxVisitorTests {
                                     __p1,
                                     typeof(global::Arborist.CodeGen.Fixtures.Cat).GetProperty(""Age"")!
                                 ),
-                                global::System.Linq.Expressions.Expression.Constant(
-                                    8,
-                                    typeof(global::System.Int32)
+                                global::System.Linq.Expressions.Expression.Convert(
+                                    global::System.Linq.Expressions.Expression.Constant(
+                                        8,
+                                        typeof(global::System.Int32)
+                                    ),
+                                    typeof(global::System.Nullable<global::System.Int32>)
                                 )
                             ),
                             __p1

@@ -60,12 +60,55 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         }
     }
 
-    public override InterpolatedTree Visit(SyntaxNode? node) {
-        return base.Visit(node)!;
-    }
+    public override InterpolatedTree Visit(SyntaxNode? node) =>
+        node switch {
+            null => base.Visit(node)!,
+            not null => ApplyImplicitConversion(node, base.Visit(node)!)
+        };
 
     public override InterpolatedTree DefaultVisit(SyntaxNode node) {
         return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
+    }
+
+    /// <summary>
+    /// Emits a convert expression wrapping the provided <paramref name="tree"/> for any implicit
+    /// conversion associated with the provided <paramref name="node"/>.
+    /// </summary>
+    private InterpolatedTree ApplyImplicitConversion(SyntaxNode node, InterpolatedTree tree) {
+        var conversion = _context.SemanticModel.GetConversion(node);
+        switch(conversion) {
+            case not { Exists: true, IsImplicit: true }:
+                return tree;
+
+            case { IsBoxing: true }:
+            case { IsConditionalExpression: true }:
+            case { IsConstantExpression: true }:
+            case { IsDefaultLiteral: true }:
+            case { IsEnumeration: true }:
+            case { IsNullable: true }:
+            case { IsNumeric: true }:
+            case { IsUserDefined: true }:
+                break;
+
+            default:
+                return tree;
+        }
+
+        var typeInfo = _context.SemanticModel.GetTypeInfo(node);
+        if(typeInfo.ConvertedType is null)
+            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
+        if(SymbolEqualityComparer.IncludeNullability.Equals(typeInfo.ConvertedType, typeInfo.Type))
+            return tree;
+
+        // In the case of a user-defined conversion, information about the method is provided, however
+        // it does not appear to be necessary to use this information despite the fact that there is
+        // an overload of Exprsesion.Convert which exists specifically to handle this situation.
+        // Conveniently for the moment this saves us from having to deal with resolving a nameless,
+        // possibly generic method.
+        return _builder.CreateExpression(nameof(Expression.Convert), [
+            tree,
+            _builder.CreateType(typeInfo.ConvertedType)
+        ]);
     }
 
     private InterpolatedTree VisitSplicingInvocation(InvocationExpressionSyntax node, IMethodSymbol method) {
@@ -444,7 +487,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         var methodSymbol = parentType.GetMembers("Add").OfType<IMethodSymbol>().FirstOrDefault(
             m => !m.IsStatic
             && m.Parameters.Length == argumentExpressions.Count
-            && m.Parameters.All(p => TypeSymbolHelpers.IsSubtype(argumentTypes[p.Ordinal].Type, p.Type))
+            && m.Parameters.All(p => TypeSymbolHelpers.IsSubtype(argumentTypes[p.Ordinal].ConvertedType, p.Type))
         );
 
         if(methodSymbol is null)

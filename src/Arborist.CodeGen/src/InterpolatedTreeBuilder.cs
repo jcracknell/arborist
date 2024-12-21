@@ -215,18 +215,18 @@ public class InterpolatedTreeBuilder {
             _typeRefFactories[constructedFrom] = methodName;
 
             var typeParameters = TypeSymbolHelpers.GetInheritedTypeParameters(type);
-            var reparametrizedTypeName = TypeSymbolHelpers.CreateReparametrizedTypeName(constructedFrom, typeParameters, nullAnnotate: true);
-            var typeArguments = Enumerable.Range(0, typeParameters.Count).MkString("<", i => $"T{i}", ", ", ">");
+            var reparametrizedTypeName = TypeSymbolHelpers.CreateReparametrizedTypeName(constructedFrom, "TR", typeParameters, nullAnnotate: true);
+            var typeArguments = Enumerable.Range(0, typeParameters.Count).MkString("<", i => $"TR{i}", ", ", ">");
 
             _methodDefinitions.Add(InterpolatedTree.MethodDefinition(
-                $"static global::Arborist.Internal.TypeRef<{reparametrizedTypeName}> {methodName}{typeArguments}",
+                $"static global::Arborist.Interpolation.Internal.TypeRef<{reparametrizedTypeName}> {methodName}{typeArguments}",
                 [..(
                     from i in Enumerable.Range(0, typeParameters.Count)
                     let typeParameter = typeParameters[i]
-                    select InterpolatedTree.Verbatim($"global::Arborist.Interpolation.Internal.TypeRef<T{i}> t{i}")
+                    select InterpolatedTree.Verbatim($"global::Arborist.Interpolation.Internal.TypeRef<TR{i}> t{i}")
                 )],
                 [..(
-                    from constraint in TypeSymbolHelpers.GetReparametrizedTypeConstraints(typeParameters)
+                    from constraint in TypeSymbolHelpers.GetReparametrizedTypeConstraints("TR", typeParameters)
                     select InterpolatedTree.Verbatim(constraint)
                 )],
                 InterpolatedTree.ArrowBody(InterpolatedTree.Verbatim("default!"))

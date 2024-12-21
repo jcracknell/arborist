@@ -75,18 +75,19 @@ internal static class TypeSymbolHelpers {
 
     public static string CreateReparametrizedTypeName(
         ITypeSymbol type,
+        string prefix,
         ImmutableList<ITypeParameterSymbol> typeParameters,
         bool nullAnnotate = false
     ) {
         // N.B. type parameters have a containing type which can cause infinite recursion
         if(type is ITypeParameterSymbol parameter)
             return string.Concat(
-                $"T{typeParameters.IndexOf(parameter, SymbolEqualityComparer.Default)}",
+                $"{prefix}{typeParameters.IndexOf(parameter, SymbolEqualityComparer.Default)}",
                 NullableAnnotation.Annotated == type.NullableAnnotation && nullAnnotate ? "?" : ""
             );
 
         var containingName = type switch {
-            { ContainingType: not null } => $"{CreateReparametrizedTypeName(type.ContainingType, typeParameters, true)}.",
+            { ContainingType: not null } => $"{CreateReparametrizedTypeName(type.ContainingType, prefix, typeParameters, true)}.",
             { ContainingNamespace.IsGlobalNamespace: true } => "global::",
             _ => $"{CreateNamespaceName(type.ContainingNamespace)}."
         };
@@ -101,7 +102,7 @@ internal static class TypeSymbolHelpers {
                 return string.Concat(
                     containingName,
                     type.Name,
-                    generic.TypeArguments.MkString("<", a => CreateReparametrizedTypeName(a, typeParameters, nullAnnotate: true), ", ", ">"),
+                    generic.TypeArguments.MkString("<", a => CreateReparametrizedTypeName(a, prefix, typeParameters, nullAnnotate: true), ", ", ">"),
                     nullAnnotation
                 );
 
@@ -124,22 +125,25 @@ internal static class TypeSymbolHelpers {
         };
 
     public static IReadOnlyList<string> GetReparametrizedTypeConstraints(
+        string prefix,
         ImmutableList<ITypeParameterSymbol> typeParameters
     ) =>
         new List<string>(
             from typeParameter in typeParameters
-            let constraints = GetReparametrizedTypeConstraints(typeParameter, typeParameters).MkString(", ")
+            let constraints = GetReparametrizedTypeConstraints(typeParameter, prefix, typeParameters).MkString(", ")
             where constraints.Length != 0
-            select $"{CreateReparametrizedTypeName(typeParameter, typeParameters, nullAnnotate: false)} : {constraints}"
+            select $"{CreateReparametrizedTypeName(typeParameter, prefix, typeParameters, nullAnnotate: false)} : {constraints}"
         );
 
     private static IEnumerable<string> GetReparametrizedTypeConstraints(
         ITypeParameterSymbol typeParameter,
+        string prefix,
         ImmutableList<ITypeParameterSymbol> typeParameters
     ) {
         for(var i = 0; i < typeParameter.ConstraintTypes.Length; i++)
             yield return CreateReparametrizedTypeName(
                 typeParameter.ConstraintTypes[i].WithNullableAnnotation(typeParameter.ConstraintNullableAnnotations[i]),
+                prefix,
                 typeParameters,
                 nullAnnotate: true
             );

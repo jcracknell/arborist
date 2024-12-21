@@ -132,7 +132,7 @@ public class InterpolatorInterceptorGenerator : IIncrementalGenerator {
         var returnStatement = InterpolatedTree.Concat(
             InterpolatedTree.Verbatim("return "),
             analysis.Builder.CreateExpression(
-                $"{nameof(Expression.Lambda)}<{TypeSymbolHelpers.CreateReparametrizedTypeName(resultDelegateType, typeParameters, nullAnnotate: true)}>",
+                $"{nameof(Expression.Lambda)}<{TypeSymbolHelpers.CreateReparametrizedTypeName(resultDelegateType, "T", typeParameters, nullAnnotate: true)}>",
                 [analysis.BodyTree, ..analysis.ParameterTrees]
             ),
             InterpolatedTree.Verbatim(";")
@@ -183,18 +183,18 @@ public class InterpolatorInterceptorGenerator : IIncrementalGenerator {
 
         var returnType = analysis.MethodSymbol.ReturnsVoid switch {
             true => "void",
-            false => TypeSymbolHelpers.CreateReparametrizedTypeName(analysis.MethodSymbol.OriginalDefinition.ReturnType, typeParameters)
+            false => TypeSymbolHelpers.CreateReparametrizedTypeName(analysis.MethodSymbol.OriginalDefinition.ReturnType, "T", typeParameters)
         };
 
         return InterpolatedTree.MethodDefinition(
             $"internal static {returnType} Interpolate{analysis.InvocationId}{typeParameterDeclarations}",
             [..(
                 from parameter in (analysis.MethodSymbol.ReducedFrom ?? analysis.MethodSymbol).OriginalDefinition.Parameters
-                let parameterTypeName = TypeSymbolHelpers.CreateReparametrizedTypeName(parameter.Type, typeParameters)
+                let parameterTypeName = TypeSymbolHelpers.CreateReparametrizedTypeName(parameter.Type, "T", typeParameters)
                 select InterpolatedTree.Verbatim($"{parameterTypeName} {parameter.Name}")
             )],
             [..(
-                from constraint in TypeSymbolHelpers.GetReparametrizedTypeConstraints(typeParameters)
+                from constraint in TypeSymbolHelpers.GetReparametrizedTypeConstraints("T", typeParameters)
                 select InterpolatedTree.Verbatim(constraint)
             )],
             // Use an empty body, as we will emit our own body elsewhere

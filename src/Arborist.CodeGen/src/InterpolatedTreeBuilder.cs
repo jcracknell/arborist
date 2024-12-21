@@ -317,24 +317,21 @@ public class InterpolatedTreeBuilder {
     }
 
     private InterpolatedTree CreateGenericMethodCallTypeArgs(IMethodSymbol methodSymbol, InvocationExpressionSyntax? node) {
-        switch(node) {
-            // Only specify type arguments if they were explicitly specified in the original call
-            // (in which case we know they are nameable).
-            case { Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax } }:
-                var typeArgNames = new List<string>(methodSymbol.TypeArguments.Length);
-                foreach(var typeArg in methodSymbol.TypeArguments) {
-                    if(TypeSymbolHelpers.TryCreateTypeName(typeArg, out var typeArgName)) {
-                        typeArgNames.Add(typeArgName);
-                    } else {
-                        return _diagnostics.UnsupportedType(typeArg, node);
-                    }
-                }
+        var typeArgNames = methodSymbol.TypeArguments.Aggregate(
+            ImmutableList<string>.Empty,
+            static (acc, ta) => TypeSymbolHelpers.TryCreateTypeName(ta, out var typeArgName)
+            ? acc.Add(typeArgName)
+            : acc
+        );
 
-                return InterpolatedTree.Verbatim(typeArgNames.MkString("<", ", ", ">"));
+        if(typeArgNames.Count == methodSymbol.TypeArguments.Length)
+            return InterpolatedTree.Verbatim(typeArgNames.MkString("<", ", ", ">"));
 
-            default:
-                return InterpolatedTree.Empty;
-        }
+        // Type arguments were specified, but we cannot name the type
+        if(node is { Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax } })
+            return _diagnostics.UnsupportedInterpolatedSyntax(node);
+
+        return InterpolatedTree.Empty;
     }
 
     public InterpolatedTree CreateParameter(ITypeSymbol type, string name) {

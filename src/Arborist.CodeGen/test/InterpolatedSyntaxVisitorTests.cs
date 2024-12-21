@@ -307,7 +307,9 @@ public partial class InterpolatedSyntaxVisitorTests {
         CodeGenAssert.CodeEqual(
             expected: @"
                 global::Arborist.ExpressionOnNone.GetMethodInfo(
-                    () => default(global::Arborist.TestFixtures.MemberFixture)!.GenericInstanceMethod(default(global::System.String)!)
+                    () => default(global::Arborist.TestFixtures.MemberFixture)!.GenericInstanceMethod<global::System.String>(
+                        default(global::System.String)!
+                    )
                 )
             ",
             actual: m0Definition.Initializer.ToString()
@@ -407,7 +409,9 @@ public partial class InterpolatedSyntaxVisitorTests {
         CodeGenAssert.CodeEqual(
             expected: @"
                 global::Arborist.ExpressionOnNone.GetMethodInfo(
-                    () => global::Arborist.TestFixtures.MemberFixture.GenericStaticMethod(default(global::System.String)!)
+                    () => global::Arborist.TestFixtures.MemberFixture.GenericStaticMethod<global::System.String>(
+                        default(global::System.String)!
+                    )
                 )
             ",
             actual: m0Definition.Initializer.ToString()

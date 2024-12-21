@@ -233,6 +233,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             context.Append(" =>");
             context.AppendNewLine();
             context.Indent(Expression);
+            context.Append(";");
         }
 
         protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>

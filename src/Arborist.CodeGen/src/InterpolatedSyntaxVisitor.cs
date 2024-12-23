@@ -552,24 +552,78 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         );
     }
 
-    public override InterpolatedTree VisitBinaryExpression(BinaryExpressionSyntax node) =>
-        _builder.CreateExpression(nameof(Expression.MakeBinary),
+    public override InterpolatedTree VisitBinaryExpression(BinaryExpressionSyntax node) {
+        if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not IMethodSymbol method)
+            return _builder.CreateExpression(nameof(Expression.MakeBinary),
+                _builder.CreateExpressionType(node),
+                Visit(node.Left),
+                Visit(node.Right)
+            );
+
+        if(_context.SemanticModel.GetTypeInfo(node.Left).ConvertedType is not {} leftType)
+            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
+        if(_context.SemanticModel.GetTypeInfo(node.Right).ConvertedType is not {} rightType)
+            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
+
+        return _builder.CreateExpression(nameof(Expression.MakeBinary),
             _builder.CreateExpressionType(node),
             Visit(node.Left),
-            Visit(node.Right)
+            Visit(node.Right),
+            // TODO: How to tell if an operator is "lifted to null"?
+            InterpolatedTree.Verbatim("false"),
+            CreateBinaryExpressionMethodInfo(node, method, leftType, rightType)
         );
+    }
+
+    private InterpolatedTree CreateBinaryExpressionMethodInfo(
+        BinaryExpressionSyntax node,
+        IMethodSymbol method,
+        ITypeSymbol leftType,
+        ITypeSymbol rightType
+    ) {
+        // Per the C# language spec, string addition operations are converted to calls to Concat, however
+        // Roslyn does the stupid thing and synthesizes an operator for String which does not actually exist
+        var leftString = SymbolEqualityComparer.Default.Equals(leftType, _context.TypeSymbols.String);
+        var rightString = SymbolEqualityComparer.Default.Equals(rightType, _context.TypeSymbols.String);
+
+        if((leftString || rightString) && node.Kind() is SyntaxKind.AddExpression or SyntaxKind.AddAssignmentExpression) {
+            var parameterType = leftString && rightString ? _context.TypeSymbols.String : _context.TypeSymbols.Object;
+            var concatMethod = _context.TypeSymbols.String.GetMembers("Concat").OfType<IMethodSymbol>().Single(
+                m => m.Parameters.Length == 2
+                && SymbolEqualityComparer.Default.Equals(parameterType, m.Parameters[0].Type)
+                && SymbolEqualityComparer.Default.Equals(parameterType, m.Parameters[1].Type)
+            );
+
+            return _builder.CreateMethodInfo(concatMethod, node);
+        }
+
+        return _builder.CreateMethodInfo(method, node);
+    }
 
     public override InterpolatedTree VisitPrefixUnaryExpression(PrefixUnaryExpressionSyntax node) =>
-        _builder.CreateExpression(nameof(Expression.MakeUnary),
-            _builder.CreateExpressionType(node),
-            Visit(node.Operand)
-        );
+        VisitUnaryExpression(node, node.Operand);
 
     public override InterpolatedTree VisitPostfixUnaryExpression(PostfixUnaryExpressionSyntax node) =>
-        _builder.CreateExpression(nameof(Expression.MakeUnary),
+        VisitUnaryExpression(node, node.Operand);
+
+    private InterpolatedTree VisitUnaryExpression(ExpressionSyntax node, ExpressionSyntax operand) {
+        if(_context.SemanticModel.GetTypeInfo(operand).ConvertedType is not {} operandType)
+            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
+
+        if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not IMethodSymbol method)
+            return _builder.CreateExpression(nameof(Expression.MakeUnary),
+                _builder.CreateExpressionType(node),
+                Visit(operand),
+                _builder.CreateType(operandType)
+            );
+
+        return _builder.CreateExpression(nameof(Expression.MakeUnary),
             _builder.CreateExpressionType(node),
-            Visit(node.Operand)
+            Visit(operand),
+            _builder.CreateType(operandType),
+            _builder.CreateMethodInfo(method, node)
         );
+    }
 
     public override InterpolatedTree VisitLiteralExpression(LiteralExpressionSyntax node) {
         if(_context.SemanticModel.GetTypeInfo(node).Type is not {} type)

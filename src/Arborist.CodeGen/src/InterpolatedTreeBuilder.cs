@@ -275,7 +275,7 @@ public class InterpolatedTreeBuilder {
     }
 
     private InterpolatedTree CreateMethodInfoUncached(IMethodSymbol method, SyntaxNode? node) {
-        if(method.IsGenericMethod)
+        if(method.IsGenericMethod && method.MethodKind is not (MethodKind.BuiltinOperator or MethodKind.UserDefinedOperator))
             return InterpolatedTree.StaticCall(
                 InterpolatedTree.Verbatim("global::Arborist.ExpressionOnNone.GetMethodInfo"),
                 [InterpolatedTree.Lambda([], CreateGenericMethodCall(method, node))]

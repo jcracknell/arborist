@@ -487,7 +487,9 @@ public partial class InterpolatedSyntaxVisitorTests {
                     global::System.Linq.Expressions.Expression.Property(
                         __p0,
                         typeof(global::Arborist.TestFixtures.Cat).GetProperty(""IsAlive"")!
-                    )
+                    ),
+                    typeof(global::System.Boolean),
+                    __m0
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -535,7 +537,9 @@ public partial class InterpolatedSyntaxVisitorTests {
                     global::System.Linq.Expressions.Expression.Constant(
                         ""foo"",
                         typeof(global::System.String)
-                    )
+                    ),
+                    false,
+                    __m0
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -622,7 +626,9 @@ public partial class InterpolatedSyntaxVisitorTests {
                     global::System.Linq.Expressions.Expression.Constant(
                         default(global::System.Int32),
                         typeof(global::System.Int32)
-                    )
+                    ),
+                    false,
+                    __m0
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -648,7 +654,9 @@ public partial class InterpolatedSyntaxVisitorTests {
                     global::System.Linq.Expressions.Expression.Constant(
                         default(global::System.String)!,
                         typeof(global::System.String)
-                    )
+                    ),
+                    false,
+                    __m0
                 )
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()

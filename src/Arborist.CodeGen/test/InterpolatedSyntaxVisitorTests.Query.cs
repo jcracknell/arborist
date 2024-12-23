@@ -1,3 +1,4 @@
+using System.Reflection;
 using Xunit;
 
 namespace Arborist.CodeGen;
@@ -274,7 +275,7 @@ public partial class InterpolatedSyntaxVisitorTests {
         CodeGenAssert.CodeEqual(
             expected: @"
                 global::System.Linq.Expressions.Expression.Call(
-                    __m1,
+                    __m2,
                     global::System.Linq.Expressions.Expression.Call(
                         __m0,
                         global::System.Linq.Expressions.Expression.Property(
@@ -312,7 +313,9 @@ public partial class InterpolatedSyntaxVisitorTests {
                             global::System.Linq.Expressions.Expression.Property(
                                 __p2,
                                 __t0.Type.GetProperty(""n"")!
-                            )
+                            ),
+                            false,
+                            __m1
                         ),
                         __p2
                     )
@@ -390,9 +393,9 @@ public partial class InterpolatedSyntaxVisitorTests {
         CodeGenAssert.CodeEqual(
             expected: @"
                 global::System.Linq.Expressions.Expression.Call(
-                    __m1,
+                    __m2,
                     global::System.Linq.Expressions.Expression.Call(
-                        __m0,
+                        __m1,
                         global::System.Linq.Expressions.Expression.Property(
                             __p0,
                             typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
@@ -410,7 +413,9 @@ public partial class InterpolatedSyntaxVisitorTests {
                                         typeof(global::System.Int32)
                                     ),
                                     typeof(global::System.Nullable<global::System.Int32>)
-                                )
+                                ),
+                                true,
+                                __m0
                             ),
                             __p1
                         )

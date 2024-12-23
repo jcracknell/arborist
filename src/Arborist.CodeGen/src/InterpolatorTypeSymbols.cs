@@ -13,6 +13,9 @@ public sealed class InterpolatorTypeSymbols {
         Expression = compilation.GetTypeByMetadataName("System.Linq.Expressions.Expression")!;
         Expression1 = compilation.GetTypeByMetadataName("System.Linq.Expressions.Expression`1")!.ConstructUnboundGenericType();
 
+        Object = compilation.GetTypeByMetadataName("System.Object")!;
+        String = compilation.GetTypeByMetadataName("System.String")!;
+
         Actions = ImmutableArray.CreateRange(
             from n in Enumerable.Range(0, InterpolatorInterceptorGenerator.MAX_DELEGATE_PARAMETER_COUNT + 1)
             select n switch {
@@ -34,6 +37,8 @@ public sealed class InterpolatorTypeSymbols {
     public INamedTypeSymbol InterpolatedSpliceParameterAttribute { get; }
     public INamedTypeSymbol Expression { get; }
     public INamedTypeSymbol Expression1 { get; }
+    public INamedTypeSymbol Object { get; }
+    public INamedTypeSymbol String { get; }
 
     public ImmutableArray<INamedTypeSymbol> Actions { get; }
     public ImmutableArray<INamedTypeSymbol> Funcs { get; }

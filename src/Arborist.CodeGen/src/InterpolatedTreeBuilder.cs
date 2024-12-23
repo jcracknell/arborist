@@ -259,7 +259,7 @@ public class InterpolatedTreeBuilder {
             )
         };
 
-    public InterpolatedTree CreateMethodInfo(IMethodSymbol method, InvocationExpressionSyntax? node) {
+    public InterpolatedTree CreateMethodInfo(IMethodSymbol method, SyntaxNode? node) {
         if(_methodInfos.TryGetValue(method, out var cached))
             return InterpolatedTree.Verbatim(cached.Identifier);
 
@@ -274,7 +274,7 @@ public class InterpolatedTreeBuilder {
         }
     }
 
-    private InterpolatedTree CreateMethodInfoUncached(IMethodSymbol method, InvocationExpressionSyntax? node) {
+    private InterpolatedTree CreateMethodInfoUncached(IMethodSymbol method, SyntaxNode? node) {
         if(method.IsGenericMethod)
             return InterpolatedTree.StaticCall(
                 InterpolatedTree.Verbatim("global::Arborist.ExpressionOnNone.GetMethodInfo"),
@@ -295,7 +295,7 @@ public class InterpolatedTreeBuilder {
         );
     }
 
-    private InterpolatedTree CreateGenericMethodCall(IMethodSymbol method, InvocationExpressionSyntax? node) {
+    private InterpolatedTree CreateGenericMethodCall(IMethodSymbol method, SyntaxNode? node) {
         // Roslyn does a stupid thing where it represents extension methods as instance
         // methods, which makes dealing with them a pain in the ass.
         if(method.ReducedFrom is not null)
@@ -327,7 +327,7 @@ public class InterpolatedTreeBuilder {
         }
     }
 
-    private InterpolatedTree CreateGenericMethodCallTypeArgs(IMethodSymbol methodSymbol, InvocationExpressionSyntax? node) {
+    private InterpolatedTree CreateGenericMethodCallTypeArgs(IMethodSymbol methodSymbol, SyntaxNode? node) {
         var typeArgNames = methodSymbol.TypeArguments.Aggregate(
             ImmutableList<string>.Empty,
             static (acc, ta) => TypeSymbolHelpers.TryCreateTypeName(ta, out var typeArgName)
@@ -339,7 +339,7 @@ public class InterpolatedTreeBuilder {
             return InterpolatedTree.Verbatim(typeArgNames.MkString("<", ", ", ">"));
 
         // Type arguments were specified, but we cannot name the type
-        if(node is { Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax } })
+        if(node is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax } })
             return _diagnostics.UnsupportedInterpolatedSyntax(node);
 
         return InterpolatedTree.Empty;

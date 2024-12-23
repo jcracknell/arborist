@@ -157,7 +157,7 @@ public class InterpolatedTreeBuilder {
             return _diagnostics.InaccesibleSymbol(type, default);
 
         // If this is a nameable type, then return an inline type reference
-        if(TypeSymbolHelpers.TryCreateTypeName(type, out var typeName))
+        if(TypeSymbolHelpers.TryCreateTypeName(type.WithNullableAnnotation(NullableAnnotation.None), out var typeName))
             return InterpolatedTree.Verbatim($"typeof({typeName})");
 
         var typeRef = CreateTypeRef(type);

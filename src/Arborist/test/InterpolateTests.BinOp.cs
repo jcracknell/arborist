@@ -53,4 +53,16 @@ public partial class InterpolateTests {
         );
         #pragma warning restore
     }
+
+    [Fact]
+    public void Should_work_for_string_add_chained() {
+        // This test validates that chained string addition is not optimized using a suitable
+        // string.Concat overload
+        #pragma warning disable ARB003
+        Assert.Equivalent(
+            expected: ExpressionOn<Cat>.Of(c => c.Name + c.Name + c.Name),
+            actual: ExpressionOn<Cat>.Interpolate((x, c) => c.Name + c.Name + c.Name)
+        );
+        #pragma warning restore
+    }
 }

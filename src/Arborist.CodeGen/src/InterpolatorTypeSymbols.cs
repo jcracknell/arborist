@@ -13,6 +13,7 @@ public sealed class InterpolatorTypeSymbols {
         Expression = compilation.GetTypeByMetadataName("System.Linq.Expressions.Expression")!;
         Expression1 = compilation.GetTypeByMetadataName("System.Linq.Expressions.Expression`1")!.ConstructUnboundGenericType();
 
+        Nullable = compilation.GetTypeByMetadataName("System.Nullable`1")!.ConstructUnboundGenericType();
         Object = compilation.GetTypeByMetadataName("System.Object")!;
         String = compilation.GetTypeByMetadataName("System.String")!;
 
@@ -37,6 +38,7 @@ public sealed class InterpolatorTypeSymbols {
     public INamedTypeSymbol InterpolatedSpliceParameterAttribute { get; }
     public INamedTypeSymbol Expression { get; }
     public INamedTypeSymbol Expression1 { get; }
+    public INamedTypeSymbol Nullable { get; }
     public INamedTypeSymbol Object { get; }
     public INamedTypeSymbol String { get; }
 

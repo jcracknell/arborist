@@ -560,17 +560,27 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
                 Visit(node.Right)
             );
 
+        if(_context.SemanticModel.GetTypeInfo(node).Type is not {} type)
+            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
         if(_context.SemanticModel.GetTypeInfo(node.Left).ConvertedType is not {} leftType)
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
         if(_context.SemanticModel.GetTypeInfo(node.Right).ConvertedType is not {} rightType)
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
 
+        // Detect "lifted" binary operators per s12.4.8 of the C# spec lifting operators on non-nullable
+        // value types to the nullable equivalents. In the context of Expression.MakeBinary, "liftedness"
+        // applies only to the return type of the operator.
+        // There does not appear to be an overload to Expression.MakeUnary requiring such a flag.
+        var lifted = method.ReturnType.IsValueType
+        && type is INamedTypeSymbol { IsGenericType: true } named
+        && SymbolEqualityComparer.Default.Equals(_context.TypeSymbols.Nullable, named.ConstructUnboundGenericType())
+        && SymbolEqualityComparer.Default.Equals(named.TypeArguments[0], method.ReturnType);
+
         return _builder.CreateExpression(nameof(Expression.MakeBinary),
             _builder.CreateExpressionType(node),
             Visit(node.Left),
             Visit(node.Right),
-            // TODO: How to tell if an operator is "lifted to null"?
-            InterpolatedTree.Verbatim("false"),
+            InterpolatedTree.Verbatim(lifted ? "true" : "false"),
             CreateBinaryExpressionMethodInfo(node, method, leftType, rightType)
         );
     }
@@ -626,21 +636,27 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
     }
 
     public override InterpolatedTree VisitLiteralExpression(LiteralExpressionSyntax node) {
-        if(_context.SemanticModel.GetTypeInfo(node).Type is not {} type)
-            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
+        var typeInfo = _context.SemanticModel.GetTypeInfo(node);
 
         switch(node.Kind()) {
             case SyntaxKind.DefaultExpression:
             case SyntaxKind.DefaultLiteralExpression:
+            case SyntaxKind.NullLiteralExpression:
+                if((typeInfo.Type ?? typeInfo.ConvertedType) is not {} defaultType)
+                    return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
+
                 return _builder.CreateExpression(nameof(Expression.Constant), [
-                    _builder.CreateDefaultValue(type),
-                    _builder.CreateType(type)
+                    _builder.CreateDefaultValue(defaultType),
+                    _builder.CreateType(defaultType)
                 ]);
 
             default:
+                if(typeInfo.Type is null)
+                    return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
+
                 return _builder.CreateExpression(nameof(Expression.Constant), [
                     InterpolatedTree.Verbatim(node.ToString().Trim()),
-                    _builder.CreateType(type)
+                    _builder.CreateType(typeInfo.Type)
                 ]);
         }
     }

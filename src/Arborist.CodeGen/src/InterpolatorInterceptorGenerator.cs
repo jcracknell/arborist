@@ -57,7 +57,7 @@ public class InterpolatorInterceptorGenerator : IIncrementalGenerator {
         try {
             var (compilation, invocations) = inputs;
 
-            var typeSymbols = new InterpolatorTypeSymbols(compilation);
+            var typeSymbols = InterpolatorTypeSymbols.Create(compilation);
             var analyses = ProcessInvocations(sourceProductionContext, compilation, invocations, typeSymbols)
             .Where(static a => a.IsSupported)
             .ToList();

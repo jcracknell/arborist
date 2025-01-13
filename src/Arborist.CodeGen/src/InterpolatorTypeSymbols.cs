@@ -3,7 +3,10 @@ using Microsoft.CodeAnalysis;
 namespace Arborist.CodeGen;
 
 public sealed class InterpolatorTypeSymbols {
-    public InterpolatorTypeSymbols(Compilation compilation) {
+    public static InterpolatorTypeSymbols Create(Compilation compilation) =>
+        new(compilation);
+
+    private InterpolatorTypeSymbols(Compilation compilation) {
         IInterpolationContext = compilation.GetTypeByMetadataName("Arborist.Interpolation.IInterpolationContext")!;
         IInterpolationContext1 = compilation.GetTypeByMetadataName("Arborist.Interpolation.IInterpolationContext`1")!.ConstructUnboundGenericType();
         ExpressionInterpolatorAttribute = compilation.GetTypeByMetadataName("Arborist.Interpolation.ExpressionInterpolatorAttribute")!;

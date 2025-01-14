@@ -376,11 +376,11 @@ public class InterpolatorInterceptorGenerator : IIncrementalGenerator {
 
     private static bool TryGetResultDelegateTypeFromInterpolated(
         INamedTypeSymbol interpolated,
-        out INamedTypeSymbol result,
+        [NotNullWhen(true)] out INamedTypeSymbol? result,
         InterpolatorTypeSymbols typeSymbols,
         SourceProductionContext context
     ) {
-        result = default!;
+        result = default;
         if(!interpolated.IsGenericType)
             return false;
 

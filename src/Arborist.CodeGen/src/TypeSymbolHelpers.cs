@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis;
 namespace Arborist.CodeGen;
 
 internal static class TypeSymbolHelpers {
-    public static bool TryCreateTypeName(ITypeSymbol type, out string typeName) {
+    public static bool TryCreateTypeName(ITypeSymbol type, [NotNullWhen(true)] out string? typeName) {
         var nullAnnotation = NullableAnnotation.Annotated == type.NullableAnnotation && !type.IsValueType ? "?" : "";
 
         if(type is ITypeParameterSymbol) {
@@ -55,13 +55,16 @@ internal static class TypeSymbolHelpers {
 
     }
 
-    private static bool TryCreateTypeContainingName(ITypeSymbol type, out string containingName) {
+    private static bool TryCreateTypeContainingName(
+        ITypeSymbol type,
+        [NotNullWhen(true)] out string? containingName
+    ) {
         if(type.ContainingType is not null) {
             if(TryCreateTypeName(type.ContainingType, out var containingTypeName)) {
                 containingName = $"{containingTypeName}.";
                 return true;
             } else {
-                containingName = default!;
+                containingName = default;
                 return false;
             }
         }
@@ -240,8 +243,12 @@ internal static class TypeSymbolHelpers {
         return true;
     }
 
-    public static bool TryGetInterfaceImplementation(INamedTypeSymbol @interface, ITypeSymbol type, out INamedTypeSymbol implementation) =>
-        type.AllInterfaces.Prepend((INamedTypeSymbol)type).TryGetSingle(
+    public static bool TryGetInterfaceImplementation(
+        INamedTypeSymbol @interface,
+        ITypeSymbol type,
+        [MaybeNullWhen(false)] out INamedTypeSymbol implementation
+    ) =>
+        type.AllInterfaces.Prepend(type).OfType<INamedTypeSymbol>().TryGetSingle(
             i => SymbolEqualityComparer.Default.Equals(@interface, i)
             || i.IsGenericType && @interface.IsGenericType && SymbolEqualityComparer.Default.Equals(@interface, i.ConstructUnboundGenericType()),
             out implementation

@@ -39,10 +39,17 @@ internal static class EnumerableExtensions {
     public static IReadOnlyList<A> NullToEmpty<A>(this IReadOnlyList<A>? list) =>
         list ?? Array.Empty<A>();
 
-    public static bool TryGetFirst<A>(this IEnumerable<A> collection, out A result) =>
+    public static bool TryGetFirst<A>(
+        this IEnumerable<A> collection,
+        [MaybeNullWhen(false)] out A result
+    ) =>
         TryGetFirst(collection, static a => true, out result);
 
-    public static bool TryGetFirst<A>(this IEnumerable<A> collection, Func<A, bool> predicate, out A result) {
+    public static bool TryGetFirst<A>(
+        this IEnumerable<A> collection,
+        Func<A, bool> predicate,
+        [MaybeNullWhen(false)] out A result
+    ) {
         using var enumerator = collection.GetEnumerator();
 
         while(enumerator.MoveNext()) {
@@ -53,15 +60,22 @@ internal static class EnumerableExtensions {
             }
         }
 
-        result = default!;
+        result = default;
         return false;
     }
 
-    public static bool TryGetSingle<A>(this IEnumerable<A> collection, out A result) =>
+    public static bool TryGetSingle<A>(
+        this IEnumerable<A> collection,
+        [MaybeNullWhen(false)] out A result
+    ) =>
         TryGetSingle(collection, static a => true, out result);
 
-    public static bool TryGetSingle<A>(this IEnumerable<A> collection, Func<A, bool> predicate, out A result) {
-        result = default!;
+    public static bool TryGetSingle<A>(
+        this IEnumerable<A> collection,
+        Func<A, bool> predicate,
+        [MaybeNullWhen(false)] out A result
+    ) {
+        result = default;
         var found = false;
 
         using var enumerator = collection.GetEnumerator();

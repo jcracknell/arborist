@@ -162,11 +162,14 @@ public class InterpolatorInterceptorGenerator : IIncrementalGenerator {
         if(analysis.DataParameter is not null)
             sb.AppendLine($"            var {analysis.Builder.DataIdentifier} = {analysis.Builder.CreateTypeRef(analysis.DataParameter.Type)}.Cast({analysis.DataParameter.Name});");
 
-        foreach(var methodDefinition in analysis.Builder.MethodDefinitions)
-            sb.AppendLine(methodDefinition.ToString(3));
-
-        sb.AppendLine($"");
+        sb.AppendLine("");
         sb.AppendLine(returnStatement.ToString(3));
+
+        foreach(var methodDefinition in analysis.Builder.MethodDefinitions) {
+            sb.AppendLine("");
+            sb.AppendLine(methodDefinition.ToString(3));
+        }
+
         sb.AppendLine($"        }}");
     }
 

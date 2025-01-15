@@ -61,15 +61,16 @@ public partial class EvaluatedSyntaxVisitor {
                 Visit(selectClause.Expression)
             );
 
-        _queryContext.RebindInput();
-
-        return InterpolatedTree.Lambda(
+        var resultTree = InterpolatedTree.Lambda(
             [InterpolatedTree.Verbatim(_queryContext.InputIdentifier), joinedParameter],
             InterpolatedTree.AnonymousClass([
                 InterpolatedTree.Verbatim(_queryContext.InputIdentifier),
                 joinedParameter
             ])
         );
+
+        _queryContext.RebindInput();
+        return resultTree;
     }
 
     public override InterpolatedTree VisitGroupClause(GroupClauseSyntax node) {

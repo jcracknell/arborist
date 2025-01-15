@@ -3,6 +3,36 @@ using Microsoft.CodeAnalysis;
 namespace Arborist.CodeGen;
 
 internal static class TypeSymbolHelpers {
+    /// <summary>
+    /// Replaces occurrences of the provided <paramref name="replacements"/> appearing in the provided
+    /// <paramref name="typeSymbol"/>, including type parameters in the event that the provided
+    /// <paramref name="typeSymbol"/> is a generic type.
+    /// </summary>
+    /// <remarks>
+    /// The provided <paramref name="replacements"/> dictionary should use the
+    /// <see cref="SymbolEqualityComparer.IncludeNullability"/> key comparer, and should have keys with
+    /// a <see cref="NullableAnnotation"/> value of <see cref="NullableAnnotation.None"/>.
+    /// </remarks>
+    public static ITypeSymbol ReplaceTypes(
+        ITypeSymbol typeSymbol,
+        IReadOnlyDictionary<ITypeSymbol, ITypeSymbol> replacements
+    ) {
+        if(replacements.Count == 0)
+            return typeSymbol;
+
+        if(replacements.TryGetValue(typeSymbol.WithNullableAnnotation(NullableAnnotation.None), out var replacement))
+            return replacement.WithNullableAnnotation(typeSymbol.NullableAnnotation);
+
+        if(typeSymbol is INamedTypeSymbol { IsGenericType: true } generic)
+            return generic.ConstructedFrom.Construct(
+                typeArguments: ImmutableArray.CreateRange(generic.TypeArguments.Select(ta => ReplaceTypes(ta, replacements))),
+                typeArgumentNullableAnnotations: generic.TypeArgumentNullableAnnotations
+            )
+            .WithNullableAnnotation(typeSymbol.NullableAnnotation);
+
+        return typeSymbol;
+    }
+
     public static bool TryCreateTypeName(ITypeSymbol type, [NotNullWhen(true)] out string? typeName) {
         var nullAnnotation = NullableAnnotation.Annotated == type.NullableAnnotation && !type.IsValueType ? "?" : "";
 

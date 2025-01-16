@@ -84,6 +84,10 @@ public partial class EvaluatedSyntaxVisitor {
             InterpolatedTree.Lambda(
                 [InterpolatedTree.Verbatim(_queryContext.InputIdentifier)],
                 Visit(node.ByExpression)
+            ),
+            InterpolatedTree.Lambda(
+                [InterpolatedTree.Verbatim(_queryContext.InputIdentifier)],
+                Visit(node.GroupExpression)
             )
         ]);
     }

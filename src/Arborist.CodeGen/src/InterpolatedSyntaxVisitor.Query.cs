@@ -117,6 +117,10 @@ public partial class InterpolatedSyntaxVisitor {
             _builder.CreateExpression(nameof(Expression.Lambda), [
                 Visit(node.ByExpression),
                 inputParameter
+            ]),
+            _builder.CreateExpression(nameof(Expression.Lambda), [
+                Visit(node.GroupExpression),
+                inputParameter
             ])
         ]);
     }

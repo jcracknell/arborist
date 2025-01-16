@@ -408,7 +408,8 @@ public class EvaluatedSyntaxVisitorTests {
                 global::System.Linq.Expressions.Expression.Constant(
                     global::System.Linq.Enumerable.GroupBy(
                         __data.Cats,
-                        (c) => c.Age
+                        (c) => c.Age,
+                        (c) => c
                     ),
                     typeof(global::System.Collections.Generic.IEnumerable<
                         global::System.Linq.IGrouping<
@@ -441,7 +442,8 @@ public class EvaluatedSyntaxVisitorTests {
                     global::System.Linq.Enumerable.Select(
                         global::System.Linq.Enumerable.GroupBy(
                             __data.Cats,
-                            (c) => c.Age
+                            (c) => c.Age,
+                            (c) => c
                         ),
                         (ageGroup) => global::System.Linq.Enumerable.Count(ageGroup)
                     ),

@@ -261,6 +261,46 @@ public partial class InterpolatedSyntaxVisitorTests {
     }
 
     [Fact]
+    public void Should_handle_group_by_clause() {
+        var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOn<Owner>.Interpolate((x, o) =>
+                from c in o.Cats
+                group c by c.Age
+            );
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                global::System.Linq.Expressions.Expression.Call(
+                    __m0,
+                    global::System.Linq.Expressions.Expression.Property(
+                        __p0,
+                        typeof(global::Arborist.TestFixtures.Owner).GetProperty(
+                            ""Cats""
+                        )!
+                    ),
+                    global::System.Linq.Expressions.Expression.Lambda(
+                        global::System.Linq.Expressions.Expression.Property(
+                            __p1,
+                            typeof(global::Arborist.TestFixtures.Cat).GetProperty(
+                                ""Age""
+                            )!
+                        ),
+                        __p1
+                    ),
+                    global::System.Linq.Expressions.Expression.Lambda(
+                        __p1,
+                        __p1
+                    )
+                )
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
     public void Should_handle_let_clause() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"

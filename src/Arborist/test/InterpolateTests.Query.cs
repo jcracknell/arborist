@@ -158,4 +158,131 @@ public partial class InterpolateTests {
 
         Assert.Equivalent(expected, interpolated);
     }
+
+    [Fact]
+    public void Should_handle_transparent_identifier_in_from_clause() {
+        #pragma warning disable ARB003
+        var interpolated = ExpressionOn<Owner>.Interpolate((x, o) =>
+            from a in o.Cats
+            from b in o.Cats
+            from c in o.Cats
+            from d in o.Cats
+            select b
+        );
+        #pragma warning restore
+
+        var expected = ExpressionOn<Owner>.Of(
+            o => o.Cats.SelectMany(a => o.Cats, (a, b) => new { a, b })
+            .SelectMany(__v0 => o.Cats, (__v0, c) => new { __v0, c })
+            .SelectMany(__v1 => o.Cats, (__v1, d) => __v1.__v0.b)
+        );
+
+        Assert.Equivalent(expected, interpolated);
+    }
+
+    [Fact]
+    public void Should_handle_transparent_identifier_in_groupby_clause() {
+        #pragma warning disable ARB003
+        var interpolated = ExpressionOn<Owner>.Interpolate((x, o) =>
+            from a in o.Cats
+            from b in o.Cats
+            from c in o.Cats
+            group a by a.Age
+        );
+        #pragma warning restore
+
+        var expected = ExpressionOn<Owner>.Of(o =>
+            o.Cats.SelectMany(a => o.Cats, (a, b) => new { a, b })
+            .SelectMany(__v0 => o.Cats, (__v0, c) => new { __v0, c })
+            .GroupBy(__v1 => __v1.__v0.a.Age, __v1 => __v1.__v0.a)
+        );
+
+        Assert.Equivalent(expected, interpolated);
+    }
+
+    [Fact]
+    public void Should_handle_transparent_identifier_in_let_clause() {
+        #pragma warning disable ARB003
+        var interpolated = ExpressionOn<Owner>.Interpolate((x, o) =>
+            from c in o.Cats
+            let n = o.Name
+            let m = o.Id
+            select c.Name + n + m
+        );
+        #pragma warning restore
+
+        var expected = ExpressionOn<Owner>.Of(
+            o => o.Cats.Select(c => new { c, n = o.Name })
+            .Select(__v0 => new { __v0, m = o.Id })
+            .Select(__v1 => __v1.__v0.c.Name + __v1.__v0.n + __v1.m)
+        );
+
+        Assert.Equivalent(expected, interpolated);
+    }
+
+    [Fact]
+    public void Should_handle_transparent_identifier_in_join_clause() {
+        #pragma warning disable ARB003
+        var interpolated = ExpressionOn<Owner>.Interpolate((x, o) =>
+            from a in o.Cats
+            join b in o.Cats on a.Id equals b.Id
+            join c in o.Cats on a.Id equals c.Id
+            join d in o.Cats on a.Id equals d.Id
+            select a
+        );
+        #pragma warning restore
+
+
+        var expected = ExpressionOn<Owner>.Of(o =>
+            o.Cats.Join(o.Cats, a => a.Id, b => b.Id, (a, b) => new { a, b })
+            .Join(o.Cats, __v0 => __v0.a.Id, c => c.Id, (__v0, c) => new { __v0, c })
+            .Join(o.Cats, __v1 => __v1.__v0.a.Id, d => d.Id, (__v1, d) => __v1.__v0.a)
+        );
+
+        Assert.Equivalent(expected, interpolated);
+    }
+
+    [Fact]
+    public void Should_handle_transparent_identifier_in_orderby_clause() {
+        #pragma warning disable ARB003
+        var interpolated = ExpressionOn<Owner>.Interpolate((x, o) =>
+            from a in o.Cats
+            from b in o.Cats
+            from c in o.Cats
+            orderby a.Name
+            select a
+        );
+        #pragma warning restore
+
+        var expected = ExpressionOn<Owner>.Of(o =>
+            o.Cats.SelectMany(a => o.Cats, (a, b) => new { a, b })
+            .SelectMany(__v0 => o.Cats, (__v0, c) => new { __v0, c })
+            .OrderBy(__v1 => __v1.__v0.a.Name)
+            .Select(__v1 => __v1.__v0.a)
+        );
+
+        Assert.Equivalent(expected, interpolated);
+    }
+
+    [Fact]
+    public void Should_handle_transparent_identifier_in_where_clause() {
+        #pragma warning disable ARB003
+        var interpolated = ExpressionOn<Owner>.Interpolate((x, o) =>
+            from a in o.Cats
+            from b in o.Cats
+            from c in o.Cats
+            where a.Id % 2 == 0
+            select a
+        );
+        #pragma warning restore
+
+        var expected = ExpressionOn<Owner>.Of(o =>
+            o.Cats.SelectMany(a => o.Cats, (a, b) => new { a, b })
+            .SelectMany(__v0 => o.Cats, (__v0, c) => new { __v0, c })
+            .Where(__v1 => __v1.__v0.a.Id % 2 == 0)
+            .Select(__v1 => __v1.__v0.a)
+        );
+
+        Assert.Equivalent(expected, interpolated);
+    }
 }

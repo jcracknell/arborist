@@ -50,10 +50,9 @@ public partial class InterpolatedSyntaxVisitor {
         if(!TryGetQueryDelegateTypeArgs(argumentTypes[0], out var expressionTypeArgs))
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
 
-        var inputType = expressionTypeArgs[0];
-        var inputParameter = _queryContext.BindInput(inputType);
+        var inputParameter = _queryContext.BindInput(expressionTypeArgs[0]);
 
-        return CreateQueryCall(method, [
+        return _queryContext.CreateQueryCall(method, [
             _queryContext.Tree,
             _builder.CreateExpression(nameof(Expression.Lambda), [
                 CreateQueryInput(node, node.Expression, qci.CastInfo.Symbol),
@@ -88,11 +87,10 @@ public partial class InterpolatedSyntaxVisitor {
                 joinedParameter
             ]);
 
-        var resultType = resultProjectionTypeArgs[2];
-        _queryContext.RebindInput(resultType);
+        var outputType = _queryContext.RebindInput(resultProjectionTypeArgs[2]);
 
         return _builder.CreateExpression(nameof(Expression.Lambda), [
-            _builder.CreateAnonymousClassExpression(resultType, [
+            _builder.CreateAnonymousClassExpression(outputType, [
                 inputParameter,
                 joinedParameter
             ]),
@@ -109,10 +107,9 @@ public partial class InterpolatedSyntaxVisitor {
         if(!TryGetQueryDelegateTypeArgs(argumentTypes[0], out var expressionTypeArgs))
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
 
-        var inputType = expressionTypeArgs[0];
-        var inputParameter = _queryContext.BindInput(inputType);
+        var inputParameter = _queryContext.BindInput(expressionTypeArgs[0]);
 
-        return CreateQueryCall(method, [
+        return _queryContext.CreateQueryCall(method, [
             _queryContext.Tree,
             _builder.CreateExpression(nameof(Expression.Lambda), [
                 Visit(node.ByExpression),
@@ -134,8 +131,7 @@ public partial class InterpolatedSyntaxVisitor {
         if(!TryGetQueryDelegateTypeArgs(argumentTypes[1], out var leftExpressionTypeArgs))
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
 
-        var inputType = leftExpressionTypeArgs[0];
-        var inputParameter = _queryContext.BindInput(inputType);
+        var inputParameter = _queryContext.BindInput(leftExpressionTypeArgs[0]);
 
         var inTree = CreateQueryInput(node, node.InExpression, qci.CastInfo.Symbol);
 
@@ -147,7 +143,7 @@ public partial class InterpolatedSyntaxVisitor {
         var rightTree = CreateJoinRightTree(node, argumentTypes, inputParameter);
         var resultProjectionTree = CreateJoinResultTree(node, argumentTypes, inputParameter);
 
-        return CreateQueryCall(method, [
+        return _queryContext.CreateQueryCall(method, [
             _queryContext.Tree,
             inTree,
             leftTree,
@@ -212,11 +208,10 @@ public partial class InterpolatedSyntaxVisitor {
                 joinedParameter
             ]);
 
-        var resultType = resultTypeArgs[2];
-        _queryContext.RebindInput(resultType);
+        var outputType = _queryContext.RebindInput(resultTypeArgs[2]);
 
         return _builder.CreateExpression(nameof(Expression.Lambda), [
-            _builder.CreateAnonymousClassExpression(resultType, [
+            _builder.CreateAnonymousClassExpression(outputType, [
                 inputParameter,
                 joinedParameter
             ]),
@@ -237,25 +232,22 @@ public partial class InterpolatedSyntaxVisitor {
         if(_context.SemanticModel.GetTypeInfo(node.Expression).Type is not {} joinedType)
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
 
-        var resultType = expressionTypeArgs[1];
-        var inputType = expressionTypeArgs[0];
-        var inputParameter = _queryContext.BindInput(inputType);
+        var inputParameter = _queryContext.BindInput(expressionTypeArgs[0]);
+        var innerTree = Visit(node.Expression);
 
-        var result = CreateQueryCall(method, [
+        _queryContext.BindJoined(node.Identifier.Text, InterpolatedTree.Unsupported);
+        var resultType = _queryContext.RebindInput(expressionTypeArgs[1]);
+
+        return _queryContext.CreateQueryCall(method, [
             _queryContext.Tree,
             _builder.CreateExpression(nameof(Expression.Lambda), [
                 _builder.CreateAnonymousClassExpression(resultType, [
                     inputParameter,
-                    Visit(node.Expression)
+                    innerTree
                 ]),
                 inputParameter
             ])
         ]);
-
-        _queryContext.BindJoined(node.Identifier.Text, InterpolatedTree.Unsupported);
-        _queryContext.RebindInput(resultType);
-
-        return result;
     }
 
     public override InterpolatedTree VisitOrderByClause(OrderByClauseSyntax node) {
@@ -273,10 +265,9 @@ public partial class InterpolatedSyntaxVisitor {
         if(!TryGetQueryDelegateTypeArgs(argumentTypes[0], out var expressionTypeArgs))
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
 
-        var inputType = expressionTypeArgs[0];
-        var inputParameter = _queryContext.BindInput(inputType);
+        var inputParameter = _queryContext.BindInput(expressionTypeArgs[0]);
 
-        return CreateQueryCall(method, [
+        return _queryContext.CreateQueryCall(method, [
             _queryContext.Tree,
             _builder.CreateExpression(nameof(Expression.Lambda), [
                 Visit(node.Expression),
@@ -293,10 +284,9 @@ public partial class InterpolatedSyntaxVisitor {
         if(!TryGetQueryDelegateTypeArgs(argumentTypes[0], out var expressionTypeArgs))
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
 
-        var inputType = expressionTypeArgs[0];
-        var inputParameter = _queryContext.BindInput(inputType);
+        var inputParameter = _queryContext.BindInput(expressionTypeArgs[0]);
 
-        return CreateQueryCall(method, [
+        return _queryContext.CreateQueryCall(method, [
             _queryContext.Tree,
             _builder.CreateExpression(nameof(Expression.Lambda), [
                 Visit(node.Expression),
@@ -314,10 +304,9 @@ public partial class InterpolatedSyntaxVisitor {
         if(!TryGetQueryDelegateTypeArgs(argumentTypes[0], out var expressionTypeArgs))
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
 
-        var inputType = expressionTypeArgs[0];
-        var inputParameter = _queryContext.BindInput(inputType);
+        var inputParameter = _queryContext.BindInput(expressionTypeArgs[0]);
 
-        return CreateQueryCall(method, [
+        return _queryContext.CreateQueryCall(method, [
             _queryContext.Tree,
             _builder.CreateExpression(nameof(Expression.Lambda), [
                 Visit(node.Condition),
@@ -326,20 +315,6 @@ public partial class InterpolatedSyntaxVisitor {
         ]);
     }
 
-    private InterpolatedTree CreateQueryCall(IMethodSymbol method, IReadOnlyList<InterpolatedTree> arguments) {
-        // Static extension method
-        if(method is { ReducedFrom: { } })
-            return _builder.CreateExpression(nameof(Expression.Call), [
-                _builder.CreateMethodInfo(method, default),
-                ..arguments
-            ]);
-
-        return _builder.CreateExpression(nameof(Expression.Call), [
-            arguments[0],
-            _builder.CreateMethodInfo(method, default),
-            ..arguments.Skip(1)
-        ]);
-    }
 
     private InterpolatedTree CreateQueryInput(SyntaxNode clause, SyntaxNode inputNode, ISymbol? castSymbol) {
         var inputTree = Visit(inputNode);
@@ -349,7 +324,7 @@ public partial class InterpolatedSyntaxVisitor {
         if(castSymbol is not IMethodSymbol castMethod)
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(clause);
 
-        return CreateQueryCall(castMethod, [inputTree]);
+        return _queryContext.CreateQueryCall(castMethod, [inputTree]);
     }
 
     private sealed class QueryContext {
@@ -370,7 +345,8 @@ public partial class InterpolatedSyntaxVisitor {
             InputIdentifier = inputIdentifier;
             Tree = tree;
             QueryBody = queryBody;
-            _bindings = ImmutableDictionary<string, InterpolatedTree>.Empty.WithComparers(IdentifierEqualityComparer.Instance);
+            _bindings = new(IdentifierEqualityComparer.Instance);
+            _remappedTypes = new(SymbolEqualityComparer.IncludeNullability);
         }
 
         private readonly QueryContext? _parentContext;
@@ -381,7 +357,8 @@ public partial class InterpolatedSyntaxVisitor {
         public string? JoinedIdentifier { get; private set; }
         public InterpolatedTree Tree { get; set; }
         public QueryBodySyntax QueryBody { get; }
-        private ImmutableDictionary<string, InterpolatedTree> _bindings;
+        private Dictionary<string, InterpolatedTree> _bindings;
+        private Dictionary<ITypeSymbol, ITypeSymbol> _remappedTypes;
 
         public QueryContext BindQuery(
             string inputIdentifier,
@@ -406,9 +383,10 @@ public partial class InterpolatedSyntaxVisitor {
         /// on the initial <see cref="FromClauseSyntax"/>.
         /// </remarks>
         public InterpolatedTree BindInput(ITypeSymbol type) {
-            var parameter = _builder.CreateParameter(type, InputIdentifier);
+            var remappedType = GetRemappedType(type);
+            var parameter = _builder.CreateParameter(remappedType, InputIdentifier);
             var inputPlaceholder = InterpolatedTree.Placeholder(InputIdentifier);
-            _bindings = _bindings.SetItem(InputIdentifier, inputPlaceholder);
+            _bindings[InputIdentifier] = inputPlaceholder;
             _visitor._interpolatableIdentifiers = _visitor._interpolatableIdentifiers.SetItem(InputIdentifier, parameter);
             return parameter;
         }
@@ -418,29 +396,32 @@ public partial class InterpolatedSyntaxVisitor {
         /// to resolve to the provided <paramref name="tree"/>.
         /// </summary>
         public void BindJoined(string identifier, InterpolatedTree tree) {
-            _bindings = _bindings.SetItem(identifier, tree);
+            _bindings[identifier] = tree;
             _visitor._interpolatableIdentifiers = _visitor._interpolatableIdentifiers.SetItem(identifier, tree);
             JoinedIdentifier = identifier;
         }
 
-        public void RebindInput(ITypeSymbol inputType) {
+        public ITypeSymbol RebindInput(ITypeSymbol type) {
+            // Remap the input type, eliminating any transparent identifiers present in anonymous classes
+            var reboundType = RemapType(type);
+
             // This is a pain in the butt; because the query syntax nodes are structured syntactically
             // instead of semantically, we have to process them bottom-up which involves maintaining
             // a second set of trees containing placeholder values which can then be replaced/remapped
             // to reference the updated query input each time we process a clause.
             var reboundIdentifier = _builder.CreateIdentifier();
-            var reboundInputPlaceholder = InterpolatedTree.Placeholder(reboundIdentifier);
-            var reboundParameter = _builder.CreateParameter(inputType, reboundIdentifier);
+            var reboundPlaceholder = InterpolatedTree.Placeholder(reboundIdentifier);
+            var reboundParameter = _builder.CreateParameter(reboundType, reboundIdentifier);
 
-            var existingInputPlaceholder = InterpolatedTree.Placeholder(InputIdentifier);
+            var existingPlaceholder = InterpolatedTree.Placeholder(InputIdentifier);
 
             // Create a tree to replace the existing input with an expression accessing the property
             // with the same name on the anonymous class representing the new input.
             var existingInputReplacement = _builder.CreateExpression(nameof(Expression.Property), [
-                reboundInputPlaceholder,
+                reboundPlaceholder,
                 InterpolatedTree.Concat(
                     InterpolatedTree.InstanceCall(
-                        _builder.CreateType(inputType),
+                        _builder.CreateType(reboundType),
                         InterpolatedTree.Verbatim("GetProperty"),
                         [InterpolatedTree.Verbatim($"\"{InputIdentifier}\"")]
                     ),
@@ -451,24 +432,21 @@ public partial class InterpolatedSyntaxVisitor {
             // Replace the existing input in our bindings with an accessor to the equivalent property
             // on the new input
             foreach(var binding in _bindings)
-                _bindings = _bindings.SetItem(
-                    binding.Key,
-                    binding.Value.Replace(existingInputPlaceholder, existingInputReplacement)
-                );
+                _bindings[binding.Key] = binding.Value.Replace(existingPlaceholder, existingInputReplacement);
 
             // If we have a joined value, add a new binding for the equivalent property on the new input
             if(JoinedIdentifier is not null) {
-                _bindings = _bindings.SetItem(JoinedIdentifier, _builder.CreateExpression(nameof(Expression.Property), [
-                    reboundInputPlaceholder,
+                _bindings[JoinedIdentifier] = _builder.CreateExpression(nameof(Expression.Property), [
+                    reboundPlaceholder,
                     InterpolatedTree.Concat(
                         InterpolatedTree.InstanceCall(
-                            _builder.CreateType(inputType),
+                            _builder.CreateType(reboundType),
                             InterpolatedTree.Verbatim("GetProperty"),
                             [InterpolatedTree.Verbatim($"\"{JoinedIdentifier}\"")]
                         ),
                         InterpolatedTree.Verbatim("!")
                     )
-                ]));
+                ]);
 
                 JoinedIdentifier = null;
             }
@@ -478,10 +456,65 @@ public partial class InterpolatedSyntaxVisitor {
             foreach(var binding in _bindings)
                 _visitor._interpolatableIdentifiers = _visitor._interpolatableIdentifiers.SetItem(
                     binding.Key,
-                    binding.Value.Replace(reboundInputPlaceholder, reboundParameter)
+                    binding.Value.Replace(reboundPlaceholder, reboundParameter)
                 );
 
+            // Finally, update the input identifier and return the remapped input type.
             InputIdentifier = reboundIdentifier;
+            return reboundType;
+        }
+
+        public InterpolatedTree CreateQueryCall(IMethodSymbol method, IReadOnlyList<InterpolatedTree> arguments) {
+            // Static extension method
+            if(method is { ReducedFrom: { } })
+                return _builder.CreateExpression(nameof(Expression.Call), [
+                    _builder.CreateMethodInfo(GetRemappedMethod(method), default),
+                    ..arguments
+                ]);
+
+            return _builder.CreateExpression(nameof(Expression.Call), [
+                arguments[0],
+                _builder.CreateMethodInfo(GetRemappedMethod(method), default),
+                ..arguments.Skip(1)
+            ]);
+        }
+
+        private ITypeSymbol RemapType(ITypeSymbol typeSymbol) {
+            var typeKey = typeSymbol.WithNullableAnnotation(NullableAnnotation.None);
+            if(_remappedTypes.TryGetValue(typeKey, out var remapped))
+                return remapped.WithNullableAnnotation(typeSymbol.NullableAnnotation);
+
+            if(typeSymbol is INamedTypeSymbol { IsAnonymousType: true } anonymous) {
+                var properties = anonymous.GetMembers().OfType<IPropertySymbol>().ToList();
+                if(properties.Count == 2 && properties[0].Name.StartsWith("<>", StringComparison.Ordinal)) {
+                    remapped = _visitor._context.Compilation.CreateAnonymousTypeSymbol(
+                        memberTypes: ImmutableArray.Create(GetRemappedType(properties[0].Type), GetRemappedType(properties[1].Type)),
+                        memberNames: ImmutableArray.Create(InputIdentifier, properties[1].Name),
+                        memberNullableAnnotations: ImmutableArray.Create(properties[0].NullableAnnotation, properties[1].NullableAnnotation)
+                    );
+
+                    _remappedTypes[typeKey] = remapped;
+                    return remapped.WithNullableAnnotation(typeSymbol.NullableAnnotation);
+                }
+            }
+
+            return typeSymbol;
+        }
+
+        private ITypeSymbol GetRemappedType(ITypeSymbol typeSymbol) =>
+            TypeSymbolHelpers.ReplaceTypes(typeSymbol, _remappedTypes);
+
+        private IMethodSymbol GetRemappedMethod(IMethodSymbol methodSymbol) {
+            if(!methodSymbol.IsGenericMethod)
+                return methodSymbol;
+
+            var typeArguments = new ITypeSymbol[methodSymbol.TypeArguments.Length];
+            for(var i = 0; i < typeArguments.Length; i++) {
+                var typeArgument = methodSymbol.TypeArguments[i];
+                typeArguments[i] = TypeSymbolHelpers.ReplaceTypes(typeArgument, _remappedTypes);
+            }
+
+            return methodSymbol.ConstructedFrom.Construct(typeArguments);
         }
     }
 }

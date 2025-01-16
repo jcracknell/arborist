@@ -1,9 +1,8 @@
-using Arborist.TestFixtures;
 using Xunit;
 
 namespace Arborist.CodeGen;
 
-public class EvaluatedSyntaxVisitorTests {
+public partial class EvaluatedSyntaxVisitorTests {
     [Fact]
     public void Should_handle_a_constant() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()

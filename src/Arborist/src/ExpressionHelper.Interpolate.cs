@@ -1,3 +1,4 @@
+using Arborist.Internal.Collections;
 using Arborist.Interpolation.Internal;
 
 namespace Arborist;
@@ -7,7 +8,7 @@ public static partial class ExpressionHelper {
         where TDelegate : Delegate
     {
         var analyzer = new AnalyzingInterpolationVisitor(expression);
-        analyzer.Visit(expression.Body);
+        analyzer.Apply(expression.Body);
 
         var parameterExpressions = expression.Parameters.Skip(1);
 
@@ -20,50 +21,56 @@ public static partial class ExpressionHelper {
         );
 
         return Expression.Lambda<TDelegate>(
-            body: interpolator.Visit(expression.Body),
+            body: interpolator.Apply(expression.Body),
             parameters: expression.Parameters.Skip(1)
         );
     }
 
-    private static IReadOnlyDictionary<Expression, object?> EvaluateInterpolatedExpressions<TData>(
+    private static IReadOnlyList<object?> EvaluateInterpolatedExpressions<TData>(
         TData data,
-        IReadOnlySet<Expression> evaluatedExpressions,
+        IReadOnlyList<Expression> evaluatedExpressions,
         IReadOnlySet<MemberExpression> dataReferences
     ) {
         if(evaluatedExpressions.Count == 0)
-            return ImmutableDictionary<Expression, object?>.Empty;
+            return Array.Empty<object?>();
 
-        var unevaluatedExpressions = default(List<Expression>);
-        var evaluatedValues = new Dictionary<Expression, object?>(evaluatedExpressions.Count);
-        foreach(var expr in evaluatedExpressions) {
-            switch(expr) {
+        var unevaluatedExpressions = default(List<(int Index, Expression Expression)>);
+        var values = new object?[evaluatedExpressions.Count];
+        for(var i = 0; i < evaluatedExpressions.Count; i++) {
+            switch(evaluatedExpressions[i]) {
+                // These are constant values, so removing them from the evaluation process has no
+                // side effects.
                 case ConstantExpression { Value: var value }:
-                    evaluatedValues[expr] = value;
+                    values[i] = value;
                     break;
                 case UnaryExpression { NodeType: ExpressionType.Convert, Operand: ConstantExpression { Value: var value } }:
-                    evaluatedValues[expr] = value;
+                    values[i] = value;
                     break;
-                default:
-                    (unevaluatedExpressions ??= new(evaluatedExpressions.Count - evaluatedValues.Count)).Add(expr);
+                case var unevaluated:
+                    unevaluatedExpressions ??= new(evaluatedExpressions.Count - i);
+                    unevaluatedExpressions.Add((i, unevaluated));
                     break;
             }
         }
 
         // If there are no expressions requiring evaluation, then we can skip costly evaluation
         if(unevaluatedExpressions is not { Count: not 0 })
-            return evaluatedValues;
+            return values;
 
         var dataParameter = Expression.Parameter(typeof(TData));
 
-        // Build a dictionary mapping references to ISplicingContext.Data with the data parameter
-        var dataReferenceReplacements = new Dictionary<Expression, Expression>(dataReferences.Count);
-        foreach(var dataReference in dataReferences)
-            dataReferenceReplacements[dataReference] = dataParameter;
+        // Build a dictionary mapping references to IInterpolationContext.Data to the data parameter.
+        // We know each reference is unique because this is a set of expressions.
+        var dataReferenceReplacements = SmallDictionary.CreateRange(
+            from dataReference in dataReferences
+            select new KeyValuePair<Expression, Expression>(dataReference, dataParameter)
+        );
 
-        var evaluated = Expression.Lambda<Func<TData, object?[]>>(
+        // Create an expression to evaluate the unevaluated expression values into an array
+        var evaluatedValues = Expression.Lambda<Func<TData, object?[]>>(
             Expression.NewArrayInit(typeof(object),
-                from expr in unevaluatedExpressions select Expression.Convert(
-                    ExpressionHelper.Replace(expr, dataReferenceReplacements),
+                from tup in unevaluatedExpressions select Expression.Convert(
+                    ExpressionHelper.Replace(tup.Expression, dataReferenceReplacements),
                     typeof(object)
                 )
             ),
@@ -72,10 +79,12 @@ public static partial class ExpressionHelper {
         .Compile()
         .Invoke(data);
 
-        for(var i = 0; i < unevaluatedExpressions.Count; i++)
-            evaluatedValues[unevaluatedExpressions[i]] = evaluated[i];
+        // Fill the holes in the result array by mapping each evaluated value to the index of the
+        // corresponding unevaluated expression
+        for(var i = 0; i < evaluatedValues.Length; i++)
+            values[unevaluatedExpressions[i].Index] = evaluatedValues[i];
 
-        return evaluatedValues;
+        return values;
     }
 
 }

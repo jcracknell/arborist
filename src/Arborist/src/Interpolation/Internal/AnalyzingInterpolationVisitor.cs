@@ -6,7 +6,7 @@ public class AnalyzingInterpolationVisitor : InterpolationVisitor {
     private readonly LambdaExpression _interpolatedExpression;
     private ImmutableHashSet<ParameterExpression> _forbiddenParameters;
     private HashSet<MemberExpression>? _dataReferences;
-    private HashSet<Expression>? _evaluatedExpressions;
+    private List<Expression>? _evaluatedExpressions;
     private Expression? _evaluatingExpression;
 
     public AnalyzingInterpolationVisitor(LambdaExpression interpolatedExpression) {
@@ -14,11 +14,17 @@ public class AnalyzingInterpolationVisitor : InterpolationVisitor {
         _forbiddenParameters = ImmutableHashSet.CreateRange(interpolatedExpression.Parameters);
     }
 
-    public IReadOnlySet<Expression> EvaluatedExpressions =>
-        _evaluatedExpressions ?? (IReadOnlySet<Expression>)ImmutableHashSet<Expression>.Empty;
+    // N.B. this MUST be a list, as an expression may appear multiple times in the tree (depending
+    // on how it is constructed), but MUST be evaluated each time it appears, in the order that
+    // they appear in order to preserve any expected side effects.
+    public IReadOnlyList<Expression> EvaluatedExpressions =>
+        _evaluatedExpressions ?? (IReadOnlyList<Expression>)Array.Empty<Expression>();
 
     public IReadOnlySet<MemberExpression> DataReferences =>
         _dataReferences ?? (IReadOnlySet<MemberExpression>)ImmutableHashSet<MemberExpression>.Empty;
+
+    public Expression Apply(Expression expression) =>
+        Visit(expression);
 
     protected override Expression VisitLambda<T>(Expression<T> node) {
         var snapshot = _forbiddenParameters;

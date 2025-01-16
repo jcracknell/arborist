@@ -1,11 +1,28 @@
 namespace Arborist.Interpolation.Internal;
 
 public class SplicingInterpolationVisitor : InterpolationVisitor {
-    private readonly IReadOnlyDictionary<Expression, object?> _evaluatedSpliceParameters;
+    private readonly IReadOnlyList<object?> _evaluatedSpliceParameters;
+    private int _evaluatedSpliceParameterIndex;
 
-    public SplicingInterpolationVisitor(IReadOnlyDictionary<Expression, object?> evaluatedSpliceParameters) {
+    public SplicingInterpolationVisitor(IReadOnlyList<object?> evaluatedSpliceParameters) {
         _evaluatedSpliceParameters = evaluatedSpliceParameters;
+        _evaluatedSpliceParameterIndex = 0;
     }
+
+    public Expression Apply(Expression expression) {
+        var result = Visit(expression);
+
+        if(_evaluatedSpliceParameterIndex != _evaluatedSpliceParameters.Count)
+            throw new Exception("Failed to consume all evaluated splice parameters?");
+
+        return result;
+    }
+
+    private T GetEvaluatedSpliceParameter<T>(bool increment = true) =>
+        GetEvaluatedSpliceParameter<T>(increment ? _evaluatedSpliceParameterIndex++ : _evaluatedSpliceParameterIndex);
+
+    private T GetEvaluatedSpliceParameter<T>(int index) =>
+        (T)_evaluatedSpliceParameters[index]!;
 
     protected override Expression VisitSplicingMethodCall(MethodCallExpression node) {
         return node.Method.Name switch {
@@ -20,7 +37,7 @@ public class SplicingInterpolationVisitor : InterpolationVisitor {
     protected Expression VisitSplice(MethodCallExpression node) {
         var resultType = node.Method.GetGenericArguments()[0];
         var expressionReference = node.Arguments[0];
-        var interpolatedValue = (Expression)_evaluatedSpliceParameters[expressionReference]!;
+        var interpolatedValue = GetEvaluatedSpliceParameter<Expression>();
 
         return Coerce(resultType, interpolatedValue);
     }
@@ -28,7 +45,7 @@ public class SplicingInterpolationVisitor : InterpolationVisitor {
     protected Expression VisitSpliceBody(MethodCallExpression node) {
         var declaredType = node.Method.GetGenericArguments()[^1];
         var expressionReference = node.Arguments[^1];
-        var interpolatedLambda = (LambdaExpression)_evaluatedSpliceParameters[expressionReference]!;
+        var interpolatedLambda = GetEvaluatedSpliceParameter<LambdaExpression>();
 
         // Apply interpolation to the argument replacement expressions
         // N.B. Visit has NotNullIfNotNullAttribute
@@ -45,14 +62,14 @@ public class SplicingInterpolationVisitor : InterpolationVisitor {
     protected Expression VisitSpliceValue(MethodCallExpression node) {
         var declaredType = node.Method.GetGenericArguments()[0];
         var expressionReference = node.Arguments[0];
-        var interpolatedValue = _evaluatedSpliceParameters[expressionReference];
+        var interpolatedValue = GetEvaluatedSpliceParameter<object?>();
 
         return Coerce(declaredType, Expression.Constant(interpolatedValue));
     }
 
     protected Expression VisitSpliceQuoted(MethodCallExpression node) {
         var expressionReference = node.Arguments[0];
-        var tree = (Expression)_evaluatedSpliceParameters[expressionReference]!;
+        var tree = GetEvaluatedSpliceParameter<Expression>();
 
         return Expression.Quote(tree);
     }

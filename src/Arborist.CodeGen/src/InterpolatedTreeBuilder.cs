@@ -275,6 +275,9 @@ public class InterpolatedTreeBuilder {
     }
 
     private InterpolatedTree CreateMethodInfoUncached(IMethodSymbol method, SyntaxNode? node) {
+        // It FEELS like this should be optimizable, however in practice it seems very difficult to improve on this,
+        // as without HEAVY caching the cost of resolving the method appears to be approximately equivalent to the
+        // cost of constructing the expression, which already contains the pre-resolved and constructed MethodInfo.
         if(method.IsGenericMethod && method.MethodKind is not (MethodKind.BuiltinOperator or MethodKind.UserDefinedOperator))
             return InterpolatedTree.StaticCall(
                 InterpolatedTree.Verbatim("global::Arborist.ExpressionOnNone.GetMethodInfo"),

@@ -1,5 +1,6 @@
 using Arborist.TestFixtures;
 using Arborist.Interpolation;
+using Arborist.Interpolation.Internal;
 
 namespace Arborist;
 

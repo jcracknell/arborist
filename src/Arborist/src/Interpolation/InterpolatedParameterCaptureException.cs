@@ -1,3 +1,5 @@
+using Arborist.Interpolation.Internal;
+
 namespace Arborist.Interpolation;
 
 /// <summary>
@@ -6,7 +8,7 @@ namespace Arborist.Interpolation;
 /// defined on <see cref="IInterpolationContext"/> captures a parameter of the interpolated
 /// expression.
 /// </summary>
-public class InterpolatedParameterCaptureException : Exception {
+public sealed class InterpolatedParameterCaptureException : Exception {
     public InterpolatedParameterCaptureException(ParameterExpression parameter, Expression evaluated)
         : base($"Interpolated parameter {parameter} is captured by evaluated expression {evaluated}.")
     { }

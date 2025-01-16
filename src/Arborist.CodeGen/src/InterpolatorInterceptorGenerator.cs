@@ -40,12 +40,15 @@ public class InterpolatorInterceptorGenerator : IIncrementalGenerator {
 
     private static bool IsExpressionInterpolatorAttribute(AttributeData a) =>
         a.AttributeClass is {
-            Name: "ExpressionInterpolatorAttribute",
+            Name: "CompileTimeExpressionInterpolatorAttribute",
             ContainingNamespace: {
-                Name: "Interpolation",
+                Name: "Internal",
                 ContainingNamespace: {
-                    Name: "Arborist",
-                    ContainingNamespace: { IsGlobalNamespace: true }
+                    Name: "Interpolation",
+                    ContainingNamespace: {
+                        Name: "Arborist",
+                        ContainingNamespace: { IsGlobalNamespace: true }
+                    }
                 }
             }
         };
@@ -214,7 +217,7 @@ public class InterpolatorInterceptorGenerator : IIncrementalGenerator {
         foreach(var (invocation, methodSymbol) in invocations) {
             // Assert that the input invocation actually calls a method with [ExpressionInterpolator]
             var methodAttrs = methodSymbol.GetAttributes();
-            if(!methodAttrs.Any(a => typeSymbols.ExpressionInterpolatorAttribute.Equals(a.AttributeClass, SymbolEqualityComparer.Default)))
+            if(!methodAttrs.Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, typeSymbols.CompileTimeExpressionInterpolatorAttribute)))
                 continue;
 
             switch(invocation.ArgumentList.Arguments.Count) {

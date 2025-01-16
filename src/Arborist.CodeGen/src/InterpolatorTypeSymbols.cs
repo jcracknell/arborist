@@ -9,9 +9,9 @@ public sealed class InterpolatorTypeSymbols {
     private InterpolatorTypeSymbols(Compilation compilation) {
         IInterpolationContext = compilation.GetTypeByMetadataName("Arborist.Interpolation.IInterpolationContext")!;
         IInterpolationContext1 = compilation.GetTypeByMetadataName("Arborist.Interpolation.IInterpolationContext`1")!.ConstructUnboundGenericType();
-        ExpressionInterpolatorAttribute = compilation.GetTypeByMetadataName("Arborist.Interpolation.ExpressionInterpolatorAttribute")!;
-        EvaluatedSpliceParameterAttribute = compilation.GetTypeByMetadataName("Arborist.Interpolation.EvaluatedSpliceParameterAttribute")!;
-        InterpolatedSpliceParameterAttribute = compilation.GetTypeByMetadataName("Arborist.Interpolation.InterpolatedSpliceParameterAttribute")!;
+        CompileTimeExpressionInterpolatorAttribute = compilation.GetTypeByMetadataName("Arborist.Interpolation.Internal.CompileTimeExpressionInterpolatorAttribute")!;
+        EvaluatedSpliceParameterAttribute = compilation.GetTypeByMetadataName("Arborist.Interpolation.Internal.EvaluatedSpliceParameterAttribute")!;
+        InterpolatedSpliceParameterAttribute = compilation.GetTypeByMetadataName("Arborist.Interpolation.Internal.InterpolatedSpliceParameterAttribute")!;
 
         Expression = compilation.GetTypeByMetadataName("System.Linq.Expressions.Expression")!;
         Expression1 = compilation.GetTypeByMetadataName("System.Linq.Expressions.Expression`1")!.ConstructUnboundGenericType();
@@ -34,7 +34,7 @@ public sealed class InterpolatorTypeSymbols {
         );
     }
 
-    public INamedTypeSymbol ExpressionInterpolatorAttribute { get; }
+    public INamedTypeSymbol CompileTimeExpressionInterpolatorAttribute { get; }
     public INamedTypeSymbol IInterpolationContext { get; }
     public INamedTypeSymbol IInterpolationContext1 { get; }
     public INamedTypeSymbol EvaluatedSpliceParameterAttribute { get; }

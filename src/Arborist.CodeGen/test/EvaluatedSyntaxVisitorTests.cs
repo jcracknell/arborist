@@ -7,7 +7,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_a_constant() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(42));
+            ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(42));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -26,7 +26,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_constructor() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(new string('0', 3)));
+            ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(new string('0', 3)));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -45,7 +45,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_target_typed_constructor() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<MemberFixture>.Interpolate((x, m) => x.SpliceValue(m.InstanceMethod(new('0', 3))));
+            ExpressionOn<MemberFixture>.Interpolate(default(object), (x, m) => x.SpliceValue(m.InstanceMethod(new('0', 3))));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -64,7 +64,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_object_initializer() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(new Cat { Name = ""Garfield"" }));
+            ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(new Cat { Name = ""Garfield"" }));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -85,7 +85,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_collection_initializer() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(new List<string> { ""foo"", ""bar"" }));
+            ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(new List<string> { ""foo"", ""bar"" }));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -107,7 +107,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_dictionary_initializer() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(new Dictionary<string, int> {
+            ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(new Dictionary<string, int> {
                 { ""foo"", 1 },
                 { ""bar"", 2 }
             }));
@@ -243,6 +243,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             ExpressionOnNone.Interpolate(
+                default(object),
                 static x => x.SpliceValue(MemberFixture.StaticMethod(""foo""))
             );
         ");
@@ -264,6 +265,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             ExpressionOnNone.Interpolate(
+                default(object),
                 static x => x.SpliceValue(MemberFixture.GenericStaticMethod(42))
             );
         ");
@@ -329,6 +331,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             ExpressionOnNone.Interpolate(
+                default(object),
                 static x => x.SpliceValue(MemberFixture.GenericStaticMethod<IEnumerable<char>>(""foo""))
             );
         ");
@@ -350,6 +353,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             ExpressionOnNone.Interpolate(
+                default(object),
                 static x => x.SpliceValue(new { foo = ""foo"", bar = 42, string.Empty })
             );
         ");

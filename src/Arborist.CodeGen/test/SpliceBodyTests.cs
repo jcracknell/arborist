@@ -40,7 +40,7 @@ public class SpliceBodyTests {
     public void Should_work_for_Func2_provided_as_literal() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Cat>.Interpolate(
+            ExpressionOn<Cat>.Interpolate(default(object),
                 (x, c) => x.SpliceBody(c.Owner, o => o.Name == ""Jon"")
             );
         ");

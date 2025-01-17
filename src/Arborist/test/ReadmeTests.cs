@@ -49,14 +49,14 @@ public class ReadmeTests {
 
     [Fact]
     public void SpliceValue_example_should_work() {
-        var interpolated = ExpressionOnNone.Interpolate(x => x.SpliceValue(42));
+        var interpolated = ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(42));
 
         Assert.Equivalent(
             expected: ExpressionOnNone.Of(() => 42),
             actual: interpolated
         );
     }
-    
+
     [Fact]
     public void And_example_should_work() {
         Assert.Equivalent(
@@ -71,7 +71,7 @@ public class ReadmeTests {
             ])
         );
     }
-        
+
     [Fact]
     public void AndTree_example_should_work() {
         Assert.Equivalent(
@@ -86,15 +86,15 @@ public class ReadmeTests {
             ])
         );
     }
-    
+
     [Fact]
     public void Not_example_should_work() {
         Assert.Equivalent(
             expected: ExpressionOn<Cat>.Of(c => !(c.Name == "Garfield")),
             actual: ExpressionHelper.Not(ExpressionOn<Cat>.Of(c => c.Name == "Garfield"))
-        ); 
+        );
     }
-    
+
     [Fact]
     public void NotNullAnd_should_work() {
         Assert.Equivalent(
@@ -102,7 +102,7 @@ public class ReadmeTests {
             actual: ExpressionHelper.NotNullAnd(ExpressionOn<int>.Of(i => i % 2 == 0))
         );
     }
-    
+
     [Fact]
     public void NullOr_should_work() {
         Assert.Equivalent(
@@ -110,7 +110,7 @@ public class ReadmeTests {
             actual: ExpressionHelper.NullOr(ExpressionOn<int>.Of(i => i % 2 == 0))
         );
     }
-    
+
     [Fact]
     public void Or_example_should_work() {
         Assert.Equivalent(
@@ -125,7 +125,7 @@ public class ReadmeTests {
             ])
         );
     }
-        
+
     [Fact]
     public void OrTree_example_should_work() {
         Assert.Equivalent(

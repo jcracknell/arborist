@@ -7,7 +7,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_select_clause() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate((x, o) =>
+            ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
                 from c in o.Cats
                 select c.Name
             );
@@ -39,7 +39,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_cast_in_initial_from_clause() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate((x, o) =>
+            ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
                 from object c in o.Cats
                 select c.GetHashCode()
             );
@@ -76,7 +76,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_join_clause() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate((x, o) =>
+            ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
                 from c in o.Cats
                 join c1 in o.Cats on c.Id equals c1.Id
                 select c1.Name
@@ -128,7 +128,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_join_clause_with_cast() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate((x, o) =>
+            ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
                 from c in o.Cats
                 join object c1 in o.Cats on c.Id equals c1.GetHashCode()
                 select c1.GetHashCode()
@@ -185,7 +185,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_join_into_clause() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate((x, o) =>
+            ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
                 from c in o.Cats
                 join c1 in o.Cats on c.Id equals c1.Id into cs
                 from cc in cs
@@ -263,7 +263,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_group_by_clause() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate((x, o) =>
+            ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
                 from c in o.Cats
                 group c by c.Age
             );
@@ -303,7 +303,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_let_clause() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate((x, o) =>
+            ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
                 from c in o.Cats
                 let n = o.Name
                 select c.Name + n
@@ -368,7 +368,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_handle_orderby_clause() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate((x, o) =>
+            ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
                 from c in o.Cats
                 orderby c.Name ascending, c.Age descending
                 select c.Name
@@ -421,7 +421,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_where_clause() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate((x, o) =>
+            ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
                 from c in o.Cats
                 where c.Age == 8
                 select c.Name
@@ -479,7 +479,7 @@ public partial class InterpolatedSyntaxVisitorTests {
         // in the projection expression provided to SelectMany
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate((x, o) =>
+            ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
                 from a in o.Cats
                 from b in o.Cats
                 from c in o.Cats
@@ -577,7 +577,7 @@ public partial class InterpolatedSyntaxVisitorTests {
         // new { * = new { c, n }, m }
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate((x, o) =>
+            ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
                 from c in o.Cats
                 let n = o.Name
                 let m = o.Id
@@ -681,7 +681,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_transparent_identifiers_in_join_clause() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate((x, o) =>
+            ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
                 from a in o.Cats
                 join b in o.Cats on a.Id equals b.Id
                 join c in o.Cats on a.Id equals c.Id

@@ -9,7 +9,7 @@ public class DiagnosticTests {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             var owner = new Owner();
-            ExpressionOn<Cat>.Interpolate((x, c) => c.Owner.Id == owner.Id);
+            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Owner.Id == owner.Id);
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -23,7 +23,7 @@ public class DiagnosticTests {
     public void Should_produce_ARB002_in_SpliceValue() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Cat>.Interpolate((x, c) => c.Owner.Id == x.SpliceValue(c.Id));
+            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Owner.Id == x.SpliceValue(c.Id));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -37,7 +37,7 @@ public class DiagnosticTests {
     public void Should_produce_ARB003_for_an_expression_without_splices() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Cat>.Interpolate((x, c) => c.Name == ""Garfield"");
+            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Name == ""Garfield"");
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);

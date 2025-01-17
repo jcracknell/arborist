@@ -7,7 +7,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_implicit_boxing_conversion() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate<object>((x, o) => 42);
+            ExpressionOn<Owner>.Interpolate<object?, object>(default(object), (x, o) => 42);
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -29,7 +29,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_implicit_numeric_conversion() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate<decimal>((x, o) => o.Id);
+            ExpressionOn<Owner>.Interpolate<object?, decimal>(default(object), (x, o) => o.Id);
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -51,7 +51,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_implicit_user_defined_conversion() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate<ImplicitlyConvertible<string>>((x, o) => o.Name);
+            ExpressionOn<Owner>.Interpolate<object?, ImplicitlyConvertible<string>>(default(object), (x, o) => o.Name);
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);

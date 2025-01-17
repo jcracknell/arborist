@@ -37,7 +37,7 @@ public partial class InterpolateTests {
 
         Assert.Throws<InterpolatedParameterCaptureException>(() => {
             #pragma warning disable ARB002
-            ExpressionOn<Owner>.Interpolate((x, o) => x.SpliceBody(o, y => o));
+            ExpressionOn<Owner>.Interpolate(default(object), (x, o) => x.SpliceBody(o, y => o));
             #pragma warning restore
         });
     }
@@ -46,7 +46,7 @@ public partial class InterpolateTests {
     public void Interpolate_should_throw_EvaluatedSpliceException() {
         Assert.Throws<InterpolationContextEvaluationException>(() => {
             #pragma warning disable ARB001
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(x.SpliceValue(1) + 2));
+            ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(x.SpliceValue(1) + 2));
             #pragma warning restore
         });
     }
@@ -55,7 +55,7 @@ public partial class InterpolateTests {
     public void Interpolate_Splice_should_work_as_expected() {
         var add = Expression.Add(Expression.Constant(1), Expression.Constant(2));
         #pragma warning disable ARB001
-        var interpolated = ExpressionOnNone.Interpolate(x => 2 * x.Splice<int>(add));
+        var interpolated = ExpressionOnNone.Interpolate(default(object), x => 2 * x.Splice<int>(add));
         #pragma warning restore
 
         var expected = Expression.Lambda<Func<int>>(Expression.Multiply(Expression.Constant(2), add));
@@ -67,7 +67,7 @@ public partial class InterpolateTests {
     public void Interpolate_SpliceBody_should_work_as_expected_for_0_parameters() {
         var spliced = ExpressionOnNone.Of(() => "foo");
         #pragma warning disable ARB001
-        var interpolated = ExpressionOnNone.Interpolate(x => x.SpliceBody(spliced).Length);
+        var interpolated = ExpressionOnNone.Interpolate(default(object), x => x.SpliceBody(spliced).Length);
         #pragma warning restore
 
         var expected = Expression.Lambda<Func<int>>(
@@ -84,7 +84,7 @@ public partial class InterpolateTests {
     public void Interpolate_SpliceBody_should_work_as_expected_for_1_parameter() {
         var nameExpr = ExpressionOn<Owner>.Of(o => o.Name);
         #pragma warning disable ARB001
-        var interpolated = ExpressionOn<Owner>.Interpolate((x, o) => x.SpliceBody(o, nameExpr).Length);
+        var interpolated = ExpressionOn<Owner>.Interpolate(default(object), (x, o) => x.SpliceBody(o, nameExpr).Length);
         #pragma warning restore
 
         var expected = Expression.Lambda<Func<Owner, int>>(
@@ -106,7 +106,7 @@ public partial class InterpolateTests {
         var catNameExpr = ExpressionOn<Cat>.Of(c => c.Name);
 
         #pragma warning disable ARB001
-        var interpolated = ExpressionOn<Owner>.Interpolate(
+        var interpolated = ExpressionOn<Owner>.Interpolate(default(object),
             (x, o) => o.CatsEnumerable.Any(c => x.SpliceBody(c, catNameExpr) == "Garfield")
         );
         #pragma warning restore
@@ -121,7 +121,7 @@ public partial class InterpolateTests {
     public void Interpolate_SpliceBody_should_work_within_a_subexpression() {
         var catNameExpr = ExpressionOn<Cat>.Of(c => c.Name);
         #pragma warning disable ARB001
-        var interpolated = ExpressionOn<Owner>.Interpolate(
+        var interpolated = ExpressionOn<Owner>.Interpolate(default(object),
             (x, o) => o.CatsQueryable.Any(c => x.SpliceBody(c, catNameExpr) == "Garfield")
         );
         #pragma warning restore
@@ -185,7 +185,7 @@ public partial class InterpolateTests {
     [Fact]
     public void Interpolate_SpliceValue_should_embed_constants() {
         ExpressionOn<Owner>.Interpolate(3, (x, o) => from c in o.CatsQueryable where c.Age == x.SpliceValue(x.Data) select c.Name);
-        var interpolated = ExpressionOnNone.Interpolate(x => x.SpliceValue("foo"));
+        var interpolated = ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue("foo"));
 
         var expected = Expression.Lambda<Func<string>>(Expression.Constant("foo"));
 

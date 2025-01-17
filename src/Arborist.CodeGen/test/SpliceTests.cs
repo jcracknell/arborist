@@ -8,7 +8,7 @@ public class SpliceTests {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Using("System.Linq.Expressions")
         .Generate(@"
-            ExpressionOnNone.Interpolate(x => x.Splice<int>(Expression.Constant(3)));
+            ExpressionOnNone.Interpolate(default(object), x => x.Splice<int>(Expression.Constant(3)));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);

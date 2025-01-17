@@ -8,7 +8,7 @@ public partial class InterpolateTests {
         #pragma warning disable ARB003
         Assert.Equivalent(
             expected: ExpressionOn<Owner>.Of(o => o.Id + 42),
-            actual: ExpressionOn<Owner>.Interpolate((x, o) => o.Id + 42)
+            actual: ExpressionOn<Owner>.Interpolate(default(object), (x, o) => o.Id + 42)
         );
         #pragma warning restore
     }
@@ -19,7 +19,7 @@ public partial class InterpolateTests {
         #pragma warning disable CS0458
         Assert.Equivalent(
             expected: ExpressionOn<Owner>.Of(o => new int?(42) + null),
-            actual: ExpressionOn<Owner>.Interpolate((x, o) => new int?(42) + null)
+            actual: ExpressionOn<Owner>.Interpolate(default(object), (x, o) => new int?(42) + null)
         );
         #pragma warning restore
     }
@@ -29,7 +29,7 @@ public partial class InterpolateTests {
         #pragma warning disable ARB003
         Assert.Equivalent(
             expected: ExpressionOn<Cat>.Of(c => c.Id < 42),
-            actual: ExpressionOn<Cat>.Interpolate((x, c) => c.Id < 42)
+            actual: ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Id < 42)
         );
         #pragma warning restore
     }
@@ -39,7 +39,7 @@ public partial class InterpolateTests {
         #pragma warning disable ARB003
         Assert.Equivalent(
             expected: ExpressionOn<Cat>.Of(c => c.Age < 42),
-            actual: ExpressionOn<Cat>.Interpolate((x, c) => c.Age < 42)
+            actual: ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Age < 42)
         );
         #pragma warning restore
     }
@@ -49,7 +49,7 @@ public partial class InterpolateTests {
         #pragma warning disable ARB003
         Assert.Equivalent(
             expected: ExpressionOn<Cat>.Of(c => c.Name + "bar"),
-            actual: ExpressionOn<Cat>.Interpolate((x, c) => c.Name + "bar")
+            actual: ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Name + "bar")
         );
         #pragma warning restore
     }
@@ -61,7 +61,7 @@ public partial class InterpolateTests {
         #pragma warning disable ARB003
         Assert.Equivalent(
             expected: ExpressionOn<Cat>.Of(c => c.Name + c.Name + c.Name),
-            actual: ExpressionOn<Cat>.Interpolate((x, c) => c.Name + c.Name + c.Name)
+            actual: ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Name + c.Name + c.Name)
         );
         #pragma warning restore
     }

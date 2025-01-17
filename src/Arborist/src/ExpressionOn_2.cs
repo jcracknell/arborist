@@ -37,31 +37,6 @@ public static class ExpressionOn<A, B> {
 
     /// <summary>
     /// Applies the interpolation process to the provided <paramref name="expression"/>, replacing
-    /// calls to splicing methods defined on the provided <see cref="IInterpolationContext"/>
-    /// argument with the corresponding subexpressions.
-    /// </summary>
-    /// <typeparam name="R">
-    /// The expression result type.
-    /// </typeparam>
-    [CompileTimeExpressionInterpolator]
-    public static Expression<Func<A, B, R>> Interpolate<R>(
-        Expression<Func<IInterpolationContext, A, B, R>> expression
-    ) =>
-        ExpressionHelper.InterpolateCore<object?, Func<A, B, R>>(default(object), expression);
-
-    /// <summary>
-    /// Applies the interpolation process to the provided <paramref name="expression"/>, replacing
-    /// calls to splicing methods defined on the provided <see cref="IInterpolationContext"/>
-    /// argument with the corresponding subexpressions.
-    /// </summary>
-    [CompileTimeExpressionInterpolator]
-    public static Expression<Action<A, B>> Interpolate(
-        Expression<Action<IInterpolationContext, A, B>> expression
-    ) =>
-        ExpressionHelper.InterpolateCore<object?, Action<A, B>>(default(object), expression);
-
-    /// <summary>
-    /// Applies the interpolation process to the provided <paramref name="expression"/>, replacing
     /// calls to splicing methods defined on the provided <see cref="IInterpolationContext{TData}"/>
     /// argument with the corresponding subexpressions.
     /// </summary>
@@ -100,41 +75,6 @@ public static class ExpressionOn<A, B> {
         Expression<Action<IInterpolationContext<TData>, A, B>> expression
     ) =>
         ExpressionHelper.InterpolateCore<TData, Action<A, B>>(data, expression);
-
-    /// <summary>
-    /// Applies the interpolation process to the provided <paramref name="expression"/>, replacing
-    /// calls to splicing methods defined on the provided <see cref="IInterpolationContext"/>
-    /// argument with the corresponding subexpressions.
-    /// </summary>
-    /// <remarks>
-    /// This method is an escape hatch providing explicit access to the runtime interpolation
-    /// implementation, and can be used as a workaround for potential bugs or deficiencies in
-    /// the compile time interpolator.
-    /// </remarks>
-    /// <typeparam name="R">
-    /// The expression result type.
-    /// </typeparam>
-    [RuntimeExpressionInterpolator]
-    public static Expression<Func<A, B, R>> InterpolateRuntimeFallback<R>(
-        Expression<Func<IInterpolationContext, A, B, R>> expression
-    ) =>
-        ExpressionHelper.InterpolateCore<object?, Func<A, B, R>>(default(object), expression);
-
-    /// <summary>
-    /// Applies the interpolation process to the provided <paramref name="expression"/>, replacing
-    /// calls to splicing methods defined on the provided <see cref="IInterpolationContext"/>
-    /// argument with the corresponding subexpressions.
-    /// </summary>
-    /// <remarks>
-    /// This method is an escape hatch providing explicit access to the runtime interpolation
-    /// implementation, and can be used as a workaround for potential bugs or deficiencies in
-    /// the compile time interpolator.
-    /// </remarks>
-    [RuntimeExpressionInterpolator]
-    public static Expression<Action<A, B>> InterpolateRuntimeFallback(
-        Expression<Action<IInterpolationContext, A, B>> expression
-    ) =>
-        ExpressionHelper.InterpolateCore<object?, Action<A, B>>(default(object), expression);
 
     /// <summary>
     /// Applies the interpolation process to the provided <paramref name="expression"/>, replacing

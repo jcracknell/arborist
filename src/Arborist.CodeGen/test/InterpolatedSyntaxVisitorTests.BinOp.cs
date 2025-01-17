@@ -7,7 +7,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_work_for_i32_add() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate((x, o) => o.Id + 42);
+            ExpressionOn<Owner>.Interpolate(default(object), (x, o) => o.Id + 42);
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -35,7 +35,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_work_for_i32_add_lifted() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate((x, o) => new int?(42) + null);
+            ExpressionOn<Owner>.Interpolate(default(object), (x, o) => new int?(42) + null);
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -72,7 +72,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_work_for_i32_lt() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Cat>.Interpolate((x, c) => c.Id < 42)
+            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Id < 42)
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -100,7 +100,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_work_for_i32_lt_lifted() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Cat>.Interpolate((x, c) => c.Age < 42)
+            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Age < 42)
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -131,7 +131,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_work_for_string_add() {
         var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Cat>.Interpolate((x, c) => c.Name + ""bar"");
+            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Name + ""bar"");
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);

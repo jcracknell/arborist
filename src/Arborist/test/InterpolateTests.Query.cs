@@ -6,7 +6,7 @@ public partial class InterpolateTests {
     [Fact]
     public void Should_handle_select_clause() {
         #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate(
+        var interpolated = ExpressionOn<Owner>.Interpolate(default(object),
             (x, o) => from c in o.Cats select c.Name
         );
         #pragma warning restore
@@ -21,7 +21,7 @@ public partial class InterpolateTests {
     [Fact]
     public void Should_handle_from_clause_with_cast() {
         #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate(
+        var interpolated = ExpressionOn<Owner>.Interpolate(default(object),
             (x, o) => from object c in o.Cats select c.GetHashCode()
         );
         #pragma warning restore
@@ -58,7 +58,7 @@ public partial class InterpolateTests {
     [Fact]
     public void Should_handle_join_clause_with_cast() {
         #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate((x, o) =>
+        var interpolated = ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
             from c in o.Cats
             join object c1 in o.Cats on c.Id equals c1.GetHashCode()
             select c1.GetHashCode()
@@ -80,7 +80,7 @@ public partial class InterpolateTests {
     [Fact]
     public void Should_handle_join_into_clause() {
         #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate((x, o) =>
+        var interpolated = ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
             from c in o.Cats
             join c1 in o.Cats on c.Id equals c1.Id into cs
             from cc in cs
@@ -107,7 +107,7 @@ public partial class InterpolateTests {
     [Fact]
     public void Should_handle_let_clause() {
         #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate((x, o) =>
+        var interpolated = ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
             from c in o.Cats
             let n = o.Name
             select c.Name + n
@@ -125,7 +125,7 @@ public partial class InterpolateTests {
     [Fact]
     public void Should_handle_orderby_clause() {
         #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate((x, o) =>
+        var interpolated = ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
             from c in o.Cats
             orderby c.Name ascending, c.Age descending
             select c.Name
@@ -144,7 +144,7 @@ public partial class InterpolateTests {
     [Fact]
     public void Should_handle_where_clause() {
         #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate((x, o) =>
+        var interpolated = ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
             from c in o.Cats
             where c.Age == 8
             select c.Name
@@ -162,7 +162,7 @@ public partial class InterpolateTests {
     [Fact]
     public void Should_handle_transparent_identifier_in_from_clause() {
         #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate((x, o) =>
+        var interpolated = ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
             from a in o.Cats
             from b in o.Cats
             from c in o.Cats
@@ -183,7 +183,7 @@ public partial class InterpolateTests {
     [Fact]
     public void Should_handle_transparent_identifier_in_groupby_clause() {
         #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate((x, o) =>
+        var interpolated = ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
             from a in o.Cats
             from b in o.Cats
             from c in o.Cats
@@ -203,7 +203,7 @@ public partial class InterpolateTests {
     [Fact]
     public void Should_handle_transparent_identifier_in_let_clause() {
         #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate((x, o) =>
+        var interpolated = ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
             from c in o.Cats
             let n = o.Name
             let m = o.Id
@@ -223,7 +223,7 @@ public partial class InterpolateTests {
     [Fact]
     public void Should_handle_transparent_identifier_in_join_clause() {
         #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate((x, o) =>
+        var interpolated = ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
             from a in o.Cats
             join b in o.Cats on a.Id equals b.Id
             join c in o.Cats on a.Id equals c.Id
@@ -245,7 +245,7 @@ public partial class InterpolateTests {
     [Fact]
     public void Should_handle_transparent_identifier_in_orderby_clause() {
         #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate((x, o) =>
+        var interpolated = ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
             from a in o.Cats
             from b in o.Cats
             from c in o.Cats
@@ -267,7 +267,7 @@ public partial class InterpolateTests {
     [Fact]
     public void Should_handle_transparent_identifier_in_where_clause() {
         #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate((x, o) =>
+        var interpolated = ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
             from a in o.Cats
             from b in o.Cats
             from c in o.Cats

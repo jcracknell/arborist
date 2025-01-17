@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Diagnostics;
 using System.Reflection;
 using System.Text;
 
@@ -85,6 +86,9 @@ public sealed class InterpolatorInterceptorGeneratorTestBuilder {
         };
 
         var driver = CSharpGeneratorDriver.Create(generator)
+        .WithUpdatedAnalyzerConfigOptions(new TestAnalyzerConfigOptionsProvider(new() {
+            ["build_property._ArboristInterceptorsNamespaces"] = "Arborist.Interpolation.Interceptors"
+        }))
         .RunGeneratorsAndUpdateCompilation(compilation, out _, out var generatorDiagnostics);
 
         return new InterpolatorInterceptorGeneratorTestResults(
@@ -113,5 +117,25 @@ public sealed class InterpolatorInterceptorGeneratorTestBuilder {
         sb.AppendLine($"}}");
 
         return sb.ToString();
+    }
+
+    private sealed class TestAnalyzerConfigOptionsProvider(Dictionary<string, string> entries)
+        : AnalyzerConfigOptionsProvider
+    {
+        private readonly AnalyzerConfigOptions _options = new TestAnalyzerConfigOptions(entries);
+
+        public override AnalyzerConfigOptions GlobalOptions =>
+            _options;
+
+        public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) =>
+            _options;
+
+        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) =>
+            _options;
+    }
+
+    private sealed class TestAnalyzerConfigOptions(IReadOnlyDictionary<string, string> entries) : AnalyzerConfigOptions {
+        public override bool TryGetValue(string key, [NotNullWhen(true)] out string? value) =>
+            entries.TryGetValue(key, out value);
     }
 }

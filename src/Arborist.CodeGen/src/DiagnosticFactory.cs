@@ -7,11 +7,14 @@ public sealed class DiagnosticFactory(
     SourceProductionContext sourceProductionContext,
     InvocationExpressionSyntax invocationSyntax
 ) {
-    public const string ARB999_UnsupportedInterpolatorInvocation = "ARB999";
-    public const string ARB998_UnsupportedInterpolatedSyntax = "ARB999";
-    public const string ARB997_UnsupportedEvaluatedSyntax = "ARB997";
-    public const string ARB996_UnsupportedType = "ARB996";
+    public const string Category = "Arborist.Interpolation";
 
+    public const string ARB998_UnsupportedInterpolatorInvocation = "ARB998";
+    public const string ARB997_UnsupportedInterpolatedSyntax = "ARB997";
+    public const string ARB996_UnsupportedEvaluatedSyntax = "ARB996";
+    public const string ARB995_UnsupportedType = "ARB995";
+
+    public const string ARB000_SetInterpolatorsNamespaces = "ARB000";
     public const string ARB001_ClosureOverScopeReference = "ARB001";
     public const string ARB002_EvaluatedInterpolatedParameter = "ARB002";
     public const string ARB003_NoSplices = "ARB003";
@@ -30,7 +33,7 @@ public sealed class DiagnosticFactory(
                 id: code,
                 title: title,
                 messageFormat: message,
-                category: "ExpressionInterpolation",
+                category: Category,
                 defaultSeverity: severity,
                 isEnabledByDefault: true
             ),
@@ -42,7 +45,7 @@ public sealed class DiagnosticFactory(
     public InterpolatedTree UnsupportedInterpolatedSyntax(SyntaxNode node) =>
         Diagnostic(
             result: InterpolatedTree.Unsupported,
-            code: ARB998_UnsupportedInterpolatedSyntax,
+            code: ARB997_UnsupportedInterpolatedSyntax,
             severity: DiagnosticSeverity.Info,
             title: "Unsupported Syntax",
             message: $"Syntax node {node} ({node.GetType()}) is not currently supported by compile-time interpolation.",
@@ -52,7 +55,7 @@ public sealed class DiagnosticFactory(
     public InterpolatedTree UnsupportedEvaluatedSyntax(SyntaxNode node) =>
         Diagnostic(
             result: InterpolatedTree.Unsupported,
-            code: ARB997_UnsupportedEvaluatedSyntax,
+            code: ARB996_UnsupportedEvaluatedSyntax,
             severity: DiagnosticSeverity.Info,
             title: "Unsupported Syntax",
             message: $"Syntax node {node} ({node.GetType()}) is not currently supported by compile-time interpolation.",
@@ -62,7 +65,7 @@ public sealed class DiagnosticFactory(
     public InterpolatedTree UnsupportedType(ITypeSymbol typeSymbol, SyntaxNode? syntax) =>
         Diagnostic(
             result: InterpolatedTree.Unsupported,
-            code: ARB996_UnsupportedType,
+            code: ARB995_UnsupportedType,
             severity: DiagnosticSeverity.Info,
             title: "Unsupported Type",
             message: $"Interpolated expression contains unsupported type symbol {typeSymbol} and cannot be interpolated at compile time.",

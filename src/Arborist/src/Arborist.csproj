@@ -2,6 +2,12 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <InterceptorsPreviewNamespaces>$(InterceptiorsPreviewNamespaces);Arborist.Interpolation.Interceptors</InterceptorsPreviewNamespaces>
+  </PropertyGroup>
+
+  <Import Project="../../Arborist.CodeGen/src/Arborist.CodeGen.props"/>
+  <PropertyGroup>
+    <InterceptorsPreviewNamespaces>$(InterceptiorsPreviewNamespaces);Arborist.Interpolation.Interceptors</InterceptorsPreviewNamespaces>
   </PropertyGroup>
 
   <PropertyGroup>

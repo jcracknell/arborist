@@ -3,7 +3,11 @@
     <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>Arborist</RootNamespace>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
-    <InterceptorsPreviewNamespaces>$(InterceptorsNamespaces);Arborist.Interpolation.Interceptors</InterceptorsPreviewNamespaces>
+  </PropertyGroup>
+
+  <Import Project="../../Arborist.CodeGen/src/Arborist.CodeGen.props"/>
+  <PropertyGroup>
+    <InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);Arborist.Interpolation.Interceptors</InterceptorsPreviewNamespaces>
   </PropertyGroup>
 
   <ItemGroup>

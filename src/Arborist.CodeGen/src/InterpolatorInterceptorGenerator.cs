@@ -1,11 +1,17 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using StringBuilder = System.Text.StringBuilder;
+using Microsoft.CodeAnalysis.Diagnostics;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Arborist.CodeGen;
 
 [Generator]
 public class InterpolatorInterceptorGenerator : IIncrementalGenerator {
+    // InterceptorsNamespaces is not supported by the current LTS SDK release (the 8.0.1XX line),
+    // so for now we ask for InterceptorsPreviewNamespaces
+    public const string INTERCEPTORSNAMESPACES_BUILD_PROP = "InterceptorsPreviewNamespaces";
+    public const string INTERCEPTOR_NAMESPACE = "Arborist.Interpolation.Interceptors";
     public const int MAX_DELEGATE_PARAMETER_COUNT = 5;
 
     public Action<InterpolatorAnalysisResults>? AnalysisResultHandler { get; set; }
@@ -19,7 +25,9 @@ public class InterpolatorInterceptorGenerator : IIncrementalGenerator {
         .Select(static (tup, _) => tup!.Value)
         .Collect();
 
-        var compilationAndInvocations = context.CompilationProvider.Combine(targetInvocations);
+        var compilationAndInvocations = context.CompilationProvider
+        .Combine(context.AnalyzerConfigOptionsProvider)
+        .Combine(targetInvocations);
 
         context.RegisterSourceOutput(compilationAndInvocations, GenerateSources);
     }
@@ -55,58 +63,62 @@ public class InterpolatorInterceptorGenerator : IIncrementalGenerator {
 
     private void GenerateSources(
         SourceProductionContext sourceProductionContext,
-        (Compilation, ImmutableArray<(InvocationExpressionSyntax, IMethodSymbol)>) inputs
+        (
+            (Compilation, AnalyzerConfigOptionsProvider),
+            ImmutableArray<(InvocationExpressionSyntax, IMethodSymbol)>
+        ) inputs
     ) {
-        try {
-            var (compilation, invocations) = inputs;
+        var ((compilation, analyzerOptions), invocations) = inputs;
 
-            var typeSymbols = InterpolatorTypeSymbols.Create(compilation);
-            var analyses = ProcessInvocations(sourceProductionContext, compilation, invocations, typeSymbols)
-            .Where(static a => a.IsSupported)
-            .ToList();
+        var typeSymbols = InterpolatorTypeSymbols.Create(compilation);
 
-            if(analyses.Count != 0)
-                GenerateInterceptors(compilation, sourceProductionContext, analyses);
-        } catch(Exception ex) {
-            sourceProductionContext.ReportDiagnostic(Diagnostic.Create(
-                new DiagnosticDescriptor(
-                    id: "ARB000",
-                    title: "",
-                    messageFormat: $"An exception occurred: {ex.GetType()} {ex} {ex.StackTrace}",
-                    defaultSeverity: DiagnosticSeverity.Error,
-                    category: "Error",
-                    isEnabledByDefault: true
-                ),
-                location: default
-            ));
-        }
+        var analyses = ProcessInvocations(sourceProductionContext, compilation, analyzerOptions, invocations, typeSymbols)
+        .Where(a => a.IsSupported)
+        .ToList();
+
+        GenerateInterceptors(compilation, sourceProductionContext, analyzerOptions, analyses);
+    }
+
+    private bool GetInterceptorsEnabled(AnalyzerConfigOptionsProvider analyzerOptions) {
+        if(!analyzerOptions.GlobalOptions.TryGetValue("build_property._ArboristInterceptorsNamespaces", out var propertyValue))
+            return false;
+        if(Regex.IsMatch(propertyValue, $@"(^|\s+){Regex.Escape(INTERCEPTOR_NAMESPACE)}(\s+|$)"))
+            return true;
+
+        return false;
     }
 
     private void GenerateInterceptors(
         Compilation compilation,
         SourceProductionContext sourceProductionContext,
+        AnalyzerConfigOptionsProvider analyzerOptions,
         IReadOnlyList<InterpolatorAnalysisResults> analyses
     ) {
         var sb = new StringBuilder();
         GenerateInterceptsLocationAttribute(sb);
 
         sb.AppendLine("");
-        sb.AppendLine("namespace Arborist.Interpolation.Interceptors {");
+        sb.AppendLine($"namespace {INTERCEPTOR_NAMESPACE} {{");
 
         var assemblyName = compilation.AssemblyName;
         var className = $"{assemblyName}.InterpolatorInterceptors".Replace("_", "__").Replace(".", "_");
         sb.AppendLine($"    file static class {className} {{");
 
-        foreach(var analysis in analyses) {
-            sb.AppendLine("");
-            GenerateInterceptor(analysis, sb);
+        if(!GetInterceptorsEnabled(analyzerOptions)) {
+            sb.AppendLine($"        // Add {INTERCEPTOR_NAMESPACE} to the {INTERCEPTORSNAMESPACES_BUILD_PROP} build property");
+            sb.AppendLine($"        // to enable compile-time expression interpolation.");
+        } else {
+            foreach(var analysis in analyses) {
+                sb.AppendLine("");
+                GenerateInterceptor(sb, analysis);
+            }
         }
 
         sb.AppendLine($"    }}");
         sb.AppendLine($"}}");
 
         sourceProductionContext.AddSource(
-            hintName: $"Arborist.Interpolation.Interceptors.{className}.cs",
+            hintName: $"{INTERCEPTOR_NAMESPACE}.{className}.cs",
             source: sb.ToString()
         );
     }
@@ -120,10 +132,7 @@ public class InterpolatorInterceptorGenerator : IIncrementalGenerator {
         sb.AppendLine("}");
     }
 
-    private void GenerateInterceptor(
-        InterpolatorAnalysisResults analysis,
-        StringBuilder sb
-    ) {
+    private void GenerateInterceptor(StringBuilder sb, InterpolatorAnalysisResults analysis) {
         // Create a typeref for the data parameter type so it gets emitted with the other definitions
         if(analysis.DataParameter is not null)
             analysis.Builder.CreateTypeRef(analysis.DataParameter.Type);
@@ -208,22 +217,39 @@ public class InterpolatorInterceptorGenerator : IIncrementalGenerator {
         );
     }
 
-    private IEnumerable<InterpolatorAnalysisResults> ProcessInvocations(
+    private IReadOnlyList<InterpolatorAnalysisResults> ProcessInvocations(
         SourceProductionContext sourceProductionContext,
         Compilation compilation,
+        AnalyzerConfigOptionsProvider analyzerOptions,
         ImmutableArray<(InvocationExpressionSyntax, IMethodSymbol)> invocations,
         InterpolatorTypeSymbols typeSymbols
     ) {
+        var analyses = new List<InterpolatorAnalysisResults>(invocations.Length);
         foreach(var (invocation, methodSymbol) in invocations) {
             // Assert that the input invocation actually calls a method with [ExpressionInterpolator]
             var methodAttrs = methodSymbol.GetAttributes();
             if(!methodAttrs.Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, typeSymbols.CompileTimeExpressionInterpolatorAttribute)))
                 continue;
 
+            if(!GetInterceptorsEnabled(analyzerOptions)) {
+                sourceProductionContext.ReportDiagnostic(Diagnostic.Create(
+                    new DiagnosticDescriptor(
+                        id: DiagnosticFactory.ARB000_SetInterpolatorsNamespaces,
+                        title: $"Add {INTERCEPTOR_NAMESPACE} to the {INTERCEPTORSNAMESPACES_BUILD_PROP} build property",
+                        messageFormat: $"Add {INTERCEPTOR_NAMESPACE} to the {INTERCEPTORSNAMESPACES_BUILD_PROP} build property to enable compile-time expression interpolation.",
+                        defaultSeverity: DiagnosticSeverity.Error,
+                        category: DiagnosticFactory.Category,
+                        isEnabledByDefault: true
+                    ),
+                    location: invocation.GetLocation()
+                ));
+                continue;
+            }
+
             switch(invocation.ArgumentList.Arguments.Count) {
                 case 1 when TryGetLambdaParameter(sourceProductionContext, methodSymbol, methodSymbol.Parameters[0], out var dataType, typeSymbols)
                     && dataType is null:
-                    yield return ProcessInterpolatorInvocation(
+                    analyses.Add(ProcessInterpolatorInvocation(
                         sourceProductionContext,
                         compilation,
                         invocation,
@@ -231,12 +257,12 @@ public class InterpolatorInterceptorGenerator : IIncrementalGenerator {
                         default,
                         methodSymbol.Parameters[0],
                         typeSymbols
-                    );
+                    ));
                     break;
 
                 case 2 when TryGetLambdaParameter(sourceProductionContext, methodSymbol, methodSymbol.Parameters[1], out var dataType, typeSymbols)
                     && TypeSymbolHelpers.IsSubtype(dataType, methodSymbol.Parameters[0].Type):
-                    yield return ProcessInterpolatorInvocation(
+                    analyses.Add(ProcessInterpolatorInvocation(
                         sourceProductionContext,
                         compilation,
                         invocation,
@@ -244,13 +270,13 @@ public class InterpolatorInterceptorGenerator : IIncrementalGenerator {
                         methodSymbol.Parameters[0],
                         methodSymbol.Parameters[1],
                         typeSymbols
-                    );
+                    ));
                     break;
 
                 default:
                     sourceProductionContext.ReportDiagnostic(Diagnostic.Create(
                         descriptor: new DiagnosticDescriptor(
-                            id: DiagnosticFactory.ARB999_UnsupportedInterpolatorInvocation,
+                            id: DiagnosticFactory.ARB998_UnsupportedInterpolatorInvocation,
                             title: "Unhandled expression interpolator method signature",
                             messageFormat: "",
                             category: "Design",
@@ -262,6 +288,8 @@ public class InterpolatorInterceptorGenerator : IIncrementalGenerator {
                     break;
             }
         }
+
+        return analyses;
     }
 
     private InterpolatorAnalysisResults ProcessInterpolatorInvocation(
@@ -274,6 +302,7 @@ public class InterpolatorInterceptorGenerator : IIncrementalGenerator {
         InterpolatorTypeSymbols typeSymbols
     ) {
         var diagnostics = new DiagnosticFactory(sourceProductionContext, invocation);
+
         var builder = new InterpolatedTreeBuilder(diagnostics);
 
         // Get the syntax node for the lambda expression to be interpolated

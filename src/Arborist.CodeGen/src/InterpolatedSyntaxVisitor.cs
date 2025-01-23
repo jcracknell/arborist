@@ -553,6 +553,9 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
     }
 
     public override InterpolatedTree VisitBinaryExpression(BinaryExpressionSyntax node) {
+        if(TryVisitBinarySpecialExpression(node, out var special))
+            return special;
+
         if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not IMethodSymbol method)
             return _builder.CreateExpression(nameof(Expression.MakeBinary),
                 _builder.CreateExpressionType(node),
@@ -583,6 +586,47 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
             InterpolatedTree.Verbatim(lifted ? "true" : "false"),
             CreateBinaryExpressionMethodInfo(node, method, leftType, rightType)
         );
+    }
+
+    private bool TryVisitBinarySpecialExpression(
+        BinaryExpressionSyntax node,
+        [NotNullWhen(true)] out InterpolatedTree? result
+    ) {
+        switch(node.Kind()) {
+            case SyntaxKind.AsExpression:
+                result = VisitBinaryAsExpression(node);
+                return true;
+            case SyntaxKind.IsExpression:
+                result = VisitBinaryIsExpression(node);
+                return true;
+            default:
+                result = default;
+                return false;
+        }
+    }
+
+    private InterpolatedTree VisitBinaryAsExpression(BinaryExpressionSyntax node) {
+        if(_context.SemanticModel.GetTypeInfo(node.Right).Type is not {} typeOperand)
+            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node.Right);
+        if(!TypeSymbolHelpers.IsAccessible(typeOperand))
+            return _context.Diagnostics.InaccessibleSymbol(typeOperand, node.Right);
+
+        return _builder.CreateExpression(nameof(Expression.TypeAs), [
+            Visit(node.Left),
+            _builder.CreateType(typeOperand)
+        ]);
+    }
+
+    private InterpolatedTree VisitBinaryIsExpression(BinaryExpressionSyntax node) {
+        if(_context.SemanticModel.GetTypeInfo(node.Right).Type is not {} typeOperand)
+            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node.Right);
+        if(!TypeSymbolHelpers.IsAccessible(typeOperand))
+            return _context.Diagnostics.InaccessibleSymbol(typeOperand, node.Right);
+
+        return _builder.CreateExpression(nameof(Expression.TypeIs), [
+            Visit(node.Left),
+            _builder.CreateType(typeOperand)
+        ]);
     }
 
     private InterpolatedTree CreateBinaryExpressionMethodInfo(

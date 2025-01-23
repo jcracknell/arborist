@@ -65,4 +65,24 @@ public partial class InterpolateTests {
         );
         #pragma warning restore
     }
+
+    [Fact]
+    public void Should_work_for_as() {
+        Assert.Equivalent(
+            expected: ExpressionOn<Cat>.Of(c => c.Owner as IFormattable),
+            #pragma warning disable ARB003
+            actual: ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Owner as IFormattable)
+            #pragma warning restore
+        );
+    }
+
+    [Fact]
+    public void Should_work_for_is() {
+        Assert.Equivalent(
+            expected: ExpressionOn<Cat>.Of(c => c.Owner is IFormattable),
+            #pragma warning disable ARB003
+            actual: ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Owner is IFormattable)
+            #pragma warning restore
+        );
+    }
 }

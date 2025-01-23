@@ -154,4 +154,48 @@ public partial class InterpolatedSyntaxVisitorTests {
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
     }
+
+    [Fact]
+    public void Should_work_for_as() {
+        var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Owner as IFormattable);
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                global::System.Linq.Expressions.Expression.TypeAs(
+                    global::System.Linq.Expressions.Expression.Property(
+                        __p0,
+                        typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Owner"")!
+                    ),
+                    typeof(global::System.IFormattable)
+                )
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
+    public void Should_work_for_is() {
+        var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Owner is IFormattable);
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                global::System.Linq.Expressions.Expression.TypeIs(
+                    global::System.Linq.Expressions.Expression.Property(
+                        __p0,
+                        typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Owner"")!
+                    ),
+                    typeof(global::System.IFormattable)
+                )
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
 }

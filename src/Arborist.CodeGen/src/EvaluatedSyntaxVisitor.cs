@@ -326,8 +326,59 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
         return InterpolatedTree.Verbatim($"{parameterTypeName} {node.Identifier.Text}");
     }
 
-    public override InterpolatedTree VisitBinaryExpression(BinaryExpressionSyntax node) =>
-        InterpolatedTree.Binary(node.OperatorToken.ToString(), Visit(node.Left), Visit(node.Right));
+    public override InterpolatedTree VisitBinaryExpression(BinaryExpressionSyntax node) {
+        if(TryVisitBinarySpecialExpression(node, out var special))
+            return special;
+
+        return InterpolatedTree.Binary(node.OperatorToken.ToString(), Visit(node.Left), Visit(node.Right));
+    }
+
+    private bool TryVisitBinarySpecialExpression(
+        BinaryExpressionSyntax node,
+        [NotNullWhen(true)] out InterpolatedTree? result
+    ) {
+        switch(node.Kind()) {
+            case SyntaxKind.AsExpression:
+                result = VisitBinaryAsExpression(node);
+                return true;
+            case SyntaxKind.IsExpression:
+                result = VisitBinaryIsExpression(node);
+                return true;
+            default:
+                result = default;
+                return false;
+        }
+    }
+
+    private InterpolatedTree VisitBinaryAsExpression(BinaryExpressionSyntax node) {
+        if(_context.SemanticModel.GetTypeInfo(node.Right).Type is not {} typeOperand)
+            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node.Right);
+        if(!TypeSymbolHelpers.IsAccessible(typeOperand))
+            return _context.Diagnostics.InaccessibleSymbol(typeOperand, node.Right);
+        if(!TypeSymbolHelpers.TryCreateTypeName(typeOperand, out var typeName))
+            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node.Right);
+
+        return InterpolatedTree.Binary(
+            node.OperatorToken.ToString(),
+            Visit(node.Left),
+            InterpolatedTree.Verbatim(typeName)
+        );
+    }
+
+    private InterpolatedTree VisitBinaryIsExpression(BinaryExpressionSyntax node) {
+        if(_context.SemanticModel.GetTypeInfo(node.Right).Type is not {} typeOperand)
+            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node.Right);
+        if(!TypeSymbolHelpers.IsAccessible(typeOperand))
+            return _context.Diagnostics.InaccessibleSymbol(typeOperand, node.Right);
+        if(!TypeSymbolHelpers.TryCreateTypeName(typeOperand, out var typeName))
+            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node.Right);
+
+        return InterpolatedTree.Binary(
+            node.OperatorToken.ToString(),
+            Visit(node.Left),
+            InterpolatedTree.Verbatim(typeName)
+        );
+    }
 
     public override InterpolatedTree? VisitPrefixUnaryExpression(PrefixUnaryExpressionSyntax node) =>
         InterpolatedTree.Concat(

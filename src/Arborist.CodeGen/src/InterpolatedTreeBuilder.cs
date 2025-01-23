@@ -96,51 +96,6 @@ public class InterpolatedTreeBuilder {
             InterpolatedTree.Initializer(elements.ToList())
         );
 
-    public InterpolatedTree CreateExpressionType(SyntaxNode syntax) {
-        if(TryGetExpressionTypeName(syntax) is not {} name)
-            return _diagnostics.UnsupportedInterpolatedSyntax(syntax);
-
-        return InterpolatedTree.Verbatim($"global::System.Linq.Expressions.ExpressionType.{name}");
-    }
-
-    private string? TryGetExpressionTypeName(SyntaxNode syntax) => syntax.Kind() switch {
-        SyntaxKind.CoalesceExpression => nameof(ExpressionType.Coalesce),
-        // Logic
-        SyntaxKind.LogicalNotExpression => nameof(ExpressionType.Not),
-        SyntaxKind.LogicalAndExpression => nameof(ExpressionType.AndAlso),
-        SyntaxKind.LogicalOrExpression => nameof(ExpressionType.OrElse),
-        // Comparison
-        SyntaxKind.EqualsExpression => nameof(ExpressionType.Equal),
-        SyntaxKind.NotEqualsExpression => nameof(ExpressionType.NotEqual),
-        SyntaxKind.LessThanExpression => nameof(ExpressionType.LessThan),
-        SyntaxKind.LessThanOrEqualExpression => nameof(ExpressionType.LessThanOrEqual),
-        SyntaxKind.GreaterThanExpression => nameof(ExpressionType.GreaterThan),
-        SyntaxKind.GreaterThanOrEqualExpression => nameof(ExpressionType.GreaterThanOrEqual),
-        // Arithmetic
-        SyntaxKind.UnaryMinusExpression => nameof(ExpressionType.Negate),
-        SyntaxKind.UnaryPlusExpression => nameof(ExpressionType.UnaryPlus),
-        SyntaxKind.AddExpression => nameof(ExpressionType.Add),
-        SyntaxKind.AddAssignmentExpression => nameof(ExpressionType.AddAssign),
-        SyntaxKind.SubtractExpression => nameof(ExpressionType.Subtract),
-        SyntaxKind.SubtractAssignmentExpression => nameof(ExpressionType.SubtractAssign),
-        SyntaxKind.MultiplyExpression => nameof(ExpressionType.Multiply),
-        SyntaxKind.MultiplyAssignmentExpression => nameof(ExpressionType.MultiplyAssign),
-        SyntaxKind.DivideExpression => nameof(ExpressionType.Divide),
-        SyntaxKind.DivideAssignmentExpression => nameof(ExpressionType.DivideAssign),
-        SyntaxKind.ModuloExpression => nameof(ExpressionType.Modulo),
-        SyntaxKind.ModuloAssignmentExpression => nameof(ExpressionType.ModuloAssign),
-        // Bitwise
-        SyntaxKind.BitwiseNotExpression => nameof(ExpressionType.Not),
-        SyntaxKind.BitwiseAndExpression => nameof(ExpressionType.And),
-        SyntaxKind.BitwiseOrExpression => nameof(ExpressionType.Or),
-        SyntaxKind.ExclusiveOrExpression => nameof(ExpressionType.ExclusiveOr),
-        SyntaxKind.ExclusiveOrAssignmentExpression => nameof(ExpressionType.ExclusiveOrAssign),
-        SyntaxKind.LeftShiftExpression => nameof(ExpressionType.LeftShift),
-        SyntaxKind.LeftShiftAssignmentExpression => nameof(ExpressionType.LeftShiftAssign),
-        SyntaxKind.RightShiftExpression => nameof(ExpressionType.RightShift),
-        SyntaxKind.RightShiftAssignmentExpression => nameof(ExpressionType.RightShiftAssign),
-        _ => default
-    };
 
     public InterpolatedTree CreateDefaultValue(ITypeSymbol type) {
         if(TypeSymbolHelpers.TryCreateTypeName(type.WithNullableAnnotation(NullableAnnotation.None), out var typeName))

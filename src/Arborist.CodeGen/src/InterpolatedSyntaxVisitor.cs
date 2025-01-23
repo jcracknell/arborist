@@ -360,6 +360,12 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         }
     }
 
+    public override InterpolatedTree VisitCheckedExpression(CheckedExpressionSyntax node) {
+        // Checked expressions do not appear in the resulting expression tree, however they
+        // alter the expressions produced for their decendants.
+        return Visit(node.Expression);
+    }
+
     public override InterpolatedTree VisitCastExpression(CastExpressionSyntax node) {
         if(_context.SemanticModel.GetTypeInfo(node).Type is not {} type)
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
@@ -558,7 +564,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
 
         if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not IMethodSymbol method)
             return _builder.CreateExpression(nameof(Expression.MakeBinary),
-                _builder.CreateExpressionType(node),
+                GetExpressionTypeName(node),
                 Visit(node.Left),
                 Visit(node.Right)
             );
@@ -580,7 +586,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         && SymbolEqualityComparer.Default.Equals(named.TypeArguments[0], method.ReturnType);
 
         return _builder.CreateExpression(nameof(Expression.MakeBinary),
-            _builder.CreateExpressionType(node),
+            GetExpressionTypeName(node),
             Visit(node.Left),
             Visit(node.Right),
             InterpolatedTree.Verbatim(lifted ? "true" : "false"),
@@ -666,13 +672,13 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
 
         if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not IMethodSymbol method)
             return _builder.CreateExpression(nameof(Expression.MakeUnary),
-                _builder.CreateExpressionType(node),
+                GetExpressionTypeName(node),
                 Visit(operand),
                 _builder.CreateType(operandType)
             );
 
         return _builder.CreateExpression(nameof(Expression.MakeUnary),
-            _builder.CreateExpressionType(node),
+            GetExpressionTypeName(node),
             Visit(operand),
             _builder.CreateType(operandType),
             _builder.CreateMethodInfo(method, node)
@@ -704,4 +710,71 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
                 ]);
         }
     }
+
+    private InterpolatedTree GetExpressionTypeName(SyntaxNode node) {
+        if(GetExpressionTypeName(node, _context.SemanticModel) is not {} name)
+            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
+
+        return InterpolatedTree.Verbatim($"global::System.Linq.Expressions.ExpressionType.{name}");
+    }
+
+    private static string? GetExpressionTypeName(SyntaxNode node, SemanticModel semanticModel) => node.Kind() switch {
+        SyntaxKind.CoalesceExpression => nameof(ExpressionType.Coalesce),
+        // Logic
+        SyntaxKind.LogicalNotExpression => nameof(ExpressionType.Not),
+        SyntaxKind.LogicalAndExpression => nameof(ExpressionType.AndAlso),
+        SyntaxKind.LogicalOrExpression => nameof(ExpressionType.OrElse),
+        // Comparison
+        SyntaxKind.EqualsExpression => nameof(ExpressionType.Equal),
+        SyntaxKind.NotEqualsExpression => nameof(ExpressionType.NotEqual),
+        SyntaxKind.LessThanExpression => nameof(ExpressionType.LessThan),
+        SyntaxKind.LessThanOrEqualExpression => nameof(ExpressionType.LessThanOrEqual),
+        SyntaxKind.GreaterThanExpression => nameof(ExpressionType.GreaterThan),
+        SyntaxKind.GreaterThanOrEqualExpression => nameof(ExpressionType.GreaterThanOrEqual),
+        // Arithmetic
+        SyntaxKind.UnaryMinusExpression => SyntaxHelpers.InCheckedContext(node, semanticModel) switch {
+            true => nameof(ExpressionType.NegateChecked),
+            false => nameof(ExpressionType.Negate)
+        },
+        SyntaxKind.UnaryPlusExpression => nameof(ExpressionType.UnaryPlus),
+        SyntaxKind.AddExpression => SyntaxHelpers.InCheckedContext(node, semanticModel) switch {
+            true => nameof(ExpressionType.AddChecked),
+            false => nameof(ExpressionType.Add)
+        },
+        SyntaxKind.AddAssignmentExpression => SyntaxHelpers.InCheckedContext(node, semanticModel) switch {
+            true => nameof(ExpressionType.AddAssignChecked),
+            false => nameof(ExpressionType.AddAssign)
+        },
+        SyntaxKind.SubtractExpression => SyntaxHelpers.InCheckedContext(node, semanticModel) switch {
+            true => nameof(ExpressionType.SubtractChecked),
+            false => nameof(ExpressionType.Subtract)
+        },
+        SyntaxKind.SubtractAssignmentExpression => SyntaxHelpers.InCheckedContext(node, semanticModel) switch {
+            true => nameof(ExpressionType.SubtractAssignChecked),
+            false => nameof(ExpressionType.SubtractAssign)
+        },
+        SyntaxKind.MultiplyExpression => SyntaxHelpers.InCheckedContext(node, semanticModel) switch {
+            true => nameof(ExpressionType.MultiplyChecked),
+            false => nameof(ExpressionType.Multiply)
+        },
+        SyntaxKind.MultiplyAssignmentExpression => SyntaxHelpers.InCheckedContext(node, semanticModel) switch {
+            true => nameof(ExpressionType.MultiplyAssignChecked),
+            false => nameof(ExpressionType.MultiplyAssign)
+        },
+        SyntaxKind.DivideExpression => nameof(ExpressionType.Divide),
+        SyntaxKind.DivideAssignmentExpression => nameof(ExpressionType.DivideAssign),
+        SyntaxKind.ModuloExpression => nameof(ExpressionType.Modulo),
+        SyntaxKind.ModuloAssignmentExpression => nameof(ExpressionType.ModuloAssign),
+        // Bitwise
+        SyntaxKind.BitwiseNotExpression => nameof(ExpressionType.Not),
+        SyntaxKind.BitwiseAndExpression => nameof(ExpressionType.And),
+        SyntaxKind.BitwiseOrExpression => nameof(ExpressionType.Or),
+        SyntaxKind.ExclusiveOrExpression => nameof(ExpressionType.ExclusiveOr),
+        SyntaxKind.ExclusiveOrAssignmentExpression => nameof(ExpressionType.ExclusiveOrAssign),
+        SyntaxKind.LeftShiftExpression => nameof(ExpressionType.LeftShift),
+        SyntaxKind.LeftShiftAssignmentExpression => nameof(ExpressionType.LeftShiftAssign),
+        SyntaxKind.RightShiftExpression => nameof(ExpressionType.RightShift),
+        SyntaxKind.RightShiftAssignmentExpression => nameof(ExpressionType.RightShiftAssign),
+        _ => default
+    };
 }

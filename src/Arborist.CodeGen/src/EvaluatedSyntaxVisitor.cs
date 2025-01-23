@@ -162,6 +162,12 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
             )
         };
 
+    public override InterpolatedTree VisitCheckedExpression(CheckedExpressionSyntax node) {
+        return InterpolatedTree.StaticCall(InterpolatedTree.Verbatim(node.Keyword.ValueText), [
+            Visit(node.Expression)
+        ]);
+    }
+
     public override InterpolatedTree VisitCastExpression(CastExpressionSyntax node) {
         if(_context.SemanticModel.GetTypeInfo(node).Type is not {} nodeType)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);

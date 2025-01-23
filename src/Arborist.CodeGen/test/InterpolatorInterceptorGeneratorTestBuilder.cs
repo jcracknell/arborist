@@ -78,8 +78,8 @@ public sealed class InterpolatorInterceptorGeneratorTestBuilder {
             generalDiagnosticOption: ReportDiagnostic.Info
         ));
 
-        var analysisResults = new List<InterpolatorAnalysisResults>();
-        var generator = new InterpolatorInterceptorGenerator {
+        var analysisResults = new List<InterpolationAnalysisResult>();
+        var generator = new InterpolationInterceptorGenerator {
             AnalysisResultHandler = (result) => {
                 analysisResults.Add(result);
             }

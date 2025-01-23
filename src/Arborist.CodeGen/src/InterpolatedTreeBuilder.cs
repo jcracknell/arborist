@@ -6,16 +6,16 @@ namespace Arborist.CodeGen;
 
 public class InterpolatedTreeBuilder {
     private int _identifierCount;
-    private readonly DiagnosticFactory _diagnostics;
-    private readonly Dictionary<IMethodSymbol, LocalDefinition> _methodInfos;
-    private readonly Dictionary<(string, ITypeSymbol), LocalDefinition> _parameters;
-    private readonly Dictionary<ITypeSymbol, LocalDefinition> _typeRefs;
+    private readonly InterpolationDiagnosticsCollector _diagnostics;
+    private readonly Dictionary<IMethodSymbol, InterpolatedValueDefinition> _methodInfos;
+    private readonly Dictionary<(string, ITypeSymbol), InterpolatedValueDefinition> _parameters;
+    private readonly Dictionary<ITypeSymbol, InterpolatedValueDefinition> _typeRefs;
     private readonly Dictionary<ITypeSymbol, string> _typeRefFactories;
-    private readonly IReadOnlyList<IReadOnlyCollection<LocalDefinition>> _valueDefinitionCollections;
+    private readonly IReadOnlyList<IReadOnlyCollection<InterpolatedValueDefinition>> _valueDefinitionCollections;
     private readonly List<InterpolatedTree> _methodDefinitions;
-    private readonly LocalDefinition.Factory _definitionFactory;
+    private readonly InterpolatedValueDefinition.Factory _definitionFactory;
 
-    public InterpolatedTreeBuilder(DiagnosticFactory diagnostics) {
+    public InterpolatedTreeBuilder(InterpolationDiagnosticsCollector diagnostics) {
         _identifierCount = 0;
         _diagnostics = diagnostics;
         _methodInfos = new(SymbolEqualityComparer.Default);
@@ -31,7 +31,7 @@ public class InterpolatedTreeBuilder {
         ];
 
 
-        _definitionFactory = new LocalDefinition.Factory(GetValueDefinitionCount);
+        _definitionFactory = new InterpolatedValueDefinition.Factory(GetValueDefinitionCount);
     }
 
     public string DataIdentifier { get; } = "__data";
@@ -39,7 +39,7 @@ public class InterpolatedTreeBuilder {
     protected int GetValueDefinitionCount() =>
         _valueDefinitionCollections.Sum(static c => c.Count(static d => d.IsInitialized));
 
-    public IEnumerable<LocalDefinition> ValueDefinitions =>
+    public IEnumerable<InterpolatedValueDefinition> ValueDefinitions =>
         _valueDefinitionCollections.SelectMany(static x => x)
         .OrderBy(static r => r.Order);
 
@@ -154,7 +154,7 @@ public class InterpolatedTreeBuilder {
 
     public InterpolatedTree CreateType(ITypeSymbol type) {
         if(!TypeSymbolHelpers.IsAccessible(type))
-            return _diagnostics.InaccesibleSymbol(type, default);
+            return _diagnostics.InaccessibleSymbol(type, default);
 
         // If this is a nameable type, then return an inline type reference
         if(TypeSymbolHelpers.TryCreateTypeName(type.WithNullableAnnotation(NullableAnnotation.None), out var typeName))
@@ -166,7 +166,7 @@ public class InterpolatedTreeBuilder {
 
     public InterpolatedTree CreateTypeRef(ITypeSymbol type) {
         if(!TypeSymbolHelpers.IsAccessible(type))
-            return _diagnostics.InaccesibleSymbol(type, default);
+            return _diagnostics.InaccessibleSymbol(type, default);
 
         if(_typeRefs.TryGetValue(type, out var cached)) {
             // This shouldn't be possible, as it would require a self-referential generic type
@@ -178,13 +178,9 @@ public class InterpolatedTreeBuilder {
 
         var definition = _definitionFactory.Create($"__t{_typeRefs.Count}");
         _typeRefs[type] = definition;
-        try {
-            definition.SetInitializer(CreateTypeRefUncached(type));
-            return InterpolatedTree.Verbatim(definition.Identifier);
-        } catch {
-            _typeRefs.Remove(type);
-            throw;
-        }
+
+        _definitionFactory.Set(definition, CreateTypeRefUncached(type));
+        return InterpolatedTree.Verbatim(definition.Identifier);
     }
 
     private InterpolatedTree CreateTypeRefUncached(ITypeSymbol type) {
@@ -265,13 +261,9 @@ public class InterpolatedTreeBuilder {
 
         var definition = _definitionFactory.Create($"__m{_methodInfos.Count}");
         _methodInfos[method] = definition;
-        try {
-            definition.SetInitializer(CreateMethodInfoUncached(method, node));
-            return InterpolatedTree.Verbatim(definition.Identifier);
-        } catch {
-            _methodInfos.Remove(method);
-            throw;
-        }
+
+        _definitionFactory.Set(definition, CreateMethodInfoUncached(method, node));
+        return InterpolatedTree.Verbatim(definition.Identifier);
     }
 
     private InterpolatedTree CreateMethodInfoUncached(IMethodSymbol method, SyntaxNode? node) {
@@ -355,18 +347,14 @@ public class InterpolatedTreeBuilder {
 
         var definition = _definitionFactory.Create($"__p{_parameters.Count}");
         _parameters[cacheKey] = definition;
-        try {
-            var parameterExpression = CreateExpression(nameof(Expression.Parameter), [
-                CreateType(type),
-                InterpolatedTree.Verbatim($"\"{name}\"")
-            ]);
 
-            definition.SetInitializer(parameterExpression);
-            return InterpolatedTree.Verbatim(definition.Identifier);
-        } catch {
-            _parameters.Remove(cacheKey);
-            throw;
-        }
+        var parameterExpression = CreateExpression(nameof(Expression.Parameter), [
+            CreateType(type),
+            InterpolatedTree.Verbatim($"\"{name}\"")
+        ]);
+
+        _definitionFactory.Set(definition, parameterExpression);
+        return InterpolatedTree.Verbatim(definition.Identifier);
     }
 
     private sealed class ParameterDefinitionsKeyEqualityComparer : IEqualityComparer<(string, ITypeSymbol)> {

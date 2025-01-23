@@ -100,8 +100,11 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
 
     public abstract bool IsSupported { get; }
     public abstract void Render(RenderingContext context);
-
     protected abstract InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer);
+
+    public void WriteTo(PooledStringWriter writer, int level) {
+        Render(new RenderingContext(writer, level));
+    }
 
     public InterpolatedTree Replace(InterpolatedTree search, InterpolatedTree replacement) {
         return Replacer(this);
@@ -123,17 +126,16 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         ToString(0);
 
     public string ToString(int level) {
-        var stringBuilder = new StringBuilder();
-        Render(new RenderingContext(stringBuilder, level));
-        return stringBuilder.ToString();
+        using var writer = PooledStringWriter.Rent();
+        Render(new RenderingContext(writer, level));
+        return writer.ToString();
     }
 
-    public readonly struct RenderingContext(StringBuilder stringBuilder, int level) {
+    public readonly struct RenderingContext(PooledStringWriter writer, int level) {
         private const string INDENT = "    ";
-        private const string NEWLINE = "\n";
 
         public void Append(string value) {
-            stringBuilder.Append(value);
+            writer.Write(value);
         }
 
         public void Append(InterpolatedTree node) {
@@ -141,8 +143,8 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         }
 
         public void AppendIndent() {
-            for(var ci = stringBuilder.Length - 1; 0 < ci; ci--) {
-                var c = stringBuilder[ci];
+            for(var ci = writer.Length - 1; 0 < ci; ci--) {
+                var c = writer[ci];
                 if(c == '\n')
                     break;
                 // Skip indentation if the buffered output does not end with a newline followed by whitespace
@@ -151,7 +153,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             }
 
             for(var i = 0; i < level; i++)
-                stringBuilder.Append(INDENT);
+                writer.Write(INDENT);
         }
 
         public void AppendIndent(string value) {
@@ -160,11 +162,11 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         }
 
         public void Indent(InterpolatedTree node) {
-            node.Render(new RenderingContext(stringBuilder, level + 1));
+            node.Render(new RenderingContext(writer, level + 1));
         }
 
         public void AppendNewLine() {
-            stringBuilder.Append(NEWLINE);
+            writer.WriteLine("");
         }
     }
 

@@ -2,11 +2,13 @@ using Microsoft.CodeAnalysis;
 
 namespace Arborist.CodeGen;
 
-public sealed class InterpolatorTypeSymbols {
-    public static InterpolatorTypeSymbols Create(Compilation compilation) =>
+public sealed class InterpolationTypeSymbols {
+    private const int MAX_DELEGATE_PARAMETER_COUNT = 5;
+
+    public static InterpolationTypeSymbols Create(Compilation compilation) =>
         new(compilation);
 
-    private InterpolatorTypeSymbols(Compilation compilation) {
+    private InterpolationTypeSymbols(Compilation compilation) {
         IInterpolationContext = compilation.GetTypeByMetadataName("Arborist.Interpolation.IInterpolationContext")!;
         IInterpolationContext1 = compilation.GetTypeByMetadataName("Arborist.Interpolation.IInterpolationContext`1")!.ConstructUnboundGenericType();
         CompileTimeExpressionInterpolatorAttribute = compilation.GetTypeByMetadataName("Arborist.Interpolation.Internal.CompileTimeExpressionInterpolatorAttribute")!;
@@ -21,7 +23,7 @@ public sealed class InterpolatorTypeSymbols {
         String = compilation.GetTypeByMetadataName("System.String")!;
 
         Actions = ImmutableArray.CreateRange(
-            from n in Enumerable.Range(0, InterpolatorInterceptorGenerator.MAX_DELEGATE_PARAMETER_COUNT + 1)
+            from n in Enumerable.Range(0, MAX_DELEGATE_PARAMETER_COUNT + 1)
             select n switch {
                 0 => compilation.GetTypeByMetadataName("System.Action")!,
                 _ => compilation.GetTypeByMetadataName($"System.Action`{n}")!.ConstructUnboundGenericType()
@@ -29,7 +31,7 @@ public sealed class InterpolatorTypeSymbols {
         );
 
         Funcs = ImmutableArray.CreateRange(
-            from n in Enumerable.Range(0, InterpolatorInterceptorGenerator.MAX_DELEGATE_PARAMETER_COUNT + 2)
+            from n in Enumerable.Range(0, MAX_DELEGATE_PARAMETER_COUNT + 2)
             select compilation.GetTypeByMetadataName($"System.Func`{n + 1}")!.ConstructUnboundGenericType()
         );
     }

@@ -14,7 +14,7 @@ public class DiagnosticTests {
 
         Assert.Equal(1, results.AnalysisResults.Count);
         Assert.Contains(results.Diagnostics, diagnostic => diagnostic is {
-            Id: DiagnosticFactory.ARB001_ClosureOverScopeReference,
+            Id: InterpolationDiagnostics.ARB001_ClosureOverScopeReference,
             Severity: DiagnosticSeverity.Warning
         });
     }
@@ -28,7 +28,7 @@ public class DiagnosticTests {
 
         Assert.Equal(1, results.AnalysisResults.Count);
         Assert.Contains(results.Diagnostics, diagnostic => diagnostic is {
-            Id: DiagnosticFactory.ARB002_EvaluatedInterpolatedParameter,
+            Id: InterpolationDiagnostics.ARB002_EvaluatedInterpolatedParameter,
             Severity: DiagnosticSeverity.Error
         });
     }
@@ -42,7 +42,7 @@ public class DiagnosticTests {
 
         Assert.Equal(1, results.AnalysisResults.Count);
         Assert.Contains(results.Diagnostics, diagnostic => diagnostic is {
-            Id: DiagnosticFactory.ARB003_NoSplices,
+            Id: InterpolationDiagnostics.ARB003_NoSplices,
             Severity: DiagnosticSeverity.Warning
         });
     }

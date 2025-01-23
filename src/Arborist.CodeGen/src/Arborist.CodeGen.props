@@ -2,7 +2,7 @@
   <ItemGroup>
     <CompilerVisibleProperty Include="_ArboristInterceptorsNamespaces" />
   </ItemGroup>
-  <Target Name="_ArboristInterceptorsNamespaces" BeforeTargets="BeforeBuild">
+  <Target Name="_ArboristInterceptorsNamespaces" BeforeTargets="BeforeCompile">
     <!--
     This is a workaround for the encoding issues associated with CompilerVisibleProperty values,
     which just get dumped into an INI file verbatim. In this case a semicolon is an INI comment,

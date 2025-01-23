@@ -5,17 +5,14 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Arborist.CodeGen;
 
 public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
-    private readonly InterpolatorInvocationContext _context;
+    private readonly InterpolationAnalysisContext _context;
     private readonly InterpolatedTreeBuilder _builder;
     private ImmutableDictionary<string, InterpolatedTree> _interpolatableIdentifiers;
     private QueryContext _queryContext;
 
-    public InterpolatedSyntaxVisitor(
-        InterpolatorInvocationContext context,
-        InterpolatedTreeBuilder builder
-    ) {
+    public InterpolatedSyntaxVisitor(InterpolationAnalysisContext context) {
         _context = context;
-        _builder = builder;
+        _builder = context.TreeBuilder;
 
         _interpolatableIdentifiers = ImmutableDictionary<string, InterpolatedTree>.Empty
         .WithComparers(IdentifierEqualityComparer.Instance)
@@ -60,11 +57,15 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         }
     }
 
-    public override InterpolatedTree Visit(SyntaxNode? node) =>
-        node switch {
+    public override InterpolatedTree Visit(SyntaxNode? node) {
+        // Check for cancellation every time we visit (iterate) over a node
+        _context.CancellationToken.ThrowIfCancellationRequested();
+
+        return node switch {
             null => base.Visit(node)!,
             not null => ApplyImplicitConversion(node, base.Visit(node)!)
         };
+    }
 
     public override InterpolatedTree DefaultVisit(SyntaxNode node) {
         return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
@@ -130,11 +131,11 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         if(_context.SemanticModel.GetTypeInfo(evaluatedNode).Type is not {} evaluatedType)
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
 
-        var identifier = _context.Builder.CreateIdentifier();
+        var identifier = _context.TreeBuilder.CreateIdentifier();
 
         return InterpolatedTree.Switch(
             InterpolatedTree.InstanceCall(
-                _context.Builder.CreateTypeRef(evaluatedType),
+                _context.TreeBuilder.CreateTypeRef(evaluatedType),
                 InterpolatedTree.Verbatim("Coerce"),
                 [VisitEvaluatedSyntax(evaluatedNode)]
             ),
@@ -234,8 +235,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
     }
 
     private InterpolatedTree VisitEvaluatedSyntax(SyntaxNode node) =>
-        new EvaluatedSyntaxVisitor(_context, _builder, _interpolatableIdentifiers)
-        .Visit(node);
+        new EvaluatedSyntaxVisitor(_context, _interpolatableIdentifiers).Visit(node);
 
     private bool TryGetSpliceMethod(InvocationExpressionSyntax node, out IMethodSymbol spliceMethod) {
         spliceMethod = default!;
@@ -252,10 +252,10 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
     public override InterpolatedTree VisitIdentifierName(IdentifierNameSyntax node) {
         var symbol = _context.SemanticModel.GetSymbolInfo(node).Symbol;
         if(symbol is not null && !TypeSymbolHelpers.IsAccessible(symbol))
-            return _context.Diagnostics.InaccesibleSymbol(symbol, node);
+            return _context.Diagnostics.InaccessibleSymbol(symbol, node);
 
         if(!_interpolatableIdentifiers.TryGetValue(node.Identifier.Text, out var identifierTree))
-            return _context.Diagnostics.Closure(node);
+            return _context.Diagnostics.ClosureOverScopeReference(node);
 
         if(_context.SemanticModel.GetTypeInfo(node).Type is not {} type)
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
@@ -446,7 +446,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
                 if(identifierSymbol is null)
                     return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
                 if(!TypeSymbolHelpers.IsAccessible(identifierSymbol))
-                    return _context.Diagnostics.InaccesibleSymbol(identifierSymbol, identifier);
+                    return _context.Diagnostics.InaccessibleSymbol(identifierSymbol, identifier);
 
                 return _builder.CreateExpression(nameof(Expression.Bind),
                     InterpolatedTree.Concat(
@@ -493,7 +493,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         if(methodSymbol is null)
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
         if(!TypeSymbolHelpers.IsAccessible(methodSymbol))
-            return _context.Diagnostics.InaccesibleSymbol(methodSymbol, node);
+            return _context.Diagnostics.InaccessibleSymbol(methodSymbol, node);
 
         return _builder.CreateExpression(nameof(Expression.ElementInit), [
             _builder.CreateMethodInfo(methodSymbol, default),

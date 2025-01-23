@@ -302,7 +302,7 @@ public partial class InterpolatedSyntaxVisitorTests {
 
         Assert.Equal(1, results.AnalysisResults.Count);
 
-        var m0Definition = results.AnalysisResults[0].Builder.ValueDefinitions.SingleOrDefault(d => d.Identifier == "__m0");
+        var m0Definition = results.AnalysisResults[0].ValueDefinitions.SingleOrDefault(d => d.Identifier == "__m0");
         Assert.NotNull(m0Definition);
         CodeGenAssert.CodeEqual(
             expected: @"
@@ -341,7 +341,7 @@ public partial class InterpolatedSyntaxVisitorTests {
 
         Assert.Equal(1, results.AnalysisResults.Count);
 
-        var m0Definition = results.AnalysisResults[0].Builder.ValueDefinitions.SingleOrDefault(d => d.Identifier == "__m0");
+        var m0Definition = results.AnalysisResults[0].ValueDefinitions.SingleOrDefault(d => d.Identifier == "__m0");
         Assert.NotNull(m0Definition);
         CodeGenAssert.CodeEqual(
             expected: @"
@@ -404,7 +404,7 @@ public partial class InterpolatedSyntaxVisitorTests {
 
         Assert.Equal(1, results.AnalysisResults.Count);
 
-        var m0Definition = results.AnalysisResults[0].Builder.ValueDefinitions.SingleOrDefault(d => d.Identifier == "__m0");
+        var m0Definition = results.AnalysisResults[0].ValueDefinitions.SingleOrDefault(d => d.Identifier == "__m0");
         Assert.NotNull(m0Definition);
         CodeGenAssert.CodeEqual(
             expected: @"
@@ -442,7 +442,7 @@ public partial class InterpolatedSyntaxVisitorTests {
 
         Assert.Equal(1, results.AnalysisResults.Count);
 
-        var m0Definition = results.AnalysisResults[0].Builder.ValueDefinitions.SingleOrDefault(d => d.Identifier == "__m0");
+        var m0Definition = results.AnalysisResults[0].ValueDefinitions.SingleOrDefault(d => d.Identifier == "__m0");
         Assert.NotNull(m0Definition);
         CodeGenAssert.CodeEqual(
             expected: @"
@@ -673,7 +673,7 @@ public partial class InterpolatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
 
         var analysisResult = results.AnalysisResults[0];
-        var anonymousTypeDefinition = analysisResult.Builder.ValueDefinitions.Single(d => d.Identifier == "__t0");
+        var anonymousTypeDefinition = analysisResult.ValueDefinitions.Single(d => d.Identifier == "__t0");
 
         CodeGenAssert.CodeEqual(
             expected: @"

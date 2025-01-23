@@ -99,11 +99,12 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
     private InterpolatedTree() { }
 
     public abstract bool IsSupported { get; }
-    public abstract void Render(RenderingContext context);
+    public abstract void Render(ref RenderingContext context);
     protected abstract InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer);
 
     public void WriteTo(PooledStringWriter writer, int level) {
-        Render(new RenderingContext(writer, level));
+        var context = new RenderingContext(writer, level);
+        Render(ref context);
     }
 
     public InterpolatedTree Replace(InterpolatedTree search, InterpolatedTree replacement) {
@@ -127,19 +128,27 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
 
     public string ToString(int level) {
         using var writer = PooledStringWriter.Rent();
-        Render(new RenderingContext(writer, level));
+        WriteTo(writer, level);
         return writer.ToString();
     }
 
-    public readonly struct RenderingContext(PooledStringWriter writer, int level) {
+    public ref struct RenderingContext(PooledStringWriter writer, int level) {
         private const string INDENT = "    ";
+
+        public void Indent() {
+            level += 1;
+        }
+
+        public void Dedent() {
+            level -= 1;
+        }
 
         public void Append(string value) {
             writer.Write(value);
         }
 
         public void Append(InterpolatedTree node) {
-            node.Render(this);
+            node.Render(ref this);
         }
 
         public void AppendIndent() {
@@ -162,7 +171,9 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         }
 
         public void Indent(InterpolatedTree node) {
-            node.Render(new RenderingContext(writer, level + 1));
+            level += 1;
+            node.Render(ref this);
+            level -= 1;
         }
 
         public void AppendNewLine() {
@@ -173,7 +184,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
     private class UnsupportedNode : InterpolatedTree {
         public override bool IsSupported => false;
 
-        public override void Render(RenderingContext context) {
+        public override void Render(ref RenderingContext context) {
             context.AppendIndent("???");
         }
 
@@ -192,7 +203,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
 
         public override bool IsSupported => true;
 
-        public override void Render(RenderingContext context) {
+        public override void Render(ref RenderingContext context) {
             context.AppendIndent(Expr);
         }
 
@@ -210,7 +221,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         public string Identifier { get; } = identifier;
         public override bool IsSupported => false;
 
-        public override void Render(RenderingContext context) {
+        public override void Render(ref RenderingContext context) {
             context.Append($"<{Identifier}>");
         }
 
@@ -231,11 +242,12 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         public override bool IsSupported =>
             Expression.IsSupported;
 
-        public override void Render(RenderingContext context) {
-            context.Append(" =>");
-            context.AppendNewLine();
-            context.Indent(Expression);
+        public override void Render(ref RenderingContext context) {
+            context.Indent();
+            context.AppendIndent("=> ");
+            context.Append(Expression);
             context.Append(";");
+            context.Dedent();
         }
 
         protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>
@@ -259,7 +271,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         public override bool IsSupported =>
             Left.IsSupported && Right.IsSupported;
 
-        public override void Render(RenderingContext context) {
+        public override void Render(ref RenderingContext context) {
             context.Append("(");
             context.Append(Left);
             context.Append(" ");
@@ -290,7 +302,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         public override bool IsSupported =>
             Body.IsSupported && Args.All(a => a.IsSupported);
 
-        public override void Render(RenderingContext context) {
+        public override void Render(ref RenderingContext context) {
             context.AppendIndent("(");
             if(Args.Count != 0) {
                 context.Append(Args[0]);
@@ -326,7 +338,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         public override bool IsSupported =>
             Initializers.All(static i => i.IsSupported);
 
-        public override void Render(RenderingContext context) {
+        public override void Render(ref RenderingContext context) {
             context.AppendIndent("{");
             if(Initializers.Count != 0) {
                 context.AppendNewLine();
@@ -360,7 +372,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             Expression.IsSupported
             && Args.All(a => a.IsSupported);
 
-        public override void Render(RenderingContext context) {
+        public override void Render(ref RenderingContext context) {
             context.Append(Expression);
             context.Append("(");
             if(Args.Count != 0) {
@@ -398,7 +410,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         public override bool IsSupported =>
             Nodes.All(n => n.IsSupported);
 
-        public override void Render(RenderingContext context) {
+        public override void Render(ref RenderingContext context) {
             for(var i = 0; i < Nodes.Count; i++)
                 context.Append(Nodes[i]);
         }
@@ -430,7 +442,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             && TypeConstraints.All(c => c.IsSupported)
             && Body.IsSupported;
 
-        public override void Render(RenderingContext context) {
+        public override void Render(ref RenderingContext context) {
             context.AppendIndent(Method);
             context.Append("(");
             if(Parameters.Count != 0) {
@@ -445,14 +457,17 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
                 context.AppendIndent();
             }
             context.Append(")");
+            context.AppendNewLine();
             if(TypeConstraints.Count != 0) {
-                context.AppendNewLine();
-                context.Indent(TypeConstraints[0]);
+                context.Indent();
+                context.AppendIndent("where ");
+                context.Append(TypeConstraints[0]);
                 for(var ci = 1; ci < TypeConstraints.Count; ci++) {
-                    context.Append(",");
                     context.AppendNewLine();
-                    context.Indent(TypeConstraints[ci]);
+                    context.AppendIndent("where ");
+                    context.Append(TypeConstraints[ci]);
                 }
+                context.Dedent();
                 context.AppendNewLine();
             }
             context.Append(Body);
@@ -492,7 +507,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         public override bool IsSupported =>
             Subject.IsSupported && Cases.All(n => n.IsSupported);
 
-        public override void Render(RenderingContext context) {
+        public override void Render(ref RenderingContext context) {
             context.Append(Subject);
             context.Append(" switch {");
             if(Cases.Count != 0) {
@@ -530,7 +545,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         public override bool IsSupported =>
             Condition.IsSupported && ThenNode.IsSupported && ElseNode.IsSupported;
 
-        public override void Render(RenderingContext context) {
+        public override void Render(ref RenderingContext context) {
             context.Append("(");
             context.Append(Condition);
             context.AppendNewLine();

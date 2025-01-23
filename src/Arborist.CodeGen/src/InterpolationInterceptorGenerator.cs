@@ -175,7 +175,6 @@ public class InterpolationInterceptorGenerator : IIncrementalGenerator {
             writer.WriteLine($"        // to enable compile-time expression interpolation.");
         }
         analysis.InterceptorMethodDeclaration.WriteTo(writer, 2);
-        writer.WriteLine("");
         writer.WriteLine($"        {{");
 
         foreach(var definition in analysis.ValueDefinitions) {

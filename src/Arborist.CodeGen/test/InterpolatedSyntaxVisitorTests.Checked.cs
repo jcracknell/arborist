@@ -110,4 +110,48 @@ public partial class InterpolatedSyntaxVisitorTests {
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
     }
+
+    [Fact]
+    public void Should_work_for_checked_numeric_conversion() {
+        var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => checked((short)c.Id));
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                global::System.Linq.Expressions.Expression.ConvertChecked(
+                    global::System.Linq.Expressions.Expression.Property(
+                        __p0,
+                        typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Id"")!
+                    ),
+                    typeof(global::System.Int16)
+                )
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
+    public void Should_work_for_checked_object_conversion() {
+        var results = InterpolatorInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => checked((object)c.Id));
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                global::System.Linq.Expressions.Expression.ConvertChecked(
+                    global::System.Linq.Expressions.Expression.Property(
+                        __p0,
+                        typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Id"")!
+                    ),
+                    typeof(global::System.Object)
+                )
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
 }

@@ -103,13 +103,10 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
 
         // In the case of a user-defined conversion, information about the method is provided, however
         // it does not appear to be necessary to use this information despite the fact that there is
-        // an overload of Exprsesion.Convert which exists specifically to handle this situation.
+        // an overload of Expression.Convert which exists specifically to handle this situation.
         // Conveniently for the moment this saves us from having to deal with resolving a nameless,
         // possibly generic method.
-        return _builder.CreateExpression(nameof(Expression.Convert), [
-            tree,
-            _builder.CreateType(typeInfo.ConvertedType)
-        ]);
+        return CreateConvertExpression(node, tree, typeInfo.ConvertedType);
     }
 
     private InterpolatedTree VisitSplicingInvocation(InvocationExpressionSyntax node, IMethodSymbol method) {
@@ -150,10 +147,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
                 ),
                 InterpolatedTree.SwitchCase(
                     InterpolatedTree.Verbatim($"var {identifier}"),
-                    _builder.CreateExpression(nameof(Expression.Convert),
-                        InterpolatedTree.Verbatim(identifier),
-                        _builder.CreateType(resultType)
-                    )
+                    CreateConvertExpression(node, InterpolatedTree.Verbatim(identifier), resultType)
                 )
             ]
         );
@@ -370,10 +364,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         if(_context.SemanticModel.GetTypeInfo(node).Type is not {} type)
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
 
-        return _builder.CreateExpression(nameof(Expression.Convert), [
-            Visit(node.Expression),
-            _builder.CreateType(type)
-        ]);
+        return CreateConvertExpression(node, Visit(node.Expression), type);
     }
 
     public override InterpolatedTree VisitDefaultExpression(DefaultExpressionSyntax node) {
@@ -710,6 +701,17 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
                 ]);
         }
     }
+
+    private InterpolatedTree CreateConvertExpression(SyntaxNode node, InterpolatedTree value, ITypeSymbol type) =>
+        // Expression.ConvertChecked appears to handle the scenario where a checked conversion
+        // does not exist, in which case it produces an expression with ExpressionType.Convert.
+        _builder.CreateExpression(
+            SyntaxHelpers.InCheckedContext(node, _context.SemanticModel) switch {
+                true => nameof(Expression.ConvertChecked),
+                false => nameof(Expression.Convert)
+            },
+            [value, _builder.CreateType(type)]
+        );
 
     private InterpolatedTree GetExpressionTypeName(SyntaxNode node) {
         if(GetExpressionTypeName(node, _context.SemanticModel) is not {} name)

@@ -2,12 +2,11 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <InterceptorsPreviewNamespaces>$(InterceptiorsPreviewNamespaces);Arborist.Interpolation.Interceptors</InterceptorsPreviewNamespaces>
   </PropertyGroup>
 
-  <Import Project="../../Arborist.CodeGen/src/Arborist.CodeGen.props"/>
+  <Import Project="$(AssemblyName).props"/>
   <PropertyGroup>
-    <InterceptorsPreviewNamespaces>$(InterceptiorsPreviewNamespaces);Arborist.Interpolation.Interceptors</InterceptorsPreviewNamespaces>
+    <InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);Arborist.Interpolation.Interceptors</InterceptorsPreviewNamespaces>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -17,6 +16,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../Arborist.CodeGen/src/Arborist.CodeGen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <None Include="$(AssemblyName).props" Pack="true" PackagePath="build" Visible="false"/>
+    <None Include="$(OutputPath)/Arborist.CodeGen.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../Arborist.CodeGen/src/Arborist.CodeGen.csproj" OutputItemType="Analyzer" PrivateAssets="all" />
   </ItemGroup>
 </Project>

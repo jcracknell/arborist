@@ -5,7 +5,7 @@
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
 
-  <Import Project="../../Arborist.CodeGen/src/Arborist.CodeGen.props"/>
+  <Import Project="../src/Arborist.props"/>
   <PropertyGroup>
     <InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);Arborist.Interpolation.Interceptors</InterceptorsPreviewNamespaces>
   </PropertyGroup>

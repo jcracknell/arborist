@@ -16,12 +16,13 @@
 
   <ItemGroup>
     <ProjectReference Include="../src/Arborist.csproj"/>
-    <ProjectReference Include="../../Arborist.CodeGen/src/Arborist.CodeGen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../gen/Arborist.Interpolation.InterceptorGenerator.csproj" OutputItemType="Analyzer" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers"/>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp"/>
     <PackageReference Include="Microsoft.NET.Test.Sdk"/>
     <PackageReference Include="NSubstitute"/>
     <PackageReference Include="xunit"/>
     <PackageReference Include="xunit.runner.visualstudio"/>
-    <ProjectReference Include="..\..\Arborist.TestFixtures\src\Arborist.TestFixtures.csproj" />
   </ItemGroup>
 
 </Project>

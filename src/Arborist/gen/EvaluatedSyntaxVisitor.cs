@@ -96,10 +96,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
                     return _context.Diagnostics.UnsupportedType(method.ContainingType, node);
 
                 return InterpolatedTree.StaticCall(
-                    InterpolatedTree.Concat(
-                        InterpolatedTree.Verbatim($"{extensionTypeName}."),
-                        GetInvocationMethodName(node, memberAccess.Name)
-                    ),
+                    InterpolatedTree.Interpolate($"{extensionTypeName}.{GetInvocationMethodName(node, memberAccess.Name)}"),
                     [
                         Visit(node.Expression),
                         ..node.ArgumentList.Arguments.Select(static a => a.Expression).Select(Visit)
@@ -111,10 +108,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
                     return _context.Diagnostics.UnsupportedType(method.ContainingType, node);
 
                 return InterpolatedTree.StaticCall(
-                    InterpolatedTree.Concat(
-                        InterpolatedTree.Verbatim($"{staticTypeName}."),
-                        GetInvocationMethodName(node, memberAccess.Name)
-                    ),
+                    InterpolatedTree.Interpolate($"{staticTypeName}.{GetInvocationMethodName(node, memberAccess.Name)}"),
                     [..node.ArgumentList.Arguments.Select(static a => a.Expression).Select(Visit)]
                 );
 
@@ -156,10 +150,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
     public override InterpolatedTree? VisitAnonymousObjectMemberDeclarator(AnonymousObjectMemberDeclaratorSyntax node) =>
         node.NameEquals switch {
             null => Visit(node.Expression),
-            not null => InterpolatedTree.Concat(
-                InterpolatedTree.Verbatim($"{node.NameEquals.Name.Identifier.Text} = "),
-                Visit(node.Expression)
-            )
+            not null => InterpolatedTree.Interpolate($"{node.NameEquals.Name.Identifier.Text} = {Visit(node.Expression)}")
         };
 
     public override InterpolatedTree VisitCheckedExpression(CheckedExpressionSyntax node) {
@@ -177,10 +168,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
         if(!TypeSymbolHelpers.TryCreateTypeName(nodeType, out var nodeTypeName))
             return _context.Diagnostics.UnsupportedType(nodeType, node);
 
-        return InterpolatedTree.Concat(
-            InterpolatedTree.Verbatim($"({nodeTypeName})"),
-            Visit(node.Expression)
-        );
+        return InterpolatedTree.Interpolate($"({nodeTypeName}){Visit(node.Expression)}");
     }
 
     public override InterpolatedTree VisitObjectCreationExpression(ObjectCreationExpressionSyntax node) =>
@@ -226,11 +214,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
                 if(!TypeSymbolHelpers.IsAccessible(leftSymbol))
                     return _context.Diagnostics.InaccessibleSymbol(leftSymbol, assignment.Left);
 
-                return InterpolatedTree.Concat(
-                    InterpolatedTree.Verbatim(assignment.Left.ToString()),
-                    InterpolatedTree.Verbatim(" = "),
-                    Visit(assignment.Right)
-                );
+                return InterpolatedTree.Interpolate($"{assignment.Left} = {Visit(assignment.Right)}");
 
             default:
                 return Visit(node);
@@ -238,11 +222,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
     }
 
     public override InterpolatedTree VisitAssignmentExpression(AssignmentExpressionSyntax node) =>
-        InterpolatedTree.Concat(
-            Visit(node.Left),
-            InterpolatedTree.Verbatim(" = "),
-            Visit(node.Right)
-        );
+        InterpolatedTree.Interpolate($"{Visit(node.Left)} = {Visit(node.Right)}");
 
     public override InterpolatedTree VisitElementBindingExpression(ElementBindingExpressionSyntax node) {
         var arguments = node.ArgumentList.Arguments;

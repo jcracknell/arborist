@@ -138,11 +138,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
             ),
             [
                 InterpolatedTree.SwitchCase(
-                    InterpolatedTree.Concat(
-                        InterpolatedTree.Verbatim($"var {identifier} when "),
-                        _builder.CreateType(resultType),
-                        InterpolatedTree.Verbatim($" == {identifier}.Type")
-                    ),
+                    InterpolatedTree.Interpolate($"var {identifier} when {_builder.CreateType(resultType)} == {identifier}.Type"),
                     InterpolatedTree.Verbatim(identifier)
                 ),
                 InterpolatedTree.SwitchCase(

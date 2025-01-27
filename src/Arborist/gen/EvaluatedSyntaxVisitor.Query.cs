@@ -180,10 +180,7 @@ public partial class EvaluatedSyntaxVisitor {
                 [InterpolatedTree.Verbatim(_queryContext.InputIdentifier)],
                 InterpolatedTree.AnonymousClass([
                     InterpolatedTree.Verbatim(_queryContext.InputIdentifier),
-                    InterpolatedTree.Concat(
-                        InterpolatedTree.Verbatim($"{node.Identifier.Text} = "),
-                        Visit(node.Expression)
-                    )
+                    InterpolatedTree.Interpolate($"{node.Identifier.Text} = {Visit(node.Expression)}")
                 ])
             )
         ]);

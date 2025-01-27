@@ -74,11 +74,8 @@ public static class InterpolationAnalyzer {
         if(context.SpliceCount == 0)
             diagnostics.NoSplices(interpolatedExpression);
 
-        var dataDeclaration = InterpolatedTree.Concat(
-            InterpolatedTree.Verbatim($"var {treeBuilder.DataIdentifier} = "),
-            treeBuilder.CreateTypeRef(dataParameter.Type),
-            InterpolatedTree.Verbatim($".Cast({dataParameter.Name});")
-        );
+        var dataTypeRef = treeBuilder.CreateTypeRef(dataParameter.Type);
+        var dataDeclaration = InterpolatedTree.Interpolate($"var {treeBuilder.DataIdentifier} = {dataTypeRef}.Cast({dataParameter.Name});");
 
         var typeParameters = TypeSymbolHelpers.GetInheritedTypeParameters(methodSymbol.ContainingType.OriginalDefinition)
         .AddRange(methodSymbol.OriginalDefinition.TypeParameters);

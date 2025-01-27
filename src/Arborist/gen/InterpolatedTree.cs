@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace Arborist.Interpolation.InterceptorGenerator;
 
 public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
@@ -47,6 +45,18 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         IReadOnlyList<InterpolatedTree> args
     ) =>
         new CallNode(Concat(expression, Verbatim("."), method), args);
+    
+    /// <summary>
+    /// Creates an <see cref="InterpolatedTree"/> from the provided interpolated string, interpolating
+    /// non-<see cref="InterpolatedTree"/> values as <see cref="Verbatim"/> trees.
+    /// </summary>
+    /// <seealso cref="Concat(IReadOnlyList{InterpolatedTree})"/>
+    public static InterpolatedTree Interpolate(ref InterpolationHandler interpolated) =>
+        interpolated.GetTrees() switch {
+            { Count: 0 } => Empty,
+            { Count: 1 } list => list[0],
+            { } list => Concat(list)
+        };
 
     public static InterpolatedTree Lambda(
         IReadOnlyList<InterpolatedTree> parameters,
@@ -568,5 +578,35 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             && this.Condition.Equals(that.Condition)
             && this.ThenNode.Equals(that.ThenNode)
             && this.ElseNode.Equals(that.ElseNode);
+    }
+
+    [global::System.Runtime.CompilerServices.InterpolatedStringHandler]
+    public ref struct InterpolationHandler {
+        private List<InterpolatedTree> _trees;
+
+        public InterpolationHandler(int literalCount, int interpolatedCount) {
+            _trees = new List<InterpolatedTree>(literalCount + interpolatedCount);
+        }
+
+        public IReadOnlyList<InterpolatedTree> GetTrees() =>
+            _trees;
+
+        public void AppendLiteral(string? literal) {
+            if(literal is not null && literal.Length != 0)
+                _trees.Add(Verbatim(literal));
+        }
+
+        public void AppendFormatted(object? obj) {
+            if(obj is InterpolatedTree tree) {
+                AppendFormatted(tree);
+            } else {
+                AppendLiteral(obj?.ToString());
+            }
+        }
+
+        public void AppendFormatted(InterpolatedTree? tree) {
+            if(tree is not null)
+                _trees.Add(tree);
+        }
     }
 }

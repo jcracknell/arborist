@@ -147,10 +147,7 @@ public class InterpolatedTreeBuilder {
                         InterpolatedTree.Verbatim("new "),
                         InterpolatedTree.Initializer([..(
                             from property in type.GetMembers().OfType<IPropertySymbol>()
-                            select InterpolatedTree.Concat(
-                                InterpolatedTree.Verbatim($"{property.Name} = "),
-                                CreateDefaultValue(property.Type)
-                            )
+                            select InterpolatedTree.Interpolate($"{property.Name} = {CreateDefaultValue(property.Type)}")
                         )])
                     )]
                 );

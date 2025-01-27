@@ -21,19 +21,19 @@ internal static class EnumerableExtensions {
     ) {
         using var enumerator = collection.GetEnumerator();
 
-        var sb = new StringBuilder();
-        sb.Append(before);
+        using var writer = PooledStringWriter.Rent();
+        writer.Write(before);
 
         if(enumerator.MoveNext()) {
-            sb.Append(projection(enumerator.Current));
+            writer.Write(projection(enumerator.Current));
             while(enumerator.MoveNext()) {
-                sb.Append(separator);
-                sb.Append(projection(enumerator.Current));
+                writer.Write(separator);
+                writer.Write(projection(enumerator.Current));
             }
         }
 
-        sb.Append(after);
-        return sb.ToString();
+        writer.Write(after);
+        return writer.ToString();
     }
 
     public static IReadOnlyList<A> NullToEmpty<A>(this IReadOnlyList<A>? list) =>

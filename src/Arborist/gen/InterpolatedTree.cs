@@ -1,15 +1,27 @@
 namespace Arborist.Interpolation.InterceptorGenerator;
 
 public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
+    private static readonly IReadOnlyDictionary<string, InterpolatedTree> CommonVerbatimInstances =
+        new[] {
+            "",
+            ".",
+            ",", ", ",
+            "<", ">",
+            "(", ")",
+            "[", "]",
+            "global::"
+        }
+        .ToDictionary<string, string, InterpolatedTree>(v => v, v => new VerbatimNode(v), StringComparer.Ordinal);
+    
     public static InterpolatedTree Unsupported { get; } = new UnsupportedNode();
 
     /// <summary>
     /// Singleton empty <see cref="InterpolatedTree"/> value.
     /// </summary>
-    public static InterpolatedTree Empty { get; } = new VerbatimNode("");
+    public static InterpolatedTree Empty { get; } = Verbatim("");
 
     public static InterpolatedTree Verbatim(string value) =>
-        value.Length == 0 ? Empty : new VerbatimNode(value);
+        CommonVerbatimInstances.TryGetValue(value, out var common) ? common : new VerbatimNode(value);
 
     public static InterpolatedTree AnonymousClass(IReadOnlyList<InterpolatedTree> propertyInitializers) =>
         Concat(Verbatim("new "), Initializer(propertyInitializers));

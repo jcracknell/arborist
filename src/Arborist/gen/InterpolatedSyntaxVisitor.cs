@@ -648,8 +648,11 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
 
     public override InterpolatedTree VisitPostfixUnaryExpression(PostfixUnaryExpressionSyntax node) =>
         VisitUnaryExpression(node, node.Operand);
-
+        
     private InterpolatedTree VisitUnaryExpression(ExpressionSyntax node, ExpressionSyntax operand) {
+        if(TryVisitUnarySpecialExpression(node, operand, out var special))
+            return special;
+    
         if(_context.SemanticModel.GetTypeInfo(operand).ConvertedType is not {} operandType)
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
 
@@ -666,6 +669,22 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
             _builder.CreateType(operandType),
             _builder.CreateMethodInfo(method, node)
         );
+    }
+    
+    private bool TryVisitUnarySpecialExpression(
+        ExpressionSyntax node,
+        ExpressionSyntax operand,
+        [NotNullWhen(true)] out InterpolatedTree? result
+    ) {
+        switch(node.Kind()) {
+            case SyntaxKind.SuppressNullableWarningExpression:
+                // The null forgiving operator does nothing, and is omitted from the resulting expression tree
+                result = Visit(operand);
+                return true;
+            default:
+                result = default;
+                return false;
+        }
     }
 
     public override InterpolatedTree VisitLiteralExpression(LiteralExpressionSyntax node) {

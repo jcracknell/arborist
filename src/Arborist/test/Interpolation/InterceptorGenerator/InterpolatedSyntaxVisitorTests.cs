@@ -708,4 +708,28 @@ public partial class InterpolatedSyntaxVisitorTests {
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
     }
+    
+    [Fact]
+    public void Should_handle_null_forgiving_operator() {
+        var results = InterpolationInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => x.SpliceValue(x.Data)!.GetHashCode());
+        ");
+        
+        // The null forgiving operator does nothing, and is omitted from the resulting expression tree
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                global::System.Linq.Expressions.Expression.Call(
+                    global::System.Linq.Expressions.Expression.Constant(
+                        __data,
+                        typeof(global::System.Object)
+                    ),
+                    __m0,
+                    new global::System.Linq.Expressions.Expression[] { }
+                )
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
 }

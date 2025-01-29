@@ -10,8 +10,6 @@ public static partial class ExpressionHelper {
         var analyzer = new AnalyzingInterpolationVisitor(expression);
         analyzer.Apply(expression.Body);
 
-        var parameterExpressions = expression.Parameters.Skip(1);
-
         var interpolator = new SplicingInterpolationVisitor(
             evaluatedSpliceParameters: EvaluateInterpolatedExpressions(
                 data: data,

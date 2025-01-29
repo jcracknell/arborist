@@ -71,7 +71,7 @@ public static class InterpolationAnalyzer {
         var bodyTree = new InterpolatedSyntaxVisitor(context).Visit(interpolatedExpression.Body);
 
         // Report an interpolated expression containing no splices, which is completely useless
-        if(context.SpliceCount == 0)
+        if(context.SpliceCount == 0 && bodyTree.IsSupported)
             diagnostics.NoSplices(interpolatedExpression);
 
         var dataTypeRef = treeBuilder.CreateTypeRef(dataParameter.Type);

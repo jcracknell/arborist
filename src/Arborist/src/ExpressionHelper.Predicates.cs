@@ -21,7 +21,7 @@ public static partial class ExpressionHelper {
     public static Expression<TDelegate> And<TDelegate>(IEnumerable<Expression<TDelegate>> predicates)
         where TDelegate : Delegate
     {
-        AssertPredicateExpressionType(typeof(TDelegate));
+        AssertPredicateType(typeof(TDelegate));
 
         var predicateList = CollectionHelpers.AsReadOnlyList(predicates);
 
@@ -50,7 +50,7 @@ public static partial class ExpressionHelper {
     public static Expression<TDelegate> Or<TDelegate>(IEnumerable<Expression<TDelegate>> predicates)
         where TDelegate : Delegate
     {
-        AssertPredicateExpressionType(typeof(TDelegate));
+        AssertPredicateType(typeof(TDelegate));
 
         var predicateList = CollectionHelpers.AsReadOnlyList(predicates);
 
@@ -66,7 +66,7 @@ public static partial class ExpressionHelper {
     /// Creates a negated version of the provided predicate <paramref name="expression"/>.
     /// </summary>
     public static Expression<TDelegate> Not<TDelegate>(Expression<TDelegate> expression) {
-        AssertPredicateExpressionType(typeof(TDelegate));
+        AssertPredicateType(typeof(TDelegate));
 
         return Expression.Lambda<TDelegate>(
             Expression.Not(expression.Body),

@@ -7,7 +7,7 @@ public static partial class ExpressionHelper {
     )
         where TDelegate : Delegate
     {
-        AssertFuncExpressionType(expression.Type);
+        AssertFuncType(expression.Type);
         AssertParameterTypesCompatible(expression.Type, GetParameterTypes(typeof(TDelegate)));
         
         return Expression.Lambda<TDelegate>(
@@ -22,7 +22,7 @@ public static partial class ExpressionHelper {
     )
         where TDelegate : Delegate
     {
-        AssertFuncExpressionType(expression.Type);
+        AssertFuncType(expression.Type);
         AssertParameterTypesCompatible(expression.Type, GetParameterTypes(typeof(TDelegate)));
         
         return Expression.Lambda<TDelegate>(
@@ -37,7 +37,7 @@ public static partial class ExpressionHelper {
     )
         where TDelegate : Delegate
     {
-        AssertFuncExpressionType(expression.Type);
+        AssertFuncType(expression.Type);
         AssertParameterTypesCompatible(expression.Type, GetParameterTypes(typeof(TDelegate)));
         
         return Expression.Lambda<TDelegate>(

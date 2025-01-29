@@ -6,18 +6,18 @@ public static partial class ExpressionHelper {
             throw new InvalidOperationException($"Invalid delegate type: {type}.");
     }
 
-    internal static void AssertActionExpressionType(Type type) {
-        if(!IsActionExpressionType(type))
+    internal static void AssertActionType(Type type) {
+        if(!IsActionType(type))
             throw new InvalidOperationException($"Invalid Action type: {type}.");
     }
 
-    internal static void AssertFuncExpressionType(Type type) {
-        if(!IsFuncExpressionType(type))
+    internal static void AssertFuncType(Type type) {
+        if(!IsFuncType(type))
             throw new InvalidOperationException($"Invalid Func type: {type}.");
     }
 
-    internal static void AssertPredicateExpressionType(Type type) {
-        if(!IsPredicateExpressionType(type))
+    internal static void AssertPredicateType(Type type) {
+        if(!IsPredicateType(type))
             throw new InvalidOperationException($"Invalid predicate type: {type}.");
     }
     
@@ -27,20 +27,20 @@ public static partial class ExpressionHelper {
     }
 
     internal static bool IsDelegateType(Type type) =>
-        IsFuncExpressionType(type) || IsActionExpressionType(type);
+        IsFuncType(type) || IsActionType(type);
 
-    internal static bool IsActionExpressionType(Type type) =>
+    internal static bool IsActionType(Type type) =>
         type.IsAssignableTo(typeof(Delegate)) && (
             type.FullName?.StartsWith("System.Action`") is true
             || type.FullName?.Equals("System.Action") is true
         );
         
-    internal static bool IsFuncExpressionType(Type type) =>
+    internal static bool IsFuncType(Type type) =>
         type.IsAssignableTo(typeof(Delegate))
         && type.FullName?.StartsWith("System.Func`") is true;
 
-    internal static bool IsPredicateExpressionType(Type type) =>
-        IsFuncExpressionType(type) && typeof(bool) == type.GetGenericArguments()[^1];
+    internal static bool IsPredicateType(Type type) =>
+        IsFuncType(type) && typeof(bool) == type.GetGenericArguments()[^1];
         
     internal static bool AreParameterTypesCompatible(
         Type delegateType,
@@ -64,7 +64,7 @@ public static partial class ExpressionHelper {
             return ReadOnlySpan<Type>.Empty;
             
         var typeArguments = delegateType.GetGenericArguments();
-        if(IsActionExpressionType(delegateType))
+        if(IsActionType(delegateType))
             return typeArguments;
             
         return typeArguments.AsSpan(0, typeArguments.Length - 1);
@@ -73,7 +73,7 @@ public static partial class ExpressionHelper {
     internal static Expression<TFunc> Const<TFunc>(IReadOnlyCollection<ParameterExpression>? parameters, object? value)
         where TFunc : Delegate
     {
-        AssertFuncExpressionType(typeof(TFunc));
+        AssertFuncType(typeof(TFunc));
 
         var genericArguments = typeof(TFunc).GetGenericArguments();
         var resultType = genericArguments[^1];

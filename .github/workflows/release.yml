@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DOTNET_NOLOGO: true
+      NUGET_API_KEY: ${{secrets.NUGET_API_KEY}}
 
     steps:
       - name: Setup .NET
@@ -26,9 +27,4 @@ jobs:
           dotnet build --no-restore -c Release src/Arborist.sln
           dotnet test --no-restore src/Arborist.sln
           dotnet pack -o ./nuget src/Arborist.sln
-          for f in ./nuget/*.nupkg; do \
-            dotnet nuget push \
-              -s https://api.nuget.org/v3/index.json \
-              -k ${{secrets.NUGET_API_KEY}} \ 
-              "$f"; \
-          done
+          dotnet nuget push -s https://api.nuget.org/v3/index.json -k "$NUGET_API_KEY" ./nuget/*.nupkg

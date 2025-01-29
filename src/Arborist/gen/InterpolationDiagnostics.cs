@@ -16,6 +16,7 @@ public static class InterpolationDiagnostics {
     public const string ARB002_EvaluatedInterpolatedParameter = "ARB002";
     public const string ARB003_NoSplices = "ARB003";
     public const string ARB004_InaccessibleSymbolReference = "ARB004";
+    public const string ARB005_ReferencesCallSiteTypeParameter = "ARB005";
 
     private static Diagnostic Create(
         string code,
@@ -115,5 +116,14 @@ public static class InterpolationDiagnostics {
             title: "Inaccesible Symbol Reference",
             message: $"Interpolated expression references inaccessible symbol {symbol} and cannot be interpolated at compile time.",
             location: location
+        );
+
+    public static Diagnostic ReferencesCallSiteTypeParameter(ITypeSymbol symbol, SyntaxNode? node) =>
+        Create(
+            code: ARB005_ReferencesCallSiteTypeParameter,
+            severity: DiagnosticSeverity.Info,
+            title: "Interpolated expression references call-site type parameter",
+            message: $"The interpolated expression contains a reference to call-site type parameter {symbol} and cannot be interpolated at compile time.",
+            location: node?.GetLocation()
         );
 }

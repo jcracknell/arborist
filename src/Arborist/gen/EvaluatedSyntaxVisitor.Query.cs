@@ -246,15 +246,11 @@ public partial class EvaluatedSyntaxVisitor {
     private InterpolatedTree CreateQueryOperationCall(SyntaxNode clause, IMethodSymbol method, IReadOnlyList<InterpolatedTree> arguments) {
         // Static extension method wherein we know that any type arguments are inferrable (because
         // it was implicitly called by query syntax)
-        if(method is { ReducedFrom: {} }) {
-            if(!TypeSymbolHelpers.TryCreateTypeName(method.ContainingType, out var typeName))
-                return _context.Diagnostics.UnsupportedType(method.ContainingType, clause);
-
+        if(method is { ReducedFrom: {} })
             return InterpolatedTree.StaticCall(
-                InterpolatedTree.Verbatim($"{typeName}.{method.Name}"),
+                InterpolatedTree.Interpolate($"{_builder.CreateTypeName(method.ContainingType, clause)}.{method.Name}"),
                 arguments
             );
-        }
 
         return InterpolatedTree.InstanceCall(
             arguments[0],
@@ -274,22 +270,18 @@ public partial class EvaluatedSyntaxVisitor {
             return _context.Diagnostics.InaccessibleSymbol(castMethod, clause);
         if(castMethod is not { IsGenericMethod: true, TypeArguments.Length: 1 })
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(clause);
-        if(!TypeSymbolHelpers.TryCreateTypeName(castMethod.TypeArguments[0], out var castTypeName))
-            return _context.Diagnostics.UnsupportedType(castMethod.TypeArguments[0], clause);
 
-        if(castMethod is { ReducedFrom: {} }) {
-            if(!TypeSymbolHelpers.TryCreateTypeName(castMethod.ContainingType, out var typeName))
-                return _context.Diagnostics.UnsupportedType(castMethod.ContainingType, clause);
+        var castTypeName = _builder.CreateTypeName(castMethod.TypeArguments[0], clause);
 
+        if(castMethod is { ReducedFrom: {} })
             return InterpolatedTree.StaticCall(
-                InterpolatedTree.Verbatim($"{typeName}.{castMethod.Name}<{castTypeName}>"),
+                InterpolatedTree.Interpolate($"{_builder.CreateTypeName(castMethod.ContainingType, clause)}.{castMethod.Name}<{castTypeName}>"), 
                 [inputTree]
             );
-        }
 
         return InterpolatedTree.InstanceCall(
             inputTree,
-            InterpolatedTree.Verbatim($"{castMethod.Name}<{castTypeName}>"),
+            InterpolatedTree.Interpolate($"{castMethod.Name}<{castTypeName}>"), 
             []
         );
     }

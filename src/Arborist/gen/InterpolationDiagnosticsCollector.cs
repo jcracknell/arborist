@@ -36,4 +36,7 @@ public sealed class InterpolationDiagnosticsCollector(Location? defaultLocation)
 
     public InterpolatedTree InaccessibleSymbol(ISymbol symbol, SyntaxNode? node) =>
         Add(InterpolationDiagnostics.InaccessibleSymbol(symbol, node?.GetLocation() ?? defaultLocation));
+
+    public InterpolatedTree ReferencesCallSiteTypeParameter(ITypeSymbol symbol, SyntaxNode? node) =>
+        Add(InterpolationDiagnostics.ReferencesCallSiteTypeParameter(symbol, node));
 }

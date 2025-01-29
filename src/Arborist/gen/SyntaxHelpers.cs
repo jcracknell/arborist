@@ -22,4 +22,13 @@ internal static class SyntaxHelpers {
                 var parent => InCheckedContext(parent, semanticModel)
             }
         };
+
+    /// <summary>
+    /// Returns true if the provided <paramref name="node"/> represents a call to a generic method
+    /// where the type parameters have been explicitly specified.
+    /// </summary>
+    public static bool IsExplicitGenericMethodInvocation([NotNullWhen(true)] SyntaxNode? node) =>
+        node is InvocationExpressionSyntax {
+            Expression: GenericNameSyntax or MemberAccessExpressionSyntax { Name: GenericNameSyntax }
+        };
 }

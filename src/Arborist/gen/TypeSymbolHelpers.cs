@@ -2,7 +2,7 @@ using Microsoft.CodeAnalysis;
 
 namespace Arborist.Interpolation.InterceptorGenerator;
 
-internal static class TypeSymbolHelpers {
+internal static partial class TypeSymbolHelpers {
     /// <summary>
     /// Replaces occurrences of the provided <paramref name="replacements"/> appearing in the provided
     /// <paramref name="typeSymbol"/>, including type parameters in the event that the provided
@@ -31,165 +31,6 @@ internal static class TypeSymbolHelpers {
             .WithNullableAnnotation(typeSymbol.NullableAnnotation);
 
         return typeSymbol;
-    }
-
-    public static bool TryCreateTypeName(ITypeSymbol type, [NotNullWhen(true)] out string? typeName) {
-        var nullAnnotation = NullableAnnotation.Annotated == type.NullableAnnotation && !type.IsValueType ? "?" : "";
-
-        if(type is ITypeParameterSymbol) {
-            typeName = string.Concat(type.Name, nullAnnotation);
-            return true;
-        }
-
-        if(!TryCreateTypeContainingName(type, out var containingName)) {
-            typeName = default!;
-            return false;
-        }
-
-        switch(type) {
-            case { IsAnonymousType: true }:
-                typeName = default!;
-                return false;
-
-            case INamedTypeSymbol { IsGenericType: true } named:
-                var typeArgumentNames = new List<string>(named.TypeArguments.Length);
-                foreach(var typeArgument in named.TypeArguments) {
-                    if(TryCreateTypeName(typeArgument, out var typeArgumentName)) {
-                        typeArgumentNames.Add(typeArgumentName);
-                    } else {
-                        typeName = default!;
-                        return false;
-                    }
-                }
-
-                typeName = string.Concat(
-                    containingName,
-                    type.Name,
-                    typeArgumentNames.MkString("<", ", ", ">"),
-                    nullAnnotation
-                );
-                return true;
-
-            case INamedTypeSymbol named:
-                typeName = string.Concat(
-                    containingName,
-                    type.Name,
-                    nullAnnotation
-                );
-                return true;
-
-            default:
-                typeName = default!;
-                return false;
-        }
-
-    }
-
-    private static bool TryCreateTypeContainingName(
-        ITypeSymbol type,
-        [NotNullWhen(true)] out string? containingName
-    ) {
-        if(type.ContainingType is not null) {
-            if(TryCreateTypeName(type.ContainingType, out var containingTypeName)) {
-                containingName = $"{containingTypeName}.";
-                return true;
-            } else {
-                containingName = default;
-                return false;
-            }
-        }
-
-        containingName = type.ContainingNamespace.IsGlobalNamespace switch {
-            true => "global::",
-            false => $"{CreateNamespaceName(type.ContainingNamespace)}."
-        };
-        return true;
-    }
-
-    public static string CreateReparametrizedTypeName(
-        ITypeSymbol type,
-        string prefix,
-        ImmutableList<ITypeParameterSymbol> typeParameters,
-        bool nullAnnotate = false
-    ) {
-        // N.B. type parameters have a containing type which can cause infinite recursion
-        if(type is ITypeParameterSymbol parameter)
-            return string.Concat(
-                $"{prefix}{typeParameters.IndexOf(parameter, SymbolEqualityComparer.Default)}",
-                NullableAnnotation.Annotated == type.NullableAnnotation && nullAnnotate ? "?" : ""
-            );
-
-        var containingName = type switch {
-            { ContainingType: not null } => $"{CreateReparametrizedTypeName(type.ContainingType, prefix, typeParameters, true)}.",
-            { ContainingNamespace.IsGlobalNamespace: true } => "global::",
-            _ => $"{CreateNamespaceName(type.ContainingNamespace)}."
-        };
-
-        var nullAnnotation = nullAnnotate switch {
-            true when NullableAnnotation.Annotated == type.NullableAnnotation && !type.IsValueType => "?",
-            _ => ""
-        };
-
-        switch(type) {
-            case INamedTypeSymbol { IsGenericType: true } generic:
-                return string.Concat(
-                    containingName,
-                    type.Name,
-                    generic.TypeArguments.MkString("<", a => CreateReparametrizedTypeName(a, prefix, typeParameters, nullAnnotate: true), ", ", ">"),
-                    nullAnnotation
-                );
-
-            case INamedTypeSymbol named:
-                return string.Concat(
-                    containingName,
-                    named.Name,
-                    nullAnnotation
-                );
-
-            default:
-                throw new ArgumentException(nameof(type));
-        }
-    }
-
-    public static string CreateNamespaceName(INamespaceSymbol ns) =>
-        ns.ContainingNamespace.IsGlobalNamespace switch {
-            true => $"global::{ns.Name}",
-            false => $"{CreateNamespaceName(ns.ContainingNamespace)}.{ns.Name}"
-        };
-
-    public static IReadOnlyList<string> GetReparametrizedTypeConstraints(
-        string prefix,
-        ImmutableList<ITypeParameterSymbol> typeParameters
-    ) =>
-        new List<string>(
-            from typeParameter in typeParameters
-            let constraints = GetReparametrizedTypeConstraints(typeParameter, prefix, typeParameters).MkString(", ")
-            where constraints.Length != 0
-            select $"{CreateReparametrizedTypeName(typeParameter, prefix, typeParameters, nullAnnotate: false)} : {constraints}"
-        );
-
-    private static IEnumerable<string> GetReparametrizedTypeConstraints(
-        ITypeParameterSymbol typeParameter,
-        string prefix,
-        ImmutableList<ITypeParameterSymbol> typeParameters
-    ) {
-        for(var i = 0; i < typeParameter.ConstraintTypes.Length; i++)
-            yield return CreateReparametrizedTypeName(
-                typeParameter.ConstraintTypes[i].WithNullableAnnotation(typeParameter.ConstraintNullableAnnotations[i]),
-                prefix,
-                typeParameters,
-                nullAnnotate: true
-            );
-        if(typeParameter.HasNotNullConstraint)
-            yield return "notnull";
-        if(typeParameter.HasReferenceTypeConstraint)
-            yield return "class";
-        if(typeParameter.HasUnmanagedTypeConstraint)
-            yield return "unmanaged";
-        if(typeParameter.HasValueTypeConstraint)
-            yield return "struct";
-        if(typeParameter.HasConstructorConstraint)
-            yield return "new()";
     }
 
     /// <summary>
@@ -255,24 +96,6 @@ internal static class TypeSymbolHelpers {
         return false;
     }
 
-    /// <summary>
-    /// Returns true if the provided <paramref name="type"/> and all of its constituent types
-    /// are named types.
-    /// </summary>
-    public static bool IsNameableType(ITypeSymbol type) {
-        if(type is ITypeParameterSymbol)
-            return true;
-        if(type is not INamedTypeSymbol named)
-            return false;
-        if(named.IsAnonymousType)
-            return false;
-        if(named.IsGenericType && !named.TypeArguments.All(IsNameableType))
-            return false;
-        if(type.ContainingType is not null && !IsNameableType(type.ContainingType))
-            return false;
-        return true;
-    }
-
     public static bool TryGetInterfaceImplementation(
         INamedTypeSymbol @interface,
         ITypeSymbol type,
@@ -283,20 +106,4 @@ internal static class TypeSymbolHelpers {
             || i.IsGenericType && @interface.IsGenericType && SymbolEqualityComparer.Default.Equals(@interface, i.ConstructUnboundGenericType()),
             out implementation
         );
-
-    public static string TypeName(INamedTypeSymbol type) {
-        if(type.ContainingType is not null)
-            return $"{TypeName(type.ContainingType)}.{type.Name}";
-
-        if(type.ContainingNamespace is not null)
-            return $"{NamespaceName(type.ContainingNamespace)}.{type.Name}";
-
-        return type.Name;
-    }
-
-    public static string NamespaceName(INamespaceSymbol ns) =>
-        ns switch {
-            { ContainingNamespace: { IsGlobalNamespace: true } } => $"global::{ns.Name}",
-            _ => $"{NamespaceName(ns.ContainingNamespace)}.{ns.Name}"
-        };
 }

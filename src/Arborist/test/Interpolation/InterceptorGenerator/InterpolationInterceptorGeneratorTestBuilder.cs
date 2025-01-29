@@ -18,6 +18,7 @@ public sealed class InterpolationInterceptorGeneratorTestBuilder {
     private readonly List<string> _assemblies = new();
     private readonly SortedSet<string> _usings = new();
     private readonly string _namespace;
+    private bool _omitEnclosingDefinitions = false;
 
     private InterpolationInterceptorGeneratorTestBuilder(string @namespace) {
         _namespace = @namespace;
@@ -60,6 +61,11 @@ public sealed class InterpolationInterceptorGeneratorTestBuilder {
     public InterpolationInterceptorGeneratorTestBuilder Using(Type type) {
         AddAssembly(type);
         return Using(type.Namespace!);
+    }
+
+    public InterpolationInterceptorGeneratorTestBuilder OmitEnclosingDefinitions(bool value = true) {
+        _omitEnclosingDefinitions = value;
+        return this;
     }
 
     public InterpolationInterceptorGeneratorTestResults Generate(
@@ -107,14 +113,18 @@ public sealed class InterpolationInterceptorGeneratorTestBuilder {
         foreach(var usingNamespace in _usings)
             sb.AppendLine($"using {usingNamespace};");
 
-        sb.AppendLine($"");
         sb.AppendLine($"namespace {_namespace};");
         sb.AppendLine($"");
-        sb.AppendLine($"public static class Program {{");
-        sb.AppendLine($"    public static void Main() {{");
-        sb.AppendLine($"         {invocations}");
-        sb.AppendLine($"    }}");
-        sb.AppendLine($"}}");
+        
+        if(_omitEnclosingDefinitions) {
+            sb.AppendLine(invocations);
+        } else {
+            sb.AppendLine($"public static class Program {{");
+            sb.AppendLine($"    public static void Main() {{");
+            sb.AppendLine($"         {invocations}");
+            sb.AppendLine($"    }}");
+            sb.AppendLine($"}}");
+        }
 
         return sb.ToString();
     }

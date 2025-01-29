@@ -46,4 +46,42 @@ public class DiagnosticTests {
             Severity: DiagnosticSeverity.Warning
         });
     }
+
+    [Fact]
+    public void Should_produce_ARB005_for_expression_referencing_type_param_from_callsite_method() {
+        var results = InterpolationInterceptorGeneratorTestBuilder.Create()
+        .OmitEnclosingDefinitions()
+        .Generate(@"
+            public class Foo {
+                public void Bar<A>() {
+                    ExpressionOnNone.Interpolate(default(object), x => Array.Empty<A>().Contains(x.SpliceValue((A)x.Data)));
+                }
+            }
+        ");
+        
+        Assert.Equal(1, results.AnalysisResults.Count);
+        Assert.Contains(results.Diagnostics, diagnostic => diagnostic is {
+            Id: InterpolationDiagnostics.ARB005_ReferencesCallSiteTypeParameter,
+            Severity: DiagnosticSeverity.Info
+        });
+    }
+    
+    [Fact]
+    public void Should_produce_ARB005_for_expression_referencing_type_param_from_callsite_class() {
+        var results = InterpolationInterceptorGeneratorTestBuilder.Create()
+        .OmitEnclosingDefinitions()
+        .Generate(@"
+            public class Foo<A> {
+                public void Bar() {
+                    ExpressionOnNone.Interpolate(default(object), x => Array.Empty<A>().Contains(x.SpliceValue((A)x.Data)));
+                }
+            }
+        ");
+        
+        Assert.Equal(1, results.AnalysisResults.Count);
+        Assert.Contains(results.Diagnostics, diagnostic => diagnostic is {
+            Id: InterpolationDiagnostics.ARB005_ReferencesCallSiteTypeParameter,
+            Severity: DiagnosticSeverity.Info
+        });
+    }
 }

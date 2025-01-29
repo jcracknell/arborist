@@ -324,7 +324,7 @@ public partial class InterpolatedSyntaxVisitor {
         if(castSymbol is not IMethodSymbol castMethod)
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(clause);
 
-        return _queryContext.CreateQueryCall(castMethod, [inputTree]);
+        return _queryContext.CreateQueryCall(castMethod, [inputTree], requireTypeParameters: true);
     }
 
     private sealed class QueryContext {
@@ -464,19 +464,17 @@ public partial class InterpolatedSyntaxVisitor {
             return reboundType;
         }
 
-        public InterpolatedTree CreateQueryCall(IMethodSymbol method, IReadOnlyList<InterpolatedTree> arguments) {
-            // Static extension method
-            if(method is { ReducedFrom: { } })
-                return _builder.CreateExpression(nameof(Expression.Call), [
-                    _builder.CreateMethodInfo(GetRemappedMethod(method), default),
-                    ..arguments
-                ]);
+        public InterpolatedTree CreateQueryCall(
+            IMethodSymbol method,
+            IReadOnlyList<InterpolatedTree> arguments,
+            bool requireTypeParameters = false
+        ) {
+            var methodInfo = _builder.CreateMethodInfo(GetRemappedMethod(method), default, requireTypeParameters);
 
-            return _builder.CreateExpression(nameof(Expression.Call), [
-                arguments[0],
-                _builder.CreateMethodInfo(GetRemappedMethod(method), default),
-                ..arguments.Skip(1)
-            ]);
+            return (method is { ReducedFrom: { } }) switch {
+                true => _builder.CreateExpression(nameof(Expression.Call), [methodInfo, ..arguments]),
+                false => _builder.CreateExpression(nameof(Expression.Call), [arguments[0], methodInfo, ..arguments.Skip(1)])
+            };
         }
 
         private ITypeSymbol RemapType(ITypeSymbol typeSymbol) {

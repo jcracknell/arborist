@@ -4,7 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Arborist.Interpolation.InterceptorGenerator;
 
-public class InterpolatedTreeBuilder {
+public partial class InterpolatedTreeBuilder {
     private int _identifierCount;
     private readonly InterpolationDiagnosticsCollector _diagnostics;
     private readonly Dictionary<IMethodSymbol, InterpolatedValueDefinition> _methodInfos;
@@ -98,10 +98,10 @@ public class InterpolatedTreeBuilder {
 
 
     public InterpolatedTree CreateDefaultValue(ITypeSymbol type) {
-        if(TypeSymbolHelpers.TryCreateTypeName(type.WithNullableAnnotation(NullableAnnotation.None), out var typeName))
+        if(TryCreateTypeName(type.WithNullableAnnotation(NullableAnnotation.None), out var typeName))
             return type.IsValueType || NullableAnnotation.Annotated == type.NullableAnnotation
-            ? InterpolatedTree.Verbatim($"default({typeName})")
-            : InterpolatedTree.Verbatim($"default({typeName})!");
+            ? InterpolatedTree.Interpolate($"default({typeName})")
+            : InterpolatedTree.Interpolate($"default({typeName})!");
 
         var typeRef = CreateTypeRef(type);
         return InterpolatedTree.Member(typeRef, InterpolatedTree.Verbatim("Default"));
@@ -112,11 +112,71 @@ public class InterpolatedTreeBuilder {
             return _diagnostics.InaccessibleSymbol(type, default);
 
         // If this is a nameable type, then return an inline type reference
-        if(TypeSymbolHelpers.TryCreateTypeName(type.WithNullableAnnotation(NullableAnnotation.None), out var typeName))
-            return InterpolatedTree.Verbatim($"typeof({typeName})");
+        if(TryCreateTypeName(type.WithNullableAnnotation(NullableAnnotation.None), out var typeName))
+            return InterpolatedTree.Interpolate($"typeof({typeName})");
 
         var typeRef = CreateTypeRef(type);
         return InterpolatedTree.Member(typeRef, InterpolatedTree.Verbatim("Type"));
+    }
+    
+    /// <summary>
+    /// Creates an <see cref="InterpolatedTree"/> containing the name of the provided <paramref name="typeSymbol"/>.
+    /// Reports a diagnostic message in the event that the <paramref name="typeSymbol"/> cannot be named or referenced.
+    /// </summary>
+    public InterpolatedTree CreateTypeName(
+        ITypeSymbol typeSymbol,
+        SyntaxNode? node,
+        IReadOnlyDictionary<ITypeParameterSymbol, string>? typeParameterMappings = default
+    ) {
+        var result = TypeSymbolHelpers.TryGetTypeName(
+            typeSymbol: typeSymbol,
+            typeParameterMappings: typeParameterMappings ?? ImmutableDictionary<ITypeParameterSymbol, string>.Empty,
+            out var typeName
+        );
+        
+        if(result.IsSuccess)
+            return InterpolatedTree.Verbatim(typeName);
+        
+        switch(result.Reason) {
+            case TypeSymbolHelpers.TypeNameFailureReason.Unhandled:
+            case TypeSymbolHelpers.TypeNameFailureReason.AnonymousType:
+                return _diagnostics.UnsupportedType(result.TypeSymbol, node);
+            
+            case TypeSymbolHelpers.TypeNameFailureReason.TypeParameter:
+                // A type parameter symbol must be from the call site, as declaration site type parameters are
+                // obviously only in scope within the declaration.
+                return _diagnostics.ReferencesCallSiteTypeParameter(result.TypeSymbol, node);
+            
+            case TypeSymbolHelpers.TypeNameFailureReason.Inaccessible:
+                return _diagnostics.InaccessibleSymbol(result.TypeSymbol, node);
+                
+            default:
+                throw new NotImplementedException(result.Reason.ToString());
+        }
+    }
+
+    /// <summary>
+    /// Attempts to create an <see cref="InterpolatedTree"/> containing the name of the provided
+    /// <paramref name="typeSymbol"/>. Reports no diagnostic messages.
+    /// </summary>
+    public bool TryCreateTypeName(
+        ITypeSymbol typeSymbol,
+        [NotNullWhen(true)] out InterpolatedTree? typeName,
+        IReadOnlyDictionary<ITypeParameterSymbol, string>? typeParameterMappings = default
+    ) {
+        var result = TypeSymbolHelpers.TryGetTypeName(
+            typeSymbol: typeSymbol,
+            typeParameterMappings: typeParameterMappings ?? ImmutableDictionary<ITypeParameterSymbol, string>.Empty,
+            out var typeNameString
+        );
+        
+        if(result.IsSuccess) {
+            typeName = InterpolatedTree.Verbatim(typeNameString);
+            return true;
+        } else {
+            typeName = default;
+            return false;
+        }
     }
 
     public InterpolatedTree CreateTypeRef(ITypeSymbol type) {
@@ -140,6 +200,11 @@ public class InterpolatedTreeBuilder {
 
     private InterpolatedTree CreateTypeRefUncached(ITypeSymbol type) {
         switch(type) {
+            case ITypeParameterSymbol:
+                // A type parameter symbol must be from the call site, as declaration site type parameters are
+                // obviously only in scope within the declaration.
+                return _diagnostics.ReferencesCallSiteTypeParameter(type, default);
+        
             case { IsAnonymousType: true }:
                 return InterpolatedTree.StaticCall(
                     InterpolatedTree.Verbatim("global::Arborist.Interpolation.Internal.TypeRef.Create"),
@@ -152,42 +217,43 @@ public class InterpolatedTreeBuilder {
                     )]
                 );
 
-            case INamedTypeSymbol named when TypeSymbolHelpers.TryCreateTypeName(named, out var typeName):
-                return InterpolatedTree.Verbatim(
-                    $"global::Arborist.Interpolation.Internal.TypeRef<{typeName}>.Instance"
-                );
+            case INamedTypeSymbol named when TryCreateTypeName(named, out var typeName):
+                return InterpolatedTree.Interpolate($"global::Arborist.Interpolation.Internal.TypeRef<{typeName}>.Instance");
 
             // If we have a generic type containing an anonymous type, we can generate a static local
             // function to construct the required typeref from other typeref instances
             case INamedTypeSymbol { IsGenericType: true } named:
                 return CreateTypeRefFactory(named);
-
+                
             default:
                 return _diagnostics.UnsupportedType(type, default);
         }
     }
 
     private InterpolatedTree CreateTypeRefFactory(INamedTypeSymbol type) {
-        var constructedFrom = type.ConstructedFrom.WithNullableAnnotation(type.NullableAnnotation);
+        var constructedFrom = (INamedTypeSymbol)type.ConstructedFrom.WithNullableAnnotation(type.NullableAnnotation);
         if(!_typeRefFactories.TryGetValue(constructedFrom, out var methodName)) {
             methodName = $"TypeRefFactory{_typeRefFactories.Count}";
             _typeRefFactories[constructedFrom] = methodName;
 
-            var typeParameters = TypeSymbolHelpers.GetInheritedTypeParameters(type);
-            var reparametrizedTypeName = TypeSymbolHelpers.CreateReparametrizedTypeName(constructedFrom, "TR", typeParameters, nullAnnotate: true);
+            var typeParameters = TypeSymbolHelpers.GetInheritedTypeParameters(constructedFrom);
+            var typeParameterMappings = typeParameters.ZipWithIndex().ToDictionary(
+                tup => (ITypeParameterSymbol)tup.Value.WithNullableAnnotation(NullableAnnotation.None),
+                tup => $"TR{tup.Index}",
+                (IEqualityComparer<ITypeParameterSymbol>)SymbolEqualityComparer.Default
+            );
+            
             var typeArguments = Enumerable.Range(0, typeParameters.Count).MkString("<", i => $"TR{i}", ", ", ">");
+            var reparametrizedTypeName = CreateTypeName(constructedFrom, default, typeParameterMappings);
 
             _methodDefinitions.Add(InterpolatedTree.MethodDefinition(
-                $"static global::Arborist.Interpolation.Internal.TypeRef<{reparametrizedTypeName}> {methodName}{typeArguments}",
+                InterpolatedTree.Interpolate($"static global::Arborist.Interpolation.Internal.TypeRef<{reparametrizedTypeName}> {methodName}{typeArguments}"),
                 [..(
                     from i in Enumerable.Range(0, typeParameters.Count)
                     let typeParameter = typeParameters[i]
-                    select InterpolatedTree.Verbatim($"global::Arborist.Interpolation.Internal.TypeRef<TR{i}> t{i}")
+                    select InterpolatedTree.Verbatim($"global::Arborist.Interpolation.Internal.TypeRef<TR{i}> tr{i}")
                 )],
-                [..(
-                    from constraint in TypeSymbolHelpers.GetReparametrizedTypeConstraints("TR", typeParameters)
-                    select InterpolatedTree.Verbatim(constraint)
-                )],
+                GetReparametrizedTypeConstraints(typeParameters, typeParameterMappings),
                 InterpolatedTree.ArrowBody(InterpolatedTree.Verbatim("default!"))
             ));
         }
@@ -197,6 +263,7 @@ public class InterpolatedTreeBuilder {
             [..TypeSymbolHelpers.GetInheritedTypeArguments(type).Select(CreateTypeRef)]
         );
     }
+    
 
     public InterpolatedTree CreateTypeArray(IEnumerable<ITypeSymbol> types) =>
         types switch {
@@ -207,89 +274,111 @@ public class InterpolatedTreeBuilder {
             )
         };
 
-    public InterpolatedTree CreateMethodInfo(IMethodSymbol method, SyntaxNode? node) {
-        if(_methodInfos.TryGetValue(method, out var cached))
+    public InterpolatedTree CreateMethodInfo(
+        IMethodSymbol methodSymbol,
+        SyntaxNode? node,
+        bool requireTypeParameters = false
+    ) {
+        // The requireTypeParameters flag feels like a hack, however in the VAST majority of cases you don't
+        // want them, as you are more likely to be able to resolve the generic method. This is intended to be
+        // used for calls to Enumerable.Cast<T> originating from LINQ queries, which are implicit but MUST
+        // specify type parameters.
+        if(_methodInfos.TryGetValue(methodSymbol, out var cached))
             return InterpolatedTree.Verbatim(cached.Identifier);
 
         var definition = _definitionFactory.Create($"__m{_methodInfos.Count}");
-        _methodInfos[method] = definition;
+        _methodInfos[methodSymbol] = definition;
 
-        _definitionFactory.Set(definition, CreateMethodInfoUncached(method, node));
+        _definitionFactory.Set(definition, CreateMethodInfoUncached(methodSymbol, node, requireTypeParameters));
         return InterpolatedTree.Verbatim(definition.Identifier);
     }
 
-    private InterpolatedTree CreateMethodInfoUncached(IMethodSymbol method, SyntaxNode? node) {
+    private InterpolatedTree CreateMethodInfoUncached(
+        IMethodSymbol methodSymbol,
+        SyntaxNode? node,
+        bool requireTypeParameters
+    ) {
         // It FEELS like this should be optimizable, however in practice it seems very difficult to improve on this,
         // as without HEAVY caching the cost of resolving the method appears to be approximately equivalent to the
         // cost of constructing the expression, which already contains the pre-resolved and constructed MethodInfo.
-        if(method.IsGenericMethod && method.MethodKind is not (MethodKind.BuiltinOperator or MethodKind.UserDefinedOperator))
+        if(methodSymbol.IsGenericMethod && methodSymbol.MethodKind is not (MethodKind.BuiltinOperator or MethodKind.UserDefinedOperator))
             return InterpolatedTree.StaticCall(
                 InterpolatedTree.Verbatim("global::Arborist.ExpressionOnNone.GetMethodInfo"),
-                [InterpolatedTree.Lambda([], CreateGenericMethodCall(method, node))]
+                [InterpolatedTree.Lambda([], CreateGenericMethodCall(methodSymbol, node, requireTypeParameters))]
             );
 
-        var declaringType = CreateType(method.ContainingType);
-        var parameterTypes = CreateTypeArray(method.Parameters.Select(p => p.Type));
+        var declaringType = CreateType(methodSymbol.ContainingType);
+        var parameterTypes = CreateTypeArray(methodSymbol.Parameters.Select(p => p.Type));
 
         return InterpolatedTree.Concat(
             InterpolatedTree.InstanceCall(
                 declaringType,
                 InterpolatedTree.Verbatim("GetMethod"), [
-                InterpolatedTree.Verbatim($"\"{method.Name}\""),
+                InterpolatedTree.Verbatim($"\"{methodSymbol.Name}\""),
                 parameterTypes
             ]),
             InterpolatedTree.Verbatim("!")
         );
     }
 
-    private InterpolatedTree CreateGenericMethodCall(IMethodSymbol method, SyntaxNode? node) {
+    private InterpolatedTree CreateGenericMethodCall(
+        IMethodSymbol methodSymbol,
+        SyntaxNode? node,
+        bool requireTypeParameters
+    ) {
         // Roslyn does a stupid thing where it represents extension methods as instance
         // methods, which makes dealing with them a pain in the ass.
-        if(method.ReducedFrom is not null)
-            return CreateGenericMethodCall(method.ReducedFrom.Construct(method.TypeArguments, method.TypeArgumentNullableAnnotations), node);
+        if(methodSymbol.ReducedFrom is not null)
+            return CreateGenericMethodCall(
+                methodSymbol.ReducedFrom.Construct(methodSymbol.TypeArguments, methodSymbol.TypeArgumentNullableAnnotations),
+                node,
+                requireTypeParameters
+            );
 
-        var typeArgs = CreateGenericMethodCallTypeArgs(method, node);
-        var valueArgs = method.Parameters.Select(p => CreateDefaultValue(p.Type)).ToList();
+        var typeArgs = CreateGenericMethodCallTypeArgs(methodSymbol, node, requireTypeParameters);
+        
+        var valueArgs = new InterpolatedTree[methodSymbol.Parameters.Length];
+        for(var i = 0; i < methodSymbol.Parameters.Length; i++)
+            valueArgs[i] = CreateDefaultValue(methodSymbol.Parameters[i].Type);
 
-        if(method.IsStatic) {
-            if(!TypeSymbolHelpers.TryCreateTypeName(method.ContainingType, out var containingTypeName))
-                return _diagnostics.UnsupportedType(method.ContainingType, node);
-
+        if(methodSymbol.IsStatic) {
+            var containingTypeName = CreateTypeName(methodSymbol.ContainingType, node);
+            
             return InterpolatedTree.StaticCall(
-                InterpolatedTree.Concat(
-                    InterpolatedTree.Verbatim($"{containingTypeName}.{method.Name}"),
-                    typeArgs
-                ),
+                InterpolatedTree.Interpolate($"{containingTypeName}.{methodSymbol.Name}{typeArgs}"),
                 valueArgs
             );
         } else {
             return InterpolatedTree.InstanceCall(
-                CreateDefaultValue(method.ContainingType),
-                InterpolatedTree.Concat(
-                    InterpolatedTree.Verbatim(method.Name),
-                    typeArgs
-                ),
+                CreateDefaultValue(methodSymbol.ContainingType),
+                InterpolatedTree.Interpolate($"{methodSymbol.Name}{typeArgs}"),
                 valueArgs
             );
         }
     }
 
-    private InterpolatedTree CreateGenericMethodCallTypeArgs(IMethodSymbol methodSymbol, SyntaxNode? node) {
-        var typeArgNames = methodSymbol.TypeArguments.Aggregate(
-            ImmutableList<string>.Empty,
-            static (acc, ta) => TypeSymbolHelpers.TryCreateTypeName(ta, out var typeArgName)
-            ? acc.Add(typeArgName)
-            : acc
-        );
+    private InterpolatedTree CreateGenericMethodCallTypeArgs(
+        IMethodSymbol methodSymbol,
+        SyntaxNode? node,
+        bool requireTypeParameters
+    ) {
+        // Type arguments were not specified in the original invocation - if the node is not an invocation,
+        // the invocation is assumed to have been implicit.
+        if(!requireTypeParameters && !SyntaxHelpers.IsExplicitGenericMethodInvocation(node))
+            return InterpolatedTree.Empty;
+        
+        var parts = new List<InterpolatedTree>(2 * methodSymbol.TypeArguments.Length + 1);
+        parts.Add(InterpolatedTree.Verbatim("<"));
+        
+        for(var i = 0; i < methodSymbol.TypeArguments.Length; i++) {
+            if(i != 0)
+                parts.Add(InterpolatedTree.Verbatim(", "));
 
-        if(typeArgNames.Count == methodSymbol.TypeArguments.Length)
-            return InterpolatedTree.Verbatim(typeArgNames.MkString("<", ", ", ">"));
-
-        // Type arguments were specified, but we cannot name the type
-        if(node is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax } })
-            return _diagnostics.UnsupportedInterpolatedSyntax(node);
-
-        return InterpolatedTree.Empty;
+            parts.Add(CreateTypeName(methodSymbol.TypeArguments[i], node));
+        }
+        
+        parts.Add(InterpolatedTree.Verbatim(">"));
+        return InterpolatedTree.Concat(parts);
     }
 
     public InterpolatedTree CreateParameter(ITypeSymbol type, string name) {
@@ -309,6 +398,42 @@ public class InterpolatedTreeBuilder {
         return InterpolatedTree.Verbatim(definition.Identifier);
     }
 
+    public IReadOnlyList<InterpolatedTree> GetReparametrizedTypeConstraints(
+        ImmutableList<ITypeParameterSymbol> typeParameters,
+        IReadOnlyDictionary<ITypeParameterSymbol, string> typeParameterMappings
+    ) {
+        var results = new List<InterpolatedTree>(0);
+        foreach(var typeParameter in typeParameters) {
+            var constraints = GetReparametrizedTypeConstraintConstraints(typeParameter, typeParameterMappings);
+            if(constraints.Count != 0)
+                results.Add(InterpolatedTree.Interpolate($"{typeParameter.Name} : {InterpolatedTree.Concat(constraints)}"));
+        }
+
+        return results;
+    }
+
+    private IReadOnlyList<InterpolatedTree> GetReparametrizedTypeConstraintConstraints(
+        ITypeParameterSymbol typeParameter,
+        IReadOnlyDictionary<ITypeParameterSymbol, string> typeParameterMappings
+    ) {
+        var constraints = new List<InterpolatedTree>(typeParameter.ConstraintTypes.Length);
+
+        for(var i = 0; i < typeParameter.ConstraintTypes.Length; i++)
+            constraints.Add(CreateTypeName(typeParameter.ConstraintTypes[i], null, typeParameterMappings));
+        if(typeParameter.HasNotNullConstraint)
+            constraints.Add(InterpolatedTree.Verbatim("notnull"));
+        if(typeParameter.HasReferenceTypeConstraint)
+            constraints.Add(InterpolatedTree.Verbatim("class"));
+        if(typeParameter.HasUnmanagedTypeConstraint)
+            constraints.Add(InterpolatedTree.Verbatim("unmanaged"));
+        if(typeParameter.HasValueTypeConstraint)
+            constraints.Add(InterpolatedTree.Verbatim("struct"));
+        if(typeParameter.HasConstructorConstraint)
+            constraints.Add(InterpolatedTree.Verbatim("new()"));
+
+        return constraints;
+    }
+    
     private sealed class ParameterDefinitionsKeyEqualityComparer : IEqualityComparer<(string, ITypeSymbol)> {
         public static ParameterDefinitionsKeyEqualityComparer Instance { get; } = new();
 

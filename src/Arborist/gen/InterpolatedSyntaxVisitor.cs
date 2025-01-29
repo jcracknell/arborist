@@ -601,8 +601,6 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
     private InterpolatedTree VisitBinaryAsExpression(BinaryExpressionSyntax node) {
         if(_context.SemanticModel.GetTypeInfo(node.Right).Type is not {} typeOperand)
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node.Right);
-        if(!TypeSymbolHelpers.IsAccessible(typeOperand))
-            return _context.Diagnostics.InaccessibleSymbol(typeOperand, node.Right);
 
         return _builder.CreateExpression(nameof(Expression.TypeAs), [
             Visit(node.Left),
@@ -613,8 +611,6 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
     private InterpolatedTree VisitBinaryIsExpression(BinaryExpressionSyntax node) {
         if(_context.SemanticModel.GetTypeInfo(node.Right).Type is not {} typeOperand)
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node.Right);
-        if(!TypeSymbolHelpers.IsAccessible(typeOperand))
-            return _context.Diagnostics.InaccessibleSymbol(typeOperand, node.Right);
 
         return _builder.CreateExpression(nameof(Expression.TypeIs), [
             Visit(node.Left),

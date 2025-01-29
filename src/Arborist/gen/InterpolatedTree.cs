@@ -83,7 +83,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         Concat(expression, Verbatim("."), member);
 
     public static InterpolatedTree MethodDefinition(
-        string method,
+        InterpolatedTree method,
         IReadOnlyList<InterpolatedTree> parameters,
         IReadOnlyList<InterpolatedTree> typeConstraints,
         InterpolatedTree body
@@ -449,23 +449,24 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
     }
 
     private class MethodDefinitionNode(
-        string method,
+        InterpolatedTree method,
         IReadOnlyList<InterpolatedTree> parameters,
         IReadOnlyList<InterpolatedTree> typeConstraints,
         InterpolatedTree body
     ) : InterpolatedTree {
-        public string Method { get; } = method;
+        public InterpolatedTree Method { get; } = method;
         public IReadOnlyList<InterpolatedTree> Parameters { get; } = parameters;
         public IReadOnlyList<InterpolatedTree> TypeConstraints { get; } = typeConstraints;
         public InterpolatedTree Body { get; } = body;
 
         public override bool IsSupported =>
-            Parameters.All(p => p.IsSupported)
-            && TypeConstraints.All(c => c.IsSupported)
-            && Body.IsSupported;
+            Method.IsSupported
+            && Body.IsSupported
+            && Parameters.All(p => p.IsSupported)
+            && TypeConstraints.All(c => c.IsSupported);
 
         public override void Render(ref RenderingContext context) {
-            context.AppendIndent(Method);
+            context.Append(Method);
             context.Append("(");
             if(Parameters.Count != 0) {
                 context.AppendNewLine();
@@ -479,25 +480,24 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
                 context.AppendIndent();
             }
             context.Append(")");
-            context.AppendNewLine();
             if(TypeConstraints.Count != 0) {
                 context.Indent();
-                context.AppendIndent("where ");
-                context.Append(TypeConstraints[0]);
-                for(var ci = 1; ci < TypeConstraints.Count; ci++) {
+                for(var ci = 0; ci < TypeConstraints.Count; ci++) {
                     context.AppendNewLine();
                     context.AppendIndent("where ");
                     context.Append(TypeConstraints[ci]);
                 }
                 context.Dedent();
-                context.AppendNewLine();
             }
-            context.Append(Body);
+            context.AppendNewLine();
+            // Avoid indenting empty method body
+            if(!Empty.Equals(Body))
+                context.Append(Body);
         }
 
         protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>
             new MethodDefinitionNode(
-                Method,
+                replacer(Method),
                 [..Parameters.Select(replacer)],
                 [..TypeConstraints.Select(replacer)],
                 replacer(Body)

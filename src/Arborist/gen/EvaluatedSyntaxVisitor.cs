@@ -47,38 +47,36 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
         if(!TypeSymbolHelpers.IsAccessible(symbol))
             return _context.Diagnostics.InaccessibleSymbol(symbol, node);
 
-        switch(_context.SemanticModel.GetSymbolInfo(node).Symbol) {
+        switch(symbol) {
             case IFieldSymbol field when field.IsStatic || field.IsConst:
-                if(!TypeSymbolHelpers.TryCreateTypeName(symbol.ContainingType, out var fieldContainingTypeName))
-                    return _context.Diagnostics.UnsupportedType(field.ContainingType, node);
+                var fieldContainingTypeName = _builder.CreateTypeName(symbol.ContainingType, node);
 
                 return InterpolatedTree.Member(
-                    InterpolatedTree.Verbatim(fieldContainingTypeName),
+                    fieldContainingTypeName,
                     InterpolatedTree.Verbatim(node.Name.ToString())
                 );
 
-            case IFieldSymbol field:
+            case IFieldSymbol:
                 return InterpolatedTree.Member(
                     Visit(node.Expression),
                     InterpolatedTree.Verbatim(node.Name.ToString())
                 );
 
             case IPropertySymbol { IsStatic: true } property:
-                if(!TypeSymbolHelpers.TryCreateTypeName(property.ContainingType, out var propertyContainingTypeName))
-                    return _context.Diagnostics.UnsupportedType(property.ContainingType, node);
+                var propertyContainingTypeName = _builder.CreateTypeName(property.ContainingType, node);
 
                 return InterpolatedTree.Member(
-                    InterpolatedTree.Verbatim(propertyContainingTypeName),
+                    propertyContainingTypeName,
                     InterpolatedTree.Verbatim(node.Name.ToString())
                 );
 
-            case IPropertySymbol property:
+            case IPropertySymbol:
                 return InterpolatedTree.Member(
                     Visit(node.Expression),
                     InterpolatedTree.Verbatim(node.Name.ToString())
                 );
 
-            case IMethodSymbol method:
+            case IMethodSymbol:
                 return Visit(node.Expression);
 
             default:
@@ -92,8 +90,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
 
         switch(_context.SemanticModel.GetSymbolInfo(node).Symbol) {
             case IMethodSymbol { ReducedFrom: { IsStatic: true } } method:
-                if(!TypeSymbolHelpers.TryCreateTypeName(method.ContainingType, out var extensionTypeName))
-                    return _context.Diagnostics.UnsupportedType(method.ContainingType, node);
+                var extensionTypeName = _builder.CreateTypeName(method.ContainingType, node);
 
                 return InterpolatedTree.StaticCall(
                     InterpolatedTree.Interpolate($"{extensionTypeName}.{GetInvocationMethodName(node, memberAccess.Name)}"),
@@ -104,8 +101,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
                 );
 
             case IMethodSymbol { IsStatic: true } method:
-                if(!TypeSymbolHelpers.TryCreateTypeName(method.ContainingType, out var staticTypeName))
-                    return _context.Diagnostics.UnsupportedType(method.ContainingType, node);
+                var staticTypeName = _builder.CreateTypeName(method.ContainingType, node);
 
                 return InterpolatedTree.StaticCall(
                     InterpolatedTree.Interpolate($"{staticTypeName}.{GetInvocationMethodName(node, memberAccess.Name)}"),
@@ -126,22 +122,22 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
 
     private InterpolatedTree GetInvocationMethodName(InvocationExpressionSyntax node, SimpleNameSyntax methodName) {
         // Emit explicitly passed type arguments
-        if(methodName is not GenericNameSyntax generic)
+        if(!SyntaxHelpers.IsExplicitGenericMethodInvocation(node) || methodName is not GenericNameSyntax generic)
             return InterpolatedTree.Verbatim(methodName.Identifier.Text);
 
-        var typeArgumentNames = new List<string>(generic.TypeArgumentList.Arguments.Count);
-        foreach(var typeArgument in generic.TypeArgumentList.Arguments) {
+        var typeArgumentParts = new List<InterpolatedTree>(2 * generic.TypeArgumentList.Arguments.Count - 1);
+        for(var i = 0; i < generic.TypeArgumentList.Arguments.Count; i++) {
+            var typeArgument = generic.TypeArgumentList.Arguments[i];
             if(_context.SemanticModel.GetTypeInfo(typeArgument).Type is not {} typeArgumentSymbol)
                 return _context.Diagnostics.UnsupportedEvaluatedSyntax(typeArgument);
-            if(!TypeSymbolHelpers.IsAccessible(typeArgumentSymbol))
-                return _context.Diagnostics.InaccessibleSymbol(typeArgumentSymbol, node);
-            if(!TypeSymbolHelpers.TryCreateTypeName(typeArgumentSymbol, out var typeArgumentName))
-                return _context.Diagnostics.UnsupportedType(typeArgumentSymbol, node);
-
-            typeArgumentNames.Add(typeArgumentName);
+            
+            if(i != 0)
+                typeArgumentParts.Add(InterpolatedTree.Verbatim(", "));
+            
+            typeArgumentParts.Add(_builder.CreateTypeName(typeArgumentSymbol, typeArgument));
         }
 
-        return InterpolatedTree.Verbatim(typeArgumentNames.MkString($"{generic.Identifier.Text}<", ", ", ">"));
+        return InterpolatedTree.Interpolate($"{generic.Identifier.Text}<{InterpolatedTree.Concat(typeArgumentParts)}>");
     }
 
     public override InterpolatedTree VisitAnonymousObjectCreationExpression(AnonymousObjectCreationExpressionSyntax node) =>
@@ -162,12 +158,8 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
     public override InterpolatedTree VisitCastExpression(CastExpressionSyntax node) {
         if(_context.SemanticModel.GetTypeInfo(node).Type is not {} nodeType)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
-
-        if(!TypeSymbolHelpers.IsAccessible(nodeType))
-            return _context.Diagnostics.InaccessibleSymbol(nodeType, node);
-        if(!TypeSymbolHelpers.TryCreateTypeName(nodeType, out var nodeTypeName))
-            return _context.Diagnostics.UnsupportedType(nodeType, node);
-
+        
+        var nodeTypeName = _builder.CreateTypeName(nodeType, node);
         return InterpolatedTree.Interpolate($"({nodeTypeName}){Visit(node.Expression)}");
     }
 
@@ -180,15 +172,11 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
     private InterpolatedTree VisitBaseObjectCreationExpression(BaseObjectCreationExpressionSyntax node) {
         if(_context.SemanticModel.GetTypeInfo(node).Type is not {} typeSymbol)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
-        if(!TypeSymbolHelpers.IsAccessible(typeSymbol))
-            return _context.Diagnostics.InaccessibleSymbol(typeSymbol, node);
-        if(!TypeSymbolHelpers.TryCreateTypeName(typeSymbol, out var typeName))
-            return _context.Diagnostics.UnsupportedType(typeSymbol, node);
 
         var newExpr = InterpolatedTree.StaticCall(
             node switch {
                 ImplicitObjectCreationExpressionSyntax => InterpolatedTree.Verbatim("new"),
-                _ => InterpolatedTree.Verbatim($"new {typeName}")
+                _ => InterpolatedTree.Interpolate($"new {_builder.CreateTypeName(typeSymbol, node)}")
             },
             [..(node.ArgumentList switch {
                 null => Array.Empty<InterpolatedTree>(),
@@ -304,12 +292,10 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
 
         if(_context.SemanticModel.GetTypeInfo(node.Type).Type is not {} parameterType)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
-        if(!TypeSymbolHelpers.IsAccessible(parameterType))
-            return _context.Diagnostics.InaccessibleSymbol(parameterType, node.Type);
-        if(!TypeSymbolHelpers.TryCreateTypeName(parameterType, out var parameterTypeName))
-            return _context.Diagnostics.UnsupportedType(parameterType, node.Type);
 
-        return InterpolatedTree.Verbatim($"{parameterTypeName} {node.Identifier.Text}");
+        var parameterTypeName = _builder.CreateTypeName(parameterType, node);
+        
+        return InterpolatedTree.Interpolate($"{parameterTypeName} {node.Identifier.Text}");
     }
 
     public override InterpolatedTree VisitBinaryExpression(BinaryExpressionSyntax node) {
@@ -339,30 +325,22 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
     private InterpolatedTree VisitBinaryAsExpression(BinaryExpressionSyntax node) {
         if(_context.SemanticModel.GetTypeInfo(node.Right).Type is not {} typeOperand)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node.Right);
-        if(!TypeSymbolHelpers.IsAccessible(typeOperand))
-            return _context.Diagnostics.InaccessibleSymbol(typeOperand, node.Right);
-        if(!TypeSymbolHelpers.TryCreateTypeName(typeOperand, out var typeName))
-            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node.Right);
 
         return InterpolatedTree.Binary(
             node.OperatorToken.ToString(),
             Visit(node.Left),
-            InterpolatedTree.Verbatim(typeName)
+            _builder.CreateTypeName(typeOperand, node.Right)
         );
     }
 
     private InterpolatedTree VisitBinaryIsExpression(BinaryExpressionSyntax node) {
         if(_context.SemanticModel.GetTypeInfo(node.Right).Type is not {} typeOperand)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node.Right);
-        if(!TypeSymbolHelpers.IsAccessible(typeOperand))
-            return _context.Diagnostics.InaccessibleSymbol(typeOperand, node.Right);
-        if(!TypeSymbolHelpers.TryCreateTypeName(typeOperand, out var typeName))
-            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node.Right);
 
         return InterpolatedTree.Binary(
             node.OperatorToken.ToString(),
             Visit(node.Left),
-            InterpolatedTree.Verbatim(typeName)
+            _builder.CreateTypeName(typeOperand, node.Right)
         );
     }
 

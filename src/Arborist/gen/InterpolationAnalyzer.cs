@@ -79,8 +79,14 @@ public static class InterpolationAnalyzer {
 
         var typeParameters = TypeSymbolHelpers.GetInheritedTypeParameters(methodSymbol.ContainingType.OriginalDefinition)
         .AddRange(methodSymbol.OriginalDefinition.TypeParameters);
+        
+        var typeParameterMappings = typeParameters.ZipWithIndex().ToDictionary(
+            tup => (ITypeParameterSymbol)tup.Value.WithNullableAnnotation(NullableAnnotation.None),
+            tup => $"T{tup.Index}",
+            (IEqualityComparer<ITypeParameterSymbol>)SymbolEqualityComparer.Default
+        );
 
-        var returnStatement = GenerateReturnStatement(treeBuilder, methodSymbol, typeParameters, bodyTree, interpolatedExpression);
+        var returnStatement = GenerateReturnStatement(treeBuilder, methodSymbol, typeParameterMappings, bodyTree, interpolatedExpression);
 
         var invocationId = GenerateInvocationId(invocation);
         var className = $"InterpolationInterceptor{invocationId}";
@@ -92,7 +98,7 @@ public static class InterpolationAnalyzer {
             fileName: $"{InterpolationInterceptorGenerator.INTERCEPTOR_NAMESPACE}.{fileBaseName}.g.cs",
             className: className,
             interceptsLocationAttribute: GenerateInterceptsLocationAttribute(invocation),
-            interceptorMethodDeclaration: GenerateInterceptorMethodDeclaration(invocationId, methodSymbol, typeParameters),
+            interceptorMethodDeclaration: GenerateInterceptorMethodDeclaration(treeBuilder, invocationId, methodSymbol, typeParameters, typeParameterMappings),
             bodyTree: bodyTree,
             dataDeclaration: dataDeclaration,
             returnStatement: returnStatement,
@@ -104,7 +110,7 @@ public static class InterpolationAnalyzer {
     private static InterpolatedTree GenerateReturnStatement(
         InterpolatedTreeBuilder builder,
         IMethodSymbol methodSymbol,
-        ImmutableList<ITypeParameterSymbol> typeParameters,
+        IReadOnlyDictionary<ITypeParameterSymbol, string> typeParameterMappings,
         InterpolatedTree bodyTree,
         LambdaExpressionSyntax interpolatedExpression
     ) {
@@ -122,11 +128,14 @@ public static class InterpolationAnalyzer {
             ));
 
         var resultDelegateType = ((INamedTypeSymbol)methodSymbol.OriginalDefinition.ReturnType).TypeArguments[0];
-
+        var reparametrizedDelegateType = builder.CreateTypeName(resultDelegateType, interpolatedExpression, typeParameterMappings);
+        if(!reparametrizedDelegateType.IsSupported)
+            return InterpolatedTree.Unsupported;
+        
         return InterpolatedTree.Concat(
             InterpolatedTree.Verbatim("return "),
             builder.CreateExpression(
-                $"{nameof(Expression.Lambda)}<{TypeSymbolHelpers.CreateReparametrizedTypeName(resultDelegateType, "T", typeParameters, nullAnnotate: true)}>",
+                $"{nameof(Expression.Lambda)}<{reparametrizedDelegateType}>",
                 [bodyTree, ..parameterTrees]
             ),
             InterpolatedTree.Verbatim(";")
@@ -148,14 +157,13 @@ public static class InterpolationAnalyzer {
     }
 
     private static InterpolatedTree GenerateInterceptorMethodDeclaration(
+        InterpolatedTreeBuilder builder,
         string invocationId,
         IMethodSymbol methodSymbol,
-        ImmutableList<ITypeParameterSymbol> typeParameters
+        ImmutableList<ITypeParameterSymbol> typeParameters,
+        IReadOnlyDictionary<ITypeParameterSymbol, string> typeParameterMappings
     ) {
-        var returnType = methodSymbol.ReturnsVoid switch {
-            true => "void",
-            false => TypeSymbolHelpers.CreateReparametrizedTypeName(methodSymbol.OriginalDefinition.ReturnType, "T", typeParameters)
-        };
+        var returnType = builder.CreateTypeName(methodSymbol.OriginalDefinition.ReturnType, default, typeParameterMappings);
 
         var typeParameterDeclarations = typeParameters.Count switch {
             0 => "",
@@ -163,16 +171,13 @@ public static class InterpolationAnalyzer {
         };
 
         return InterpolatedTree.MethodDefinition(
-            $"internal static {returnType} Interpolate{invocationId}{typeParameterDeclarations}",
+            InterpolatedTree.Interpolate($"internal static {returnType} Interpolate{invocationId}{typeParameterDeclarations}"),
             [..(
                 from parameter in (methodSymbol.ReducedFrom ?? methodSymbol).OriginalDefinition.Parameters
-                let parameterTypeName = TypeSymbolHelpers.CreateReparametrizedTypeName(parameter.Type, "T", typeParameters)
-                select InterpolatedTree.Verbatim($"{parameterTypeName} {parameter.Name}")
+                let parameterTypeName = builder.CreateTypeName(parameter.Type, default, typeParameterMappings)
+                select InterpolatedTree.Interpolate($"{parameterTypeName} {parameter.Name}")
             )],
-            [..(
-                from constraint in TypeSymbolHelpers.GetReparametrizedTypeConstraints("T", typeParameters)
-                select InterpolatedTree.Verbatim(constraint)
-            )],
+            builder.GetReparametrizedTypeConstraints(typeParameters, typeParameterMappings),
             // Use an empty body, as we will emit our own body elsewhere
             InterpolatedTree.Empty
         );

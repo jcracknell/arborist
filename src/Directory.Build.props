@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <PropertyGroup>
+    <SlnRoot>$(MSBuildThisFileDirectory)</SlnRoot>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <Nullable>enable</Nullable>
     <InheritDocEnabled>true</InheritDocEnabled>
     <ImplicitUsings>enable</ImplicitUsings>

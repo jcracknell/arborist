@@ -1,13 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <RootNamespace>Arborist</RootNamespace>
+    <RootNamespace>Arborist.Interpolation.InterceptorGenerator</RootNamespace>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
-  </PropertyGroup>
-
-  <Import Project="../src/Arborist.props"/>
-  <PropertyGroup>
-    <InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);Arborist.Interpolation.Interceptors</InterceptorsPreviewNamespaces>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,8 +10,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../src/Arborist.csproj"/>
-    <ProjectReference Include="$(SlnRoot)/Arborist.Interpolation.InterceptorGenerator/src/Arborist.Interpolation.InterceptorGenerator.csproj" OutputItemType="Analyzer" PrivateAssets="all" />
+    <ProjectReference Include="../src/Arborist.Interpolation.InterceptorGenerator.csproj" OutputItemType="Analyzer" PrivateAssets="all" />
+    <ProjectReference Include="$(SlnRoot)/Arborist/src/Arborist.csproj" />
     <ProjectReference Include="$(SlnRoot)/Arborist.TestFixtures/src/Arborist.TestFixtures.csproj" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers"/>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp"/>

@@ -21,6 +21,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../gen/Arborist.Interpolation.InterceptorGenerator.csproj" OutputItemType="Analyzer" PrivateAssets="all" />
+    <ProjectReference Include="$(SlnRoot)/Arborist.Interpolation.InterceptorGenerator/src/Arborist.Interpolation.InterceptorGenerator.csproj" OutputItemType="Analyzer" PrivateAssets="all" />
   </ItemGroup>
 </Project>

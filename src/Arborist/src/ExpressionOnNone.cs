@@ -22,6 +22,31 @@ public static class ExpressionOnNone {
     /// </remarks>
     public static Expression<Action> Of(Expression<Action> expression) =>
         expression;
+        
+    /// <summary>
+    /// Wraps the body of the provided lambda <paramref name="expression"/> in a
+    /// <see cref="System.Linq.Expressions.ExpressionType.TypeAs"/> node of the form
+    /// <c>body as T</c>.
+    /// </summary>
+    public static Expression<Func<T>> As<T>(LambdaExpression expression) =>
+        ExpressionHelper.AsCore<Func<T>>(typeof(T), expression);
+        
+    /// <summary>
+    /// Wraps the body of the provided lambda <paramref name="expression"/> in a 
+    /// <see cref="System.Linq.Expressions.ExpressionType.Convert"/> node of the form
+    /// <c>(T)body</c>.
+    /// </summary>
+    public static Expression<Func<T>> Convert<T>(LambdaExpression expression) =>
+        ExpressionHelper.ConvertCore<Func<T>>(typeof(T), expression);
+        
+    /// <summary>
+    /// Wraps the body of the provided lambda <paramref name="expression"/> in a
+    /// <see cref="System.Linq.Expressions.ExpressionType.ConvertChecked"/> node (or
+    /// <see cref="System.Linq.Expressions.ExpressionType.Convert"/> if there is no defined checked
+    /// conversion) of the form <c>(T)body</c>.
+    /// </summary>
+    public static Expression<Func<T>> ConvertChecked<T>(LambdaExpression expression) =>
+        ExpressionHelper.ConvertCheckedCore<Func<T>>(typeof(T), expression);
 
     /// <summary>
     /// Gets the constructor identified by the provided <paramref name="expression"/>.

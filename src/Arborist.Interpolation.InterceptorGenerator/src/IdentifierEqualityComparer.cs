@@ -31,12 +31,8 @@ public class IdentifierEqualityComparer : IEqualityComparer<string> {
     }
 
     public int GetHashCode(string value) {
-        // This is just the old Java string hashCode implementation, which is good enough
-        // for our purposes, for now.
-        var hash = 0;
-        for(var i = GetStartOffset(value); i < value.Length; i++)
-            hash = 31 * hash + value[i];
-
-        return hash;
+        var hash = new HashCode();
+        hash.AddRange(value.AsSpan(GetStartOffset(value)));
+        return hash.ToHashCode();
     }
 }

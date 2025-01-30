@@ -315,7 +315,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             new BinaryNode(Operator, replacer(Left), replacer(Right));
 
         public override int GetHashCode() =>
-            Operator.GetHashCode() ^ Left.GetHashCode() ^ Right.GetHashCode();
+            HashCode.Combine(Operator, Left, Right);
 
         public override bool Equals(InterpolatedTree? obj) =>
             obj is BinaryNode that
@@ -346,7 +346,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             new BindNode(Identifier, replacer(Value), replacer(Body));
 
         public override int GetHashCode() =>
-            Identifier.GetHashCode() ^ Value.GetHashCode() ^ Body.GetHashCode();
+            HashCode.Combine(Identifier, Value, Body);
 
         public override bool Equals(InterpolatedTree? obj) =>
             obj is BindNode that
@@ -383,8 +383,11 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
                 replacer(Body)
             );
 
-        public override int GetHashCode() =>
-            Args.Aggregate(Body.GetHashCode(), (h, a) => h ^ a.GetHashCode());
+        public override int GetHashCode() {
+            var hash = new HashCode();
+            hash.AddRange(Args);
+            return hash.ToHashCode();
+        }
 
         public override bool Equals(InterpolatedTree? obj) =>
             obj is LambdaNode that
@@ -418,8 +421,11 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>
             new InitializerNode([..Initializers.Select(replacer)]);
 
-        public override int GetHashCode() =>
-            Initializers.Aggregate(default(int), (h, i) => h ^ i.GetHashCode());
+        public override int GetHashCode() {
+            var hash = new HashCode();
+            hash.AddRange(Initializers);
+            return hash.ToHashCode();
+        }
 
         public override bool Equals(InterpolatedTree? obj) =>
             obj is InitializerNode that
@@ -453,8 +459,12 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>
             new CallNode(replacer(Expression), [..Args.Select(replacer)]);
 
-        public override int GetHashCode() =>
-            Args.Aggregate(Expression.GetHashCode(), (h, a) => h ^ a.GetHashCode());
+        public override int GetHashCode() {
+            var hash = new HashCode();
+            hash.Add(Expression);
+            hash.AddRange(Args);
+            return hash.ToHashCode();
+        }
 
         public override bool Equals(InterpolatedTree? obj) =>
             obj is CallNode that
@@ -480,8 +490,11 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>
             new ConcatNode([..Nodes.Select(replacer)]);
 
-        public override int GetHashCode() =>
-            Nodes.Aggregate(0, (h, n) => h ^ n.GetHashCode());
+        public override int GetHashCode() {
+            var hash = new HashCode();
+            hash.AddRange(Nodes);
+            return hash.ToHashCode();
+        }
 
         public override bool Equals(InterpolatedTree? obj) =>
             obj is ConcatNode that
@@ -544,11 +557,12 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             );
 
         public override int GetHashCode() {
-            var hash = Method.GetHashCode();
-            hash = Parameters.Aggregate(hash, (h, p) => h ^ p.GetHashCode());
-            hash = TypeConstraints.Aggregate(hash, (h, c) => h ^ c.GetHashCode());
-            hash ^= Body.GetHashCode();
-            return hash;
+            var hash = new HashCode();
+            hash.Add(Method);
+            hash.AddRange(Parameters);
+            hash.AddRange(TypeConstraints);
+            hash.Add(Body);
+            return hash.ToHashCode();
         }
 
         public override bool Equals(InterpolatedTree? obj) =>
@@ -588,8 +602,12 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>
             new SwitchNode(replacer(Subject), [..Cases.Select(replacer)]);
 
-        public override int GetHashCode() =>
-            Cases.Aggregate(Subject.GetHashCode(), (h, n) => h ^ n.GetHashCode());
+        public override int GetHashCode() {
+            var hash = new HashCode();
+            hash.Add(Subject);
+            hash.AddRange(Cases);
+            return hash.ToHashCode();
+        }
 
         public override bool Equals(InterpolatedTree? obj) =>
             obj is SwitchNode that
@@ -623,7 +641,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             new TernaryNode(replacer(Condition), replacer(ThenNode), replacer(ElseNode));
 
         public override int GetHashCode() =>
-            Condition.GetHashCode() ^ ThenNode.GetHashCode() ^ ElseNode.GetHashCode();
+            HashCode.Combine(Condition, ThenNode, ElseNode);
 
         public override bool Equals(InterpolatedTree? obj) =>
             obj is TernaryNode that

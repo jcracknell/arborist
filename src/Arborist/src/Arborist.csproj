@@ -16,8 +16,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="$(AssemblyName).props" Pack="true" PackagePath="build" Visible="false"/>
+    <None Include="$(AssemblyName).props" Pack="true" PackagePath="build"/>
     <None Include="$(OutputPath)/Arborist.Interpolation.InterceptorGenerator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
+    <PackageReference Include="Microsoft.Bcl.HashCode" OutputItemType="Analyzer" PrivateAssets="all" GeneratePathProperty="true" />
+    <None Include="$(PkgMicrosoft_Bcl_HashCode)/lib/netstandard2.0/*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
   </ItemGroup>
 
   <ItemGroup>

@@ -443,8 +443,11 @@ public partial class InterpolatedTreeBuilder {
             StringComparer.Ordinal.Equals(a.Item1, b.Item1)
             && SymbolEqualityComparer.Default.Equals(a.Item2, b.Item2);
 
-        public int GetHashCode((string, ITypeSymbol) obj) =>
-            StringComparer.Ordinal.GetHashCode(obj.Item1)
-            ^ SymbolEqualityComparer.Default.GetHashCode(obj.Item2);
+        public int GetHashCode((string, ITypeSymbol) obj) {
+            var hash = new HashCode();
+            hash.Add(obj.Item1);
+            hash.Add(obj.Item2, SymbolEqualityComparer.Default);
+            return hash.ToHashCode();
+        }
     }
 }

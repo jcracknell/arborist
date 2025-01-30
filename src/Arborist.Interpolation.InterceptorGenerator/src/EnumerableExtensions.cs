@@ -3,6 +3,44 @@ using System.Text;
 namespace Arborist.Interpolation.InterceptorGenerator;
 
 internal static class EnumerableExtensions {
+    public static void AddRange<A>(
+        this HashCode hash,
+        IEnumerable<A> enumerable,
+        IEqualityComparer<A>? equalityComparer = default
+    ) {
+        var length = 0;
+        foreach(var element in enumerable) {
+            hash.Add(element, equalityComparer);
+            length += 1;
+        }
+        
+        hash.Add(length);
+    }
+    
+    public static void AddRange<A>(
+        this HashCode hash,
+        IReadOnlyList<A> list,
+        IEqualityComparer<A>? equalityComparer = default
+    ) {
+        var length = list.Count;
+        for(var i = 0; i < length; i++)
+            hash.Add(list[i], equalityComparer);
+            
+        hash.Add(length);
+    }
+    
+    public static void AddRange<A>(
+        this HashCode hash,
+        ReadOnlySpan<A> span,
+        IEqualityComparer<A>? equalityComparer = default
+    ) {
+        var length = span.Length;
+        for(var i = 0; i < length; i++)
+            hash.Add(span[i], equalityComparer);
+            
+        hash.Add(length);
+    }
+
     public static string MkString<A>(this IEnumerable<A> collection, string separator) =>
         MkString(collection, "", static a => a, separator, "");
 

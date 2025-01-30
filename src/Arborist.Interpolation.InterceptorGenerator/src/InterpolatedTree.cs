@@ -5,6 +5,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         new[] {
             "",
             ".",
+            "!",
             ",", ", ",
             "<", ">",
             "(", ")",

@@ -17,8 +17,8 @@ public class SpliceBodyTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                __data.OwnerPredicate switch {
-                    var __v0 => global::Arborist.ExpressionHelper.Replace(
+                __data.OwnerPredicate switch { var __v0 =>
+                    global::Arborist.ExpressionHelper.Replace(
                         __v0.Body,
                         global::Arborist.Internal.Collections.SmallDictionary.Create(
                             new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
@@ -48,8 +48,8 @@ public class SpliceBodyTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                __t0.Coerce((o) => (o.Name == ""Jon"")) switch {
-                    var __v0 => global::Arborist.ExpressionHelper.Replace(
+                __t0.Coerce((o) => (o.Name == ""Jon"")) switch { var __v0 =>
+                    global::Arborist.ExpressionHelper.Replace(
                         __v0.Body,
                         global::Arborist.Internal.Collections.SmallDictionary.Create(
                             new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(

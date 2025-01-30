@@ -36,6 +36,13 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         InterpolatedTree right
     ) =>
         new BinaryNode(@operator, left, right);
+        
+    /// <summary>
+    /// Binds the provided <paramref name="value"/> to a variable with the specified <paramref name="identifier"/>
+    /// using a single-arm switch expression with the provided <paramref name="body"/>.
+    /// </summary>
+    public static InterpolatedTree Bind(string identifier, InterpolatedTree value, InterpolatedTree body) =>
+        new BindNode(identifier, value, body);
 
     public static InterpolatedTree Concat(params InterpolatedTree[] nodes) =>
         new ConcatNode(nodes);
@@ -314,6 +321,38 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             obj is BinaryNode that
             && this.Left.Equals(that.Left)
             && this.Right.Equals(that.Right);
+    }
+    
+    private class BindNode(string identifier, InterpolatedTree value, InterpolatedTree body) : InterpolatedTree {
+        public string Identifier { get; } = identifier;
+        public InterpolatedTree Value { get; } = value;
+        public InterpolatedTree Body { get; } = body;
+
+        public override bool IsSupported =>
+            Value.IsSupported && Body.IsSupported;
+        
+        public override void Render(ref RenderingContext context) {
+            context.Append(Value);
+            context.Append(" switch { var ");
+            context.Append(Identifier);
+            context.Append(" =>");
+            context.AppendNewLine();
+            context.Indent(Body);
+            context.AppendNewLine();
+            context.AppendIndent("}");
+        }
+
+        protected override InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer) =>
+            new BindNode(Identifier, replacer(Value), replacer(Body));
+
+        public override int GetHashCode() =>
+            Identifier.GetHashCode() ^ Value.GetHashCode() ^ Body.GetHashCode();
+
+        public override bool Equals(InterpolatedTree? obj) =>
+            obj is BindNode that
+            && this.Identifier.Equals(that.Identifier)
+            && this.Value.Equals(that.Value)
+            && this.Body.Equals(that.Body);
     }
 
     private class LambdaNode(IReadOnlyList<InterpolatedTree> args, InterpolatedTree body)

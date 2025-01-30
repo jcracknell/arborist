@@ -150,11 +150,9 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
     }
 
     private InterpolatedTree VisitSpliceBody(InvocationExpressionSyntax node, IMethodSymbol method) {
-        var identifer = _builder.CreateIdentifier();
+        var identifier = _builder.CreateIdentifier();
         var parameterCount = method.Parameters.Length - 1;
-        var resultType = method.Parameters[parameterCount].Type;
         var expressionNode = node.ArgumentList.Arguments[parameterCount];
-        var expressionType = _context.SemanticModel.GetTypeInfo(expressionNode).Type;
 
         // Generate the interpolated parameter trees so that the nodes are interpolated in
         // declaration order.
@@ -165,30 +163,29 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         var expressionTree = VisitSpliceBodyExpression(expressionNode, method);
 
         // We'll use a switch expression with a single case to bind the evaluated expression tree
-        return InterpolatedTree.Switch(expressionTree, [
-            InterpolatedTree.SwitchCase(
-                InterpolatedTree.Verbatim($"var {identifer}"),
-                InterpolatedTree.StaticCall(
-                    InterpolatedTree.Verbatim("global::Arborist.ExpressionHelper.Replace"),
-                    [
-                        InterpolatedTree.Verbatim($"{identifer}.Body"),
-                        InterpolatedTree.StaticCall(
-                            InterpolatedTree.Verbatim("global::Arborist.Internal.Collections.SmallDictionary.Create"),
-                            [..(
-                                from parameterIndex in Enumerable.Range(0, parameterCount)
-                                select InterpolatedTree.StaticCall(
-                                    InterpolatedTree.Verbatim($"new global::System.Collections.Generic.KeyValuePair<{_builder.ExpressionTypeName}, {_builder.ExpressionTypeName}>"),
-                                    [
-                                        InterpolatedTree.Verbatim($"{identifer}.Parameters[{parameterIndex}]"),
-                                        parameterTrees[parameterIndex]
-                                    ]
-                                )
-                            )]
-                        )
-                    ]
-                )
+        return InterpolatedTree.Bind(
+            identifier,
+            expressionTree,
+            InterpolatedTree.StaticCall(
+                InterpolatedTree.Verbatim("global::Arborist.ExpressionHelper.Replace"),
+                [
+                    InterpolatedTree.Verbatim($"{identifier}.Body"),
+                    InterpolatedTree.StaticCall(
+                        InterpolatedTree.Verbatim("global::Arborist.Internal.Collections.SmallDictionary.Create"),
+                        [..(
+                            from parameterIndex in Enumerable.Range(0, parameterCount)
+                            select InterpolatedTree.StaticCall(
+                                InterpolatedTree.Verbatim($"new global::System.Collections.Generic.KeyValuePair<{_builder.ExpressionTypeName}, {_builder.ExpressionTypeName}>"),
+                                [
+                                    InterpolatedTree.Verbatim($"{identifier}.Parameters[{parameterIndex}]"),
+                                    parameterTrees[parameterIndex]
+                                ]
+                            )
+                        )]
+                    )
+                ]
             )
-        ]);
+        );
     }
 
     private InterpolatedTree VisitSpliceBodyExpression(ArgumentSyntax node, IMethodSymbol method) {

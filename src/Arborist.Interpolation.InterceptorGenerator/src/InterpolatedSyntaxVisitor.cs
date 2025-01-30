@@ -441,11 +441,17 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
                 if(!TypeSymbolHelpers.IsAccessible(identifierSymbol))
                     return _context.Diagnostics.InaccessibleSymbol(identifierSymbol, identifier);
 
+                var memberInfoAccessorName = identifierSymbol switch {
+                    IPropertySymbol => InterpolatedTree.Verbatim(nameof(Type.GetProperty)),
+                    IFieldSymbol => InterpolatedTree.Verbatim(nameof(Type.GetField)),
+                    _ => _context.Diagnostics.UnsupportedInterpolatedSyntax(node)
+                };
+
                 return _builder.CreateExpression(nameof(Expression.Bind),
                     InterpolatedTree.Concat(
                         InterpolatedTree.InstanceCall(
                             _builder.CreateType(identifierSymbol.ContainingType),
-                            InterpolatedTree.Verbatim(nameof(Type.GetMember)),
+                            memberInfoAccessorName,
                             [InterpolatedTree.Verbatim($"\"{identifier.Identifier.Text}\"")]
                         ),
                         InterpolatedTree.Verbatim("!")

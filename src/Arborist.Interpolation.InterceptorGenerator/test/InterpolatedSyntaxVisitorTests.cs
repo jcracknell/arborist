@@ -95,7 +95,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                     ),
                     new global::System.Linq.Expressions.MemberBinding[] {
                         global::System.Linq.Expressions.Expression.Bind(
-                            typeof(global::Arborist.TestFixtures.Cat).GetMember(""Name"")!,
+                            typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Name"")!,
                             global::System.Linq.Expressions.Expression.Constant(
                                 ""Garfield"",
                                 typeof(global::System.String)

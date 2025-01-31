@@ -76,7 +76,59 @@ internal static class EnumerableExtensions {
 
     public static IReadOnlyList<A> NullToEmpty<A>(this IReadOnlyList<A>? list) =>
         list ?? Array.Empty<A>();
-
+        
+    /// <summary>
+    /// Eagerly applies the provided <paramref name="projection"/> to the subject <paramref name="collection"/>
+    /// with known length, returning the results.
+    /// </summary>
+    public static B[] SelectEager<A, B>(
+        this IReadOnlyCollection<A> collection,
+        Func<A, B> projection
+    ) {
+        var index = 0;
+        var count = collection.Count;
+        var results = new B[count];
+        if(collection is IReadOnlyList<A> list) {
+            while(index < count) {
+                results[index] = projection(list[index]);
+                index += 1;
+            }
+        } else {
+            foreach(var element in collection) {
+                results[index] = projection(element);
+                index += 1;
+            }
+        }
+        
+        return results;
+    }
+    
+    /// <summary>
+    /// Eagerly applies the provided <paramref name="projection"/> to the subject <paramref name="collection"/>
+    /// with known length, returning the results.
+    /// </summary>
+    public static B[] SelectEager<A, B>(
+        this IReadOnlyCollection<A> collection,
+        Func<A, int, B> projection
+    ) {
+        var index = 0;
+        var count = collection.Count;
+        var results = new B[count];
+        if(collection is IReadOnlyList<A> list) {
+            while(index < count) {
+                results[index] = projection(list[index], index);
+                index += 1;
+            }
+        } else {
+            foreach(var element in collection) {
+                results[index] = projection(element, index);
+                index += 1;
+            }
+        }
+        
+        return results;
+    }
+    
     public static bool TryGetFirst<A>(
         this IEnumerable<A> collection,
         [MaybeNullWhen(false)] out A result

@@ -72,11 +72,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
     /// </summary>
     /// <seealso cref="Concat(IReadOnlyList{InterpolatedTree})"/>
     public static InterpolatedTree Interpolate(ref InterpolationHandler interpolated) =>
-        interpolated.GetTrees() switch {
-            { Count: 0 } => Empty,
-            { Count: 1 } list => list[0],
-            { } list => Concat(list)
-        };
+        interpolated.GetTree();
 
     public static InterpolatedTree Lambda(
         IReadOnlyList<InterpolatedTree> parameters,
@@ -652,31 +648,59 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
 
     [global::System.Runtime.CompilerServices.InterpolatedStringHandler]
     public ref struct InterpolationHandler {
-        private List<InterpolatedTree> _trees;
+        private readonly List<InterpolatedTree> _trees;
+        private readonly PooledStringWriter _writer;
+        private bool _consumed;
 
         public InterpolationHandler(int literalCount, int interpolatedCount) {
             _trees = new List<InterpolatedTree>(literalCount + interpolatedCount);
+            _writer = PooledStringWriter.Rent();
+            _consumed = false;
+        }
+        
+        private void AssertUnconsumed() {
+            if(_consumed)
+                throw new InvalidOperationException($"Attempt to access consumed {nameof(InterpolationHandler)}.");
         }
 
-        public IReadOnlyList<InterpolatedTree> GetTrees() =>
-            _trees;
-
+        public InterpolatedTree GetTree() {
+            AssertUnconsumed();
+            
+            AppendBufferedLiteral();
+            _writer.Dispose();
+            _consumed = true;
+        
+            return _trees.Count switch {
+                0 => Empty,
+                1 => _trees[0],
+                _ => Concat(_trees)
+            };
+        }
+        
+        private void AppendBufferedLiteral() {
+            if(_writer.Length == 0)
+                return;
+                
+            _trees.Add(Verbatim(_writer.ToString()));
+            _writer.Clear();
+        }
+        
         public void AppendLiteral(string? literal) {
+            AssertUnconsumed();
+            
             if(literal is not null && literal.Length != 0)
-                _trees.Add(Verbatim(literal));
+                _writer.Write(literal);
         }
 
         public void AppendFormatted(object? obj) {
+            AssertUnconsumed();
+            
             if(obj is InterpolatedTree tree) {
-                AppendFormatted(tree);
+                AppendBufferedLiteral();
+                _trees.Add(tree);
             } else {
                 AppendLiteral(obj?.ToString());
             }
-        }
-
-        public void AppendFormatted(InterpolatedTree? tree) {
-            if(tree is not null)
-                _trees.Add(tree);
         }
     }
 }

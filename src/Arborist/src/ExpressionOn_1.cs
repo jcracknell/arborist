@@ -78,6 +78,11 @@ public static class ExpressionOn<A> {
             body: ExpressionHelper.Replace(branch.Body, branch.Parameters[0], root.Body),
             parameters: root.Parameters
         );
+        
+    /// <summary>
+    /// The identity expression: <c>a => a</c>.
+    /// </summary>
+    public static Expression<Func<A, A>> Identity { get; } = Of(a => a);
 
     /// <summary>
     /// Applies the interpolation process to the provided <paramref name="expression"/>, replacing

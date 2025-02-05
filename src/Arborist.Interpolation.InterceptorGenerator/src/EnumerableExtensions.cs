@@ -1,9 +1,10 @@
-using System.Text;
+using System.Diagnostics.Contracts;
 
 namespace Arborist.Interpolation.InterceptorGenerator;
 
 internal static class EnumerableExtensions {
-    public static void AddRange<A>(
+    [Pure]
+    public static HashCode AddRange<A>(
         this HashCode hash,
         IEnumerable<A> enumerable,
         IEqualityComparer<A>? equalityComparer = default
@@ -15,9 +16,11 @@ internal static class EnumerableExtensions {
         }
         
         hash.Add(length);
+        return hash;
     }
     
-    public static void AddRange<A>(
+    [Pure]
+    public static HashCode AddRange<A>(
         this HashCode hash,
         IReadOnlyList<A> list,
         IEqualityComparer<A>? equalityComparer = default
@@ -27,9 +30,11 @@ internal static class EnumerableExtensions {
             hash.Add(list[i], equalityComparer);
             
         hash.Add(length);
+        return hash;
     }
     
-    public static void AddRange<A>(
+    [Pure]
+    public static HashCode AddRange<A>(
         this HashCode hash,
         ReadOnlySpan<A> span,
         IEqualityComparer<A>? equalityComparer = default
@@ -39,6 +44,7 @@ internal static class EnumerableExtensions {
             hash.Add(span[i], equalityComparer);
             
         hash.Add(length);
+        return hash;
     }
 
     public static string MkString<A>(this IEnumerable<A> collection, string separator) =>

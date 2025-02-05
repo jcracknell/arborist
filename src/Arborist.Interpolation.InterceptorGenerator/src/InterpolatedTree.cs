@@ -349,7 +349,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
 
         public override int GetHashCode() {
             var hash = new HashCode();
-            hash.AddRange(Args);
+            hash = hash.AddRange(Args);
             return hash.ToHashCode();
         }
 
@@ -387,7 +387,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
 
         public override int GetHashCode() {
             var hash = new HashCode();
-            hash.AddRange(Initializers);
+            hash = hash.AddRange(Initializers);
             return hash.ToHashCode();
         }
 
@@ -426,7 +426,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         public override int GetHashCode() {
             var hash = new HashCode();
             hash.Add(Expression);
-            hash.AddRange(Args);
+            hash = hash.AddRange(Args);
             return hash.ToHashCode();
         }
 
@@ -456,7 +456,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
 
         public override int GetHashCode() {
             var hash = new HashCode();
-            hash.AddRange(Nodes);
+            hash = hash.AddRange(Nodes);
             return hash.ToHashCode();
         }
 
@@ -523,8 +523,8 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         public override int GetHashCode() {
             var hash = new HashCode();
             hash.Add(Method);
-            hash.AddRange(Parameters);
-            hash.AddRange(TypeConstraints);
+            hash = hash.AddRange(Parameters);
+            hash = hash.AddRange(TypeConstraints);
             hash.Add(Body);
             return hash.ToHashCode();
         }
@@ -569,7 +569,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         public override int GetHashCode() {
             var hash = new HashCode();
             hash.Add(Subject);
-            hash.AddRange(Cases);
+            hash = hash.AddRange(Cases);
             return hash.ToHashCode();
         }
 

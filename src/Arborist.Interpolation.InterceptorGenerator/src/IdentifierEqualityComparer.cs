@@ -32,7 +32,7 @@ public class IdentifierEqualityComparer : IEqualityComparer<string> {
 
     public int GetHashCode(string value) {
         var hash = new HashCode();
-        hash.AddRange(value.AsSpan(GetStartOffset(value)));
+        hash = hash.AddRange(value.AsSpan(GetStartOffset(value)));
         return hash.ToHashCode();
     }
 }

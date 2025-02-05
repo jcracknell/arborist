@@ -122,11 +122,17 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
     ) =>
         new TernaryNode(condition, thenNode, elseNode);
 
-    private InterpolatedTree() { }
-
+    private bool _isModified;
     public abstract bool IsSupported { get; }
+    public abstract InterpolatedTree AsModified();
+    protected abstract bool ChildrenModified();
     public abstract void Render(ref RenderingContext context);
     protected abstract InterpolatedTree Replace(Func<InterpolatedTree, InterpolatedTree> replacer);
+    
+    public bool IsModified {
+        get { return _isModified || ChildrenModified(); }
+        protected set { _isModified = value; }
+    }
 
     public void WriteTo(PooledStringWriter writer, int level) {
         var context = new RenderingContext(writer, level);
@@ -208,7 +214,15 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
     }
 
     private class UnsupportedNode : InterpolatedTree {
+        public UnsupportedNode() {
+            IsModified = true;
+        }
+    
         public override bool IsSupported => false;
+
+        public override InterpolatedTree AsModified() => this;
+        
+        protected override bool ChildrenModified() => false;
 
         public override void Render(ref RenderingContext context) {
             context.AppendIndent("???");
@@ -228,6 +242,11 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         public string Expr { get; } = expr;
 
         public override bool IsSupported => true;
+        
+        public override InterpolatedTree AsModified() =>
+            new VerbatimNode(Expr) { IsModified = true };
+            
+        protected override bool ChildrenModified() => false;
 
         public override void Render(ref RenderingContext context) {
             context.AppendIndent(Expr);
@@ -243,9 +262,18 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             obj is VerbatimNode that && this.Expr.Equals(that.Expr);
     }
 
-    private class PlaceholderNode(string identifier) : InterpolatedTree {
-        public string Identifier { get; } = identifier;
+    private class PlaceholderNode : InterpolatedTree {
+        public PlaceholderNode(string identifier) {
+            Identifier = identifier;
+            IsModified = true;
+        }
+    
+        public string Identifier { get; }
         public override bool IsSupported => false;
+
+        public override InterpolatedTree AsModified() => this;
+        
+        protected override bool ChildrenModified() => false;
 
         public override void Render(ref RenderingContext context) {
             context.Append($"<{Identifier}>");
@@ -267,6 +295,12 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
 
         public override bool IsSupported =>
             Expression.IsSupported;
+
+        public override InterpolatedTree AsModified() =>
+            new ArrowBodyNode(Expression) { IsModified = true };
+            
+        protected override bool ChildrenModified() =>
+            Expression.IsModified;
 
         public override void Render(ref RenderingContext context) {
             context.Indent();
@@ -296,6 +330,12 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
 
         public override bool IsSupported =>
             Left.IsSupported && Right.IsSupported;
+
+        public override InterpolatedTree AsModified() =>
+            new BinaryNode(Operator, Left, Right) { IsModified = true };
+
+        protected override bool ChildrenModified() =>
+            Left.IsModified || Right.IsModified;
 
         public override void Render(ref RenderingContext context) {
             context.Append("(");
@@ -327,6 +367,12 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
 
         public override bool IsSupported =>
             Body.IsSupported && Args.All(a => a.IsSupported);
+
+        public override InterpolatedTree AsModified() =>
+            new LambdaNode(Args, Body) { IsModified = true };
+
+        protected override bool ChildrenModified() =>
+            Body.IsModified || Args.Any(a => a.IsModified);
 
         public override void Render(ref RenderingContext context) {
             context.AppendIndent("(");
@@ -367,6 +413,12 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         public override bool IsSupported =>
             Initializers.All(static i => i.IsSupported);
 
+        public override InterpolatedTree AsModified() =>
+            new InitializerNode(Initializers) { IsModified = true };
+            
+        protected override bool ChildrenModified() =>
+            Initializers.Any(i => i.IsModified);
+
         public override void Render(ref RenderingContext context) {
             context.AppendIndent("{");
             if(Initializers.Count != 0) {
@@ -403,6 +455,12 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         public override bool IsSupported =>
             Expression.IsSupported
             && Args.All(a => a.IsSupported);
+
+        public override InterpolatedTree AsModified() =>
+            new CallNode(Expression, Args) { IsModified = true };
+
+        protected override bool ChildrenModified() =>
+            Expression.IsModified || Args.Any(a => a.IsModified);
 
         public override void Render(ref RenderingContext context) {
             context.Append(Expression);
@@ -446,6 +504,12 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         public override bool IsSupported =>
             Nodes.All(n => n.IsSupported);
 
+        public override InterpolatedTree AsModified() =>
+            new ConcatNode(Nodes) { IsModified = true };
+            
+        protected override bool ChildrenModified() =>
+            Nodes.Any(n => n.IsModified);
+
         public override void Render(ref RenderingContext context) {
             for(var i = 0; i < Nodes.Count; i++)
                 context.Append(Nodes[i]);
@@ -481,6 +545,15 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             && Body.IsSupported
             && Parameters.All(p => p.IsSupported)
             && TypeConstraints.All(c => c.IsSupported);
+
+        public override InterpolatedTree AsModified() =>
+            new MethodDefinitionNode(Method, Parameters, TypeConstraints, Body) { IsModified = true };
+
+        protected override bool ChildrenModified() =>
+            Method.IsModified
+            || Body.IsModified
+            || Parameters.Any(p => p.IsModified)
+            || TypeConstraints.Any(c => c.IsModified);
 
         public override void Render(ref RenderingContext context) {
             context.Append(Method);
@@ -547,6 +620,12 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         public override bool IsSupported =>
             Subject.IsSupported && Cases.All(n => n.IsSupported);
 
+        public override InterpolatedTree AsModified() =>
+            new SwitchNode(Subject, Cases) { IsModified = true };
+
+        protected override bool ChildrenModified() =>
+            Subject.IsModified || Cases.Any(c => c.IsModified);
+
         public override void Render(ref RenderingContext context) {
             context.Append(Subject);
             context.Append(" switch {");
@@ -588,6 +667,12 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
 
         public override bool IsSupported =>
             Condition.IsSupported && ThenNode.IsSupported && ElseNode.IsSupported;
+
+        public override InterpolatedTree AsModified() =>
+            new TernaryNode(Condition, ThenNode, ElseNode) { IsModified = true };
+
+        protected override bool ChildrenModified() =>
+            Condition.IsModified || ThenNode.IsModified || ElseNode.IsModified;
 
         public override void Render(ref RenderingContext context) {
             context.Append("(");

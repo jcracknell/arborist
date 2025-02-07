@@ -155,6 +155,13 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
         ]);
     }
 
+    public override InterpolatedTree VisitDefaultExpression(DefaultExpressionSyntax node) {
+        if(_context.SemanticModel.GetTypeInfo(node).Type is not {} typeSymbol)
+            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
+        
+        return _builder.CreateDefaultValue(typeSymbol.WithNullableAnnotation(NullableAnnotation.Annotated));
+    }
+
     public override InterpolatedTree VisitCastExpression(CastExpressionSyntax node) {
         if(_context.SemanticModel.GetTypeInfo(node).Type is not {} nodeType)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
@@ -355,11 +362,20 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
             Visit(node.Operand),
             InterpolatedTree.Verbatim(node.OperatorToken.ToString())
         );
-
+        
     public override InterpolatedTree VisitParenthesizedExpression(ParenthesizedExpressionSyntax node) =>
         Visit(node.Expression);
 
     public override InterpolatedTree VisitLiteralExpression(LiteralExpressionSyntax node) =>
-        InterpolatedTree.Verbatim(node.ToString().Trim());
-
+        node.Kind() switch {
+            SyntaxKind.DefaultLiteralExpression => VisitDefaultLiteralExpression(node),
+            _ => InterpolatedTree.Verbatim(node.ToString().Trim())
+        };
+    
+    private InterpolatedTree VisitDefaultLiteralExpression(LiteralExpressionSyntax node) {
+        if(_context.SemanticModel.GetTypeInfo(node).Type is not {} typeSymbol)
+            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
+            
+        return _builder.CreateDefaultValue(typeSymbol.WithNullableAnnotation(NullableAnnotation.Annotated));
+    }
 }

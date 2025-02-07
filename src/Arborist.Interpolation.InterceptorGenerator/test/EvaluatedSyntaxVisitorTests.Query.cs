@@ -1,5 +1,3 @@
-using Xunit;
-
 namespace Arborist.Interpolation.InterceptorGenerator;
 
 public partial class EvaluatedSyntaxVisitorTests {
@@ -16,13 +14,15 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    global::System.Linq.Enumerable.Select(
-                        __data.Cats,
-                        (c) => c.Name
-                    ),
-                    typeof(global::System.Collections.Generic.IEnumerable<global::System.String>)
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        global::System.Linq.Enumerable.Select(
+                            __data.Cats,
+                            (c) => c.Name
+                        ),
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -41,19 +41,16 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    global::System.Linq.Enumerable.GroupBy(
-                        __data.Cats,
-                        (c) => c.Age,
-                        (c) => c
-                    ),
-                    typeof(global::System.Collections.Generic.IEnumerable<
-                        global::System.Linq.IGrouping<
-                            global::System.Nullable<global::System.Int32>,
-                            global::Arborist.TestFixtures.Cat
-                        >
-                    >)
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        global::System.Linq.Enumerable.GroupBy(
+                            __data.Cats,
+                            (c) => c.Age,
+                            (c) => c
+                        ),
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -74,17 +71,19 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    global::System.Linq.Enumerable.Select(
-                        global::System.Linq.Enumerable.GroupBy(
-                            __data.Cats,
-                            (c) => c.Age,
-                            (c) => c
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        global::System.Linq.Enumerable.Select(
+                            global::System.Linq.Enumerable.GroupBy(
+                                __data.Cats,
+                                (c) => c.Age,
+                                (c) => c
+                            ),
+                            (ageGroup) => global::System.Linq.Enumerable.Count(ageGroup)
                         ),
-                        (ageGroup) => global::System.Linq.Enumerable.Count(ageGroup)
-                    ),
-                    typeof(global::System.Collections.Generic.IEnumerable<global::System.Int32>)
-                )
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -104,16 +103,18 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    global::System.Linq.Enumerable.Join(
-                        __data.Cats,
-                        __data.Cats,
-                        (c) => c.Id,
-                        (c1) => c1.Id,
-                        (c, c1) => c1.Name
-                    ),
-                    typeof(global::System.Collections.Generic.IEnumerable<global::System.String>)
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        global::System.Linq.Enumerable.Join(
+                            __data.Cats,
+                            __data.Cats,
+                            (c) => c.Id,
+                            (c1) => c1.Id,
+                            (c, c1) => c1.Name
+                        ),
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -134,22 +135,24 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    global::System.Linq.Enumerable.Select(
-                        global::System.Linq.Enumerable.Where(
-                            global::System.Linq.Enumerable.Join(
-                                __data.Cats,
-                                __data.Cats,
-                                (c) => c.Id,
-                                (c1) => c1.Id,
-                                (c, c1) => new { c, c1 }
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        global::System.Linq.Enumerable.Select(
+                            global::System.Linq.Enumerable.Where(
+                                global::System.Linq.Enumerable.Join(
+                                    __data.Cats,
+                                    __data.Cats,
+                                    (c) => c.Id,
+                                    (c1) => c1.Id,
+                                    (c, c1) => new { c, c1 }
+                                ),
+                                (__v0) => (__v0.c.Age == 8)
                             ),
-                            (__v0) => (__v0.c.Age == 8)
+                            (__v0) => __v0.c1.Name
                         ),
-                        (__v0) => __v0.c1.Name
-                    ),
-                    typeof(global::System.Collections.Generic.IEnumerable<global::System.String>)
-                )
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -170,20 +173,22 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    global::System.Linq.Enumerable.SelectMany(
-                        global::System.Linq.Enumerable.GroupJoin(
-                            __data.Cats,
-                            __data.Cats,
-                            (c) => c.Id,
-                            (c1) => c1.Id,
-                            (c, cs) => new { c, cs }
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        global::System.Linq.Enumerable.SelectMany(
+                            global::System.Linq.Enumerable.GroupJoin(
+                                __data.Cats,
+                                __data.Cats,
+                                (c) => c.Id,
+                                (c1) => c1.Id,
+                                (c, cs) => new { c, cs }
+                            ),
+                            (__v0) => __v0.cs,
+                            (__v0, cc) => cc.Age
                         ),
-                        (__v0) => __v0.cs,
-                        (__v0, cc) => cc.Age
-                    ),
-                    typeof(global::System.Collections.Generic.IEnumerable<global::System.Nullable<global::System.Int32>>)
-                )
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -203,16 +208,18 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    global::System.Linq.Enumerable.Select(
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
                         global::System.Linq.Enumerable.Select(
-                            __data.Cats,
-                            (c) => new { c, name = c.Name }
+                            global::System.Linq.Enumerable.Select(
+                                __data.Cats,
+                                (c) => new { c, name = c.Name }
+                            ),
+                            (__v0) => __v0.name
                         ),
-                        (__v0) => __v0.name
-                    ),
-                    typeof(global::System.Collections.Generic.IEnumerable<global::System.String>)
-                )
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -232,16 +239,18 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    global::System.Linq.Enumerable.Select(
-                        global::System.Linq.Enumerable.Where(
-                            __data.Cats,
-                            (c) => (c.Age == 8)
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        global::System.Linq.Enumerable.Select(
+                            global::System.Linq.Enumerable.Where(
+                                __data.Cats,
+                                (c) => (c.Age == 8)
+                            ),
+                            (c) => c.Name
                         ),
-                        (c) => c.Name
-                    ),
-                    typeof(global::System.Collections.Generic.IEnumerable<global::System.String>)
-                )
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -262,22 +271,24 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, builder.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    global::System.Linq.Enumerable.SelectMany(
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
                         global::System.Linq.Enumerable.SelectMany(
                             global::System.Linq.Enumerable.SelectMany(
-                                __data.Cats,
-                                (a) => __data.Cats,
-                                (a, b) => new { a, b }
+                                global::System.Linq.Enumerable.SelectMany(
+                                    __data.Cats,
+                                    (a) => __data.Cats,
+                                    (a, b) => new { a, b }
+                                ),
+                                (__v0) => __data.Cats,
+                                (__v0, c) => new { __v0, c }
                             ),
-                            (__v0) => __data.Cats,
-                            (__v0, c) => new { __v0, c }
+                            (__v1) => __data.Cats,
+                            (__v1, d) => __v1.__v0.b
                         ),
-                        (__v1) => __data.Cats,
-                        (__v1, d) => __v1.__v0.b
-                    ),
-                    typeof(global::System.Collections.Generic.IEnumerable<global::Arborist.TestFixtures.Cat>)
-                )
+                        __e0.Type
+                    )
+                }
             ",
             actual: builder.AnalysisResults[0].BodyTree.ToString()
         );
@@ -299,28 +310,30 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, builder.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    global::System.Linq.Enumerable.Join(
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
                         global::System.Linq.Enumerable.Join(
                             global::System.Linq.Enumerable.Join(
+                                global::System.Linq.Enumerable.Join(
+                                    __data.Cats,
+                                    __data.Cats,
+                                    (a) => a.Id,
+                                    (b) => b.Id,
+                                    (a, b) => new { a, b }
+                                ),
                                 __data.Cats,
-                                __data.Cats,
-                                (a) => a.Id,
-                                (b) => b.Id,
-                                (a, b) => new { a, b }
+                                (__v0) => __v0.a.Id,
+                                (c) => c.Id,
+                                (__v0, c) => new { __v0, c }
                             ),
                             __data.Cats,
-                            (__v0) => __v0.a.Id,
-                            (c) => c.Id,
-                            (__v0, c) => new { __v0, c }
+                            (__v1) => __v1.__v0.a.Id,
+                            (d) => d.Id,
+                            (__v1, d) => __v1.__v0.a
                         ),
-                        __data.Cats,
-                        (__v1) => __v1.__v0.a.Id,
-                        (d) => d.Id,
-                        (__v1, d) => __v1.__v0.a
-                    ),
-                    typeof(global::System.Collections.Generic.IEnumerable<global::Arborist.TestFixtures.Cat>)
-                )
+                        __e0.Type
+                    )
+                }
             ",
             actual: builder.AnalysisResults[0].BodyTree.ToString()
         );
@@ -341,19 +354,21 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, builder.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    global::System.Linq.Enumerable.Select(
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
                         global::System.Linq.Enumerable.Select(
                             global::System.Linq.Enumerable.Select(
-                                __data.Cats,
-                                (c) => new { c, n = c.Name }
+                                global::System.Linq.Enumerable.Select(
+                                    __data.Cats,
+                                    (c) => new { c, n = c.Name }
+                                ),
+                                (__v0) => new { __v0, i = __v0.c.Id }
                             ),
-                            (__v0) => new { __v0, i = __v0.c.Id }
+                            (__v1) => __v1.__v0.n
                         ),
-                        (__v1) => __v1.__v0.n
-                    ),
-                    typeof(global::System.Collections.Generic.IEnumerable<global::System.String>)
-                )
+                        __e0.Type
+                    )
+                }
             ",
             actual: builder.AnalysisResults[0].BodyTree.ToString()
         );

@@ -1,5 +1,3 @@
-using Xunit;
-
 namespace Arborist.Interpolation.InterceptorGenerator;
 
 public partial class InterpolatedSyntaxVisitorTests {
@@ -7,62 +5,26 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_work_for_i32_add() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate(default(object), (x, o) => o.Id + 42);
+            ExpressionOn<Owner>.Interpolate(default(object), (x, o) => o.Id + x.SpliceValue(42));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.MakeBinary(
-                    global::System.Linq.Expressions.ExpressionType.Add,
-                    global::System.Linq.Expressions.Expression.Property(
-                        __p0,
-                        typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Id"")!
-                    ),
-                    global::System.Linq.Expressions.Expression.Constant(
-                        42,
-                        typeof(global::System.Int32)
-                    ),
-                    false,
-                    __m0
-                )
-            ",
-            actual: results.AnalysisResults[0].BodyTree.ToString()
-        );
-    }
-
-    [Fact]
-    public void Should_work_for_i32_add_lifted() {
-        var results = InterpolationInterceptorGeneratorTestBuilder.Create()
-        .Generate(@"
-            ExpressionOn<Owner>.Interpolate(default(object), (x, o) => new int?(42) + null);
-        ");
-
-        Assert.Equal(1, results.AnalysisResults.Count);
-        CodeGenAssert.CodeEqual(
-            expected: @"
-                global::System.Linq.Expressions.Expression.MakeBinary(
-                    global::System.Linq.Expressions.ExpressionType.Add,
-                    global::System.Linq.Expressions.Expression.New(
-                        typeof(global::System.Nullable<global::System.Int32>).GetConstructor(
-                            new global::System.Type[] {
-                                typeof(global::System.Int32)
-                            }
-                        )!,
-                        new global::System.Linq.Expressions.Expression[] {
-                            global::System.Linq.Expressions.Expression.Constant(
+                (global::System.Linq.Expressions.BinaryExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.MakeBinary(
+                        __e0.NodeType,
+                        __e0.Left,
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Right) switch {
+                            var __e1 => global::System.Linq.Expressions.Expression.Constant(
                                 42,
-                                typeof(global::System.Int32)
+                                __e1.Type
                             )
-                        }
-                    ),
-                    global::System.Linq.Expressions.Expression.Constant(
-                        default(global::System.Nullable<global::System.Int32>),
-                        typeof(global::System.Nullable<global::System.Int32>)
-                    ),
-                    true,
-                    __m0
-                )
+                        },
+                        __e0.IsLiftedToNull,
+                        __e0.Method
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -72,56 +34,26 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_work_for_i32_lt() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Id < 42)
+            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Id < x.SpliceValue(42))
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.MakeBinary(
-                    global::System.Linq.Expressions.ExpressionType.LessThan,
-                    global::System.Linq.Expressions.Expression.Property(
-                        __p0,
-                        typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Id"")!
-                    ),
-                    global::System.Linq.Expressions.Expression.Constant(
-                        42,
-                        typeof(global::System.Int32)
-                    ),
-                    false,
-                    __m0
-                )
-            ",
-            actual: results.AnalysisResults[0].BodyTree.ToString()
-        );
-    }
-
-    [Fact]
-    public void Should_work_for_i32_lt_lifted() {
-        var results = InterpolationInterceptorGeneratorTestBuilder.Create()
-        .Generate(@"
-            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Age < 42)
-        ");
-
-        Assert.Equal(1, results.AnalysisResults.Count);
-        CodeGenAssert.CodeEqual(
-            expected: @"
-                global::System.Linq.Expressions.Expression.MakeBinary(
-                    global::System.Linq.Expressions.ExpressionType.LessThan,
-                    global::System.Linq.Expressions.Expression.Property(
-                        __p0,
-                        typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Age"")!
-                    ),
-                    global::System.Linq.Expressions.Expression.Convert(
-                        global::System.Linq.Expressions.Expression.Constant(
-                            42,
-                            typeof(global::System.Int32)
-                        ),
-                        typeof(global::System.Nullable<global::System.Int32>)
-                    ),
-                    false,
-                    __m0
-                )
+                (global::System.Linq.Expressions.BinaryExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.MakeBinary(
+                        __e0.NodeType,
+                        __e0.Left,
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Right) switch {
+                            var __e1 => global::System.Linq.Expressions.Expression.Constant(
+                                42,
+                                __e1.Type
+                            )
+                        },
+                        __e0.IsLiftedToNull,
+                        __e0.Method
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -131,25 +63,26 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_work_for_string_add() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Name + ""bar"");
+            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Name + x.SpliceValue(""bar""));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.MakeBinary(
-                    global::System.Linq.Expressions.ExpressionType.Add,
-                    global::System.Linq.Expressions.Expression.Property(
-                        __p0,
-                        typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Name"")!
-                    ),
-                    global::System.Linq.Expressions.Expression.Constant(
-                        ""bar"",
-                        typeof(global::System.String)
-                    ),
-                    false,
-                    __m0
-                )
+                (global::System.Linq.Expressions.BinaryExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.MakeBinary(
+                        __e0.NodeType,
+                        __e0.Left,
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Right) switch {
+                            var __e1 => global::System.Linq.Expressions.Expression.Constant(
+                                ""bar"",
+                                __e1.Type
+                            )
+                        },
+                        __e0.IsLiftedToNull,
+                        __e0.Method
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -159,19 +92,23 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_work_for_as() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Owner as IFormattable);
+            ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue<object>(default!) as IFormattable);
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.TypeAs(
-                    global::System.Linq.Expressions.Expression.Property(
-                        __p0,
-                        typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Owner"")!
-                    ),
-                    typeof(global::System.IFormattable)
-                )
+                (global::System.Linq.Expressions.UnaryExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.TypeAs(
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Operand) switch {
+                            var __e1 => global::System.Linq.Expressions.Expression.Constant(
+                                default(global::System.Object)!,
+                                __e1.Type
+                            )
+                        },
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -181,19 +118,23 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_work_for_is() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Owner is IFormattable);
+            ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue<object>(default!) is IFormattable);
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.TypeIs(
-                    global::System.Linq.Expressions.Expression.Property(
-                        __p0,
-                        typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Owner"")!
-                    ),
-                    typeof(global::System.IFormattable)
-                )
+                (global::System.Linq.Expressions.TypeBinaryExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.TypeIs(
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Expression) switch {
+                            var __e1 => global::System.Linq.Expressions.Expression.Constant(
+                                default(global::System.Object)!,
+                                __e1.Type
+                            )
+                        },
+                        __e0.TypeOperand
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );

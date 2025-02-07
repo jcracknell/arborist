@@ -1,5 +1,3 @@
-using Xunit;
-
 namespace Arborist.Interpolation.InterceptorGenerator;
 
 public partial class InterpolatedSyntaxVisitorTests {
@@ -7,29 +5,57 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_select_clause() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
-                from c in o.Cats
-                select c.Name
+            var data = new {
+                OwnerCats = ExpressionOn<Owner>.Of(o => o.Cats),
+                CatName = ExpressionOn<Cat>.Of(c => c.Name)
+            };
+            
+            ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+                from c in x.SpliceBody(o, x.Data.OwnerCats)
+                select x.SpliceBody(c, x.Data.CatName)
             );
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Call(
-                    __m0,
-                    global::System.Linq.Expressions.Expression.Property(
-                        __p0,
-                        typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
-                    ),
-                    global::System.Linq.Expressions.Expression.Lambda(
-                        global::System.Linq.Expressions.Expression.Property(
-                            __p1,
-                            typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Name"")!
-                        ),
-                        __p1
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Call(
+                        default(global::System.Linq.Expressions.Expression),
+                        __e0.Method,
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => __data.OwnerCats switch {
+                                var __v0 => global::Arborist.ExpressionHelper.Replace(
+                                    __v0.Body,
+                                    global::Arborist.Internal.Collections.SmallDictionary.Create(
+                                        new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
+                                            __v0.Parameters[0],
+                                            __e1.Arguments[0]
+                                        )
+                                    )
+                                )
+                            }
+                        },
+                        (global::System.Linq.Expressions.LambdaExpression)(__e0.Arguments[1]) switch {
+                            var __e1 => global::System.Linq.Expressions.Expression.Lambda(
+                                (global::System.Linq.Expressions.MethodCallExpression)(__e1.Body) switch {
+                                    var __e2 => __data.CatName switch {
+                                        var __v1 => global::Arborist.ExpressionHelper.Replace(
+                                            __v1.Body,
+                                            global::Arborist.Internal.Collections.SmallDictionary.Create(
+                                                new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
+                                                    __v1.Parameters[0],
+                                                    __e2.Arguments[0]
+                                                )
+                                            )
+                                        )
+                                    }
+                                },
+                                __e1.Parameters
+                            )
+                        }
                     )
-                )   
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -39,33 +65,63 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_cast_in_initial_from_clause() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
-                from object c in o.Cats
-                select c.GetHashCode()
+            var data = new {
+                OwnerCats = ExpressionOn<Owner>.Of(o => o.Cats),
+                ObjectHashCode = ExpressionOn<object>.Of(o => o.GetHashCode())
+            };
+            
+            ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+                from object c in x.SpliceBody(o, x.Data.OwnerCats)
+                select x.SpliceBody(c, x.Data.ObjectHashCode)
             );
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Call(
-                    __m2,
-                    global::System.Linq.Expressions.Expression.Call(
-                        __m0,
-                        global::System.Linq.Expressions.Expression.Property(
-                            __p0,
-                            typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
-                        )
-                    ),
-                    global::System.Linq.Expressions.Expression.Lambda(
-                        global::System.Linq.Expressions.Expression.Call(
-                            __p1,
-                            __m1,
-                            new global::System.Linq.Expressions.Expression[] { }
-                        ),
-                        __p1
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Call(
+                        default(global::System.Linq.Expressions.Expression),
+                        __e0.Method,
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => global::System.Linq.Expressions.Expression.Call(
+                                default(global::System.Linq.Expressions.Expression),
+                                __e1.Method,
+                                (global::System.Linq.Expressions.MethodCallExpression)(__e1.Arguments[0]) switch {
+                                    var __e2 => __data.OwnerCats switch {
+                                        var __v0 => global::Arborist.ExpressionHelper.Replace(
+                                            __v0.Body,
+                                            global::Arborist.Internal.Collections.SmallDictionary.Create(
+                                                new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
+                                                    __v0.Parameters[0],
+                                                    __e2.Arguments[0]
+                                                )
+                                            )
+                                        )
+                                    }
+                                }
+                            )
+                        },
+                        (global::System.Linq.Expressions.LambdaExpression)(__e0.Arguments[1]) switch {
+                            var __e1 => global::System.Linq.Expressions.Expression.Lambda(
+                                (global::System.Linq.Expressions.MethodCallExpression)(__e1.Body) switch {
+                                    var __e2 => __data.ObjectHashCode switch {
+                                        var __v1 => global::Arborist.ExpressionHelper.Replace(
+                                            __v1.Body,
+                                            global::Arborist.Internal.Collections.SmallDictionary.Create(
+                                                new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
+                                                    __v1.Parameters[0],
+                                                    __e2.Arguments[0]
+                                                )
+                                            )
+                                        )
+                                    }
+                                },
+                                __e1.Parameters
+                            )
+                        }
                     )
-                )   
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -76,9 +132,14 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_join_clause() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
+            var data = new {
+                OwnerCats = ExpressionOn<Owner>.Of(o => o.Cats),
+                CatId = ExpressionOn<Cat>.Of(c => c.Id)
+            };
+        
+            ExpressionOn<Owner>.Interpolate(data, (x, o) =>
                 from c in o.Cats
-                join c1 in o.Cats on c.Id equals c1.Id
+                join c1 in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceValue(42)
                 select c1.Name
             );
         ");
@@ -86,39 +147,56 @@ public partial class InterpolatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Call(
-                    __m0,
-                    global::System.Linq.Expressions.Expression.Property(
-                        __p0,
-                        typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
-                    ),
-                    global::System.Linq.Expressions.Expression.Property(
-                        __p0,
-                        typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
-                    ),
-                    global::System.Linq.Expressions.Expression.Lambda(
-                        global::System.Linq.Expressions.Expression.Property(
-                            __p1,
-                            typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Id"")!
-                        ),
-                        __p1
-                    ),
-                    global::System.Linq.Expressions.Expression.Lambda(
-                        global::System.Linq.Expressions.Expression.Property(
-                            __p2,
-                            typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Id"")!
-                        ),
-                        __p2
-                    ),
-                    global::System.Linq.Expressions.Expression.Lambda(
-                        global::System.Linq.Expressions.Expression.Property(
-                            __p2,
-                            typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Name"")!
-                        ),
-                        __p1,
-                        __p2
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Call(
+                        default(global::System.Linq.Expressions.Expression),
+                        __e0.Method,
+                        __e0.Arguments[0],
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[1]) switch {
+                            var __e1 => __data.OwnerCats switch {
+                                var __v0 => global::Arborist.ExpressionHelper.Replace(
+                                    __v0.Body,
+                                    global::Arborist.Internal.Collections.SmallDictionary.Create(
+                                        new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
+                                            __v0.Parameters[0],
+                                            __e1.Arguments[0]
+                                        )
+                                    )
+                                )
+                            }
+                        },
+                        (global::System.Linq.Expressions.LambdaExpression)(__e0.Arguments[2]) switch {
+                            var __e1 => global::System.Linq.Expressions.Expression.Lambda(
+                                (global::System.Linq.Expressions.MethodCallExpression)(__e1.Body) switch {
+                                    var __e2 => __data.CatId switch {
+                                        var __v1 => global::Arborist.ExpressionHelper.Replace(
+                                            __v1.Body,
+                                            global::Arborist.Internal.Collections.SmallDictionary.Create(
+                                                new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
+                                                    __v1.Parameters[0],
+                                                    __e2.Arguments[0]
+                                                )
+                                            )
+                                        )
+                                    }
+                                },
+                                __e1.Parameters
+                            )
+                        },
+                        (global::System.Linq.Expressions.LambdaExpression)(__e0.Arguments[3]) switch {
+                            var __e1 => global::System.Linq.Expressions.Expression.Lambda(
+                                (global::System.Linq.Expressions.MethodCallExpression)(__e1.Body) switch {
+                                    var __e2 => global::System.Linq.Expressions.Expression.Constant(
+                                        42,
+                                        __e2.Type
+                                    )
+                                },
+                                __e1.Parameters
+                            )
+                        },
+                        __e0.Arguments[4]
                     )
-                )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -128,54 +206,77 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_join_clause_with_cast() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
+            var data = new {
+                OwnerCats = ExpressionOn<Owner>.Of(o => o.Cats),
+                CatId = ExpressionOn<Cat>.Of(c => c.Id)
+            };
+            
+            ExpressionOn<Owner>.Interpolate(data, (x, o) =>
                 from c in o.Cats
-                join object c1 in o.Cats on c.Id equals c1.GetHashCode()
-                select c1.GetHashCode()
+                join object c1 in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceValue(42)
+                select c1
             );
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Call(
-                    __m2,
-                    global::System.Linq.Expressions.Expression.Property(
-                        __p0,
-                        typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
-                    ),
-                    global::System.Linq.Expressions.Expression.Call(
-                        __m0,
-                        global::System.Linq.Expressions.Expression.Property(
-                            __p0,
-                            typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
-                        )
-                    ),
-                    global::System.Linq.Expressions.Expression.Lambda(
-                        global::System.Linq.Expressions.Expression.Property(
-                            __p1,
-                            typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Id"")!
-                        ),
-                        __p1
-                    ),
-                    global::System.Linq.Expressions.Expression.Lambda(
-                        global::System.Linq.Expressions.Expression.Call(
-                            __p2,
-                            __m1,
-                            new global::System.Linq.Expressions.Expression[] { }
-                        ),
-                        __p2
-                    ),
-                    global::System.Linq.Expressions.Expression.Lambda(
-                        global::System.Linq.Expressions.Expression.Call(
-                            __p2,
-                            __m1,
-                            new global::System.Linq.Expressions.Expression[] { }
-                        ),
-                        __p1,
-                        __p2
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Call(
+                        default(global::System.Linq.Expressions.Expression),
+                        __e0.Method,
+                        __e0.Arguments[0],
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[1]) switch {
+                            var __e1 => global::System.Linq.Expressions.Expression.Call(
+                                default(global::System.Linq.Expressions.Expression),
+                                __e1.Method,
+                                (global::System.Linq.Expressions.MethodCallExpression)(__e1.Arguments[0]) switch {
+                                    var __e2 => __data.OwnerCats switch {
+                                        var __v0 => global::Arborist.ExpressionHelper.Replace(
+                                            __v0.Body,
+                                            global::Arborist.Internal.Collections.SmallDictionary.Create(
+                                                new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
+                                                    __v0.Parameters[0],
+                                                    __e2.Arguments[0]
+                                                )
+                                            )
+                                        )
+                                    }
+                                }
+                            )
+                        },
+                        (global::System.Linq.Expressions.LambdaExpression)(__e0.Arguments[2]) switch {
+                            var __e1 => global::System.Linq.Expressions.Expression.Lambda(
+                                (global::System.Linq.Expressions.MethodCallExpression)(__e1.Body) switch {
+                                    var __e2 => __data.CatId switch {
+                                        var __v1 => global::Arborist.ExpressionHelper.Replace(
+                                            __v1.Body,
+                                            global::Arborist.Internal.Collections.SmallDictionary.Create(
+                                                new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
+                                                    __v1.Parameters[0],
+                                                    __e2.Arguments[0]
+                                                )
+                                            )
+                                        )
+                                    }
+                                },
+                                __e1.Parameters
+                            )
+                        },
+                        (global::System.Linq.Expressions.LambdaExpression)(__e0.Arguments[3]) switch {
+                            var __e1 => global::System.Linq.Expressions.Expression.Lambda(
+                                (global::System.Linq.Expressions.MethodCallExpression)(__e1.Body) switch {
+                                    var __e2 => global::System.Linq.Expressions.Expression.Constant(
+                                        42,
+                                        __e2.Type
+                                    )
+                                },
+                                __e1.Parameters
+                            )
+                        },
+                        __e0.Arguments[4]
                     )
-                )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -185,9 +286,15 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_join_into_clause() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
+            var data = new {
+                OwnerCats = ExpressionOn<Owner>.Of(o => o.Cats),
+                CatId = ExpressionOn<Cat>.Of(c => c.Id)
+            };
+            
+            ExpressionOn<Owner>.Interpolate(data, (x, o) =>
                 from c in o.Cats
-                join c1 in o.Cats on c.Id equals c1.Id into cs
+                join c1 in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceValue(42)
+                into cs
                 from cc in cs
                 select cc.Age
             );
@@ -196,64 +303,64 @@ public partial class InterpolatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Call(
-                    __m1,
-                    global::System.Linq.Expressions.Expression.Call(
-                        __m0,
-                        global::System.Linq.Expressions.Expression.Property(
-                            __p0,
-                            typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
-                        ),
-                        global::System.Linq.Expressions.Expression.Property(
-                            __p0,
-                            typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
-                        ),
-                        global::System.Linq.Expressions.Expression.Lambda(
-                            global::System.Linq.Expressions.Expression.Property(
-                                __p1,
-                                typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Id"")!
-                            ),
-                            __p1
-                        ),
-                        global::System.Linq.Expressions.Expression.Lambda(
-                            global::System.Linq.Expressions.Expression.Property(
-                                __p2,
-                                typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Id"")!
-                            ),
-                            __p2
-                        ),
-                        global::System.Linq.Expressions.Expression.Lambda(
-                            global::System.Linq.Expressions.Expression.New(
-                                __t0.Type.GetConstructors()[0],
-                                new global::System.Linq.Expressions.Expression[] {
-                                    __p1,
-                                    __p3
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Call(
+                        default(global::System.Linq.Expressions.Expression),
+                        __e0.Method,
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => global::System.Linq.Expressions.Expression.Call(
+                                default(global::System.Linq.Expressions.Expression),
+                                __e1.Method,
+                                __e1.Arguments[0],
+                                (global::System.Linq.Expressions.MethodCallExpression)(__e1.Arguments[1]) switch {
+                                    var __e2 => __data.OwnerCats switch {
+                                        var __v0 => global::Arborist.ExpressionHelper.Replace(
+                                            __v0.Body,
+                                            global::Arborist.Internal.Collections.SmallDictionary.Create(
+                                                new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
+                                                    __v0.Parameters[0],
+                                                    __e2.Arguments[0]
+                                                )
+                                            )
+                                        )
+                                    }
                                 },
-                                new global::System.Reflection.MemberInfo[] {
-                                    __t0.Type.GetProperty(""c"")!,
-                                    __t0.Type.GetProperty(""cs"")!
-                                }
-                            ),
-                            __p1,
-                            __p3
-                        )
-                    ),
-                    global::System.Linq.Expressions.Expression.Lambda(
-                        global::System.Linq.Expressions.Expression.Property(
-                            __p4,
-                            __t0.Type.GetProperty(""cs"")!
-                        ),
-                        __p4
-                    ),
-                    global::System.Linq.Expressions.Expression.Lambda(
-                        global::System.Linq.Expressions.Expression.Property(
-                            __p5,
-                            typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Age"")!
-                        ),
-                        __p4,
-                        __p5
+                                (global::System.Linq.Expressions.LambdaExpression)(__e1.Arguments[2]) switch {
+                                    var __e2 => global::System.Linq.Expressions.Expression.Lambda(
+                                        (global::System.Linq.Expressions.MethodCallExpression)(__e2.Body) switch {
+                                            var __e3 => __data.CatId switch {
+                                                var __v1 => global::Arborist.ExpressionHelper.Replace(
+                                                    __v1.Body,
+                                                    global::Arborist.Internal.Collections.SmallDictionary.Create(
+                                                        new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
+                                                            __v1.Parameters[0],
+                                                            __e3.Arguments[0]
+                                                        )
+                                                    )
+                                                )
+                                            }
+                                        },
+                                        __e2.Parameters
+                                    )
+                                },
+                                (global::System.Linq.Expressions.LambdaExpression)(__e1.Arguments[3]) switch {
+                                    var __e2 => global::System.Linq.Expressions.Expression.Lambda(
+                                        (global::System.Linq.Expressions.MethodCallExpression)(__e2.Body) switch {
+                                            var __e3 => global::System.Linq.Expressions.Expression.Constant(
+                                                42,
+                                                __e3.Type
+                                            )
+                                        },
+                                        __e2.Parameters
+                                    )
+                                },
+                                __e1.Arguments[4]
+                            )
+                        },
+                        __e0.Arguments[1],
+                        __e0.Arguments[2]
                     )
-                )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -263,37 +370,63 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_group_by_clause() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
+            var data = new {
+                NameSelector = ExpressionOn<Cat>.Of(c => c.Name),
+                AgeSelector = ExpressionOn<Cat>.Of(c => c.Age)
+            };
+            
+            ExpressionOn<Owner>.Interpolate(data, (x, o) =>
                 from c in o.Cats
-                group c by c.Age
+                group x.SpliceBody(c, x.Data.NameSelector) by x.SpliceBody(c, x.Data.AgeSelector)
             );
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Call(
-                    __m0,
-                    global::System.Linq.Expressions.Expression.Property(
-                        __p0,
-                        typeof(global::Arborist.TestFixtures.Owner).GetProperty(
-                            ""Cats""
-                        )!
-                    ),
-                    global::System.Linq.Expressions.Expression.Lambda(
-                        global::System.Linq.Expressions.Expression.Property(
-                            __p1,
-                            typeof(global::Arborist.TestFixtures.Cat).GetProperty(
-                                ""Age""
-                            )!
-                        ),
-                        __p1
-                    ),
-                    global::System.Linq.Expressions.Expression.Lambda(
-                        __p1,
-                        __p1
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Call(
+                        default(global::System.Linq.Expressions.Expression),
+                        __e0.Method,
+                        __e0.Arguments[0],
+                        (global::System.Linq.Expressions.LambdaExpression)(__e0.Arguments[1]) switch {
+                            var __e1 => global::System.Linq.Expressions.Expression.Lambda(
+                                (global::System.Linq.Expressions.MethodCallExpression)(__e1.Body) switch {
+                                    var __e2 => __data.AgeSelector switch {
+                                        var __v0 => global::Arborist.ExpressionHelper.Replace(
+                                            __v0.Body,
+                                            global::Arborist.Internal.Collections.SmallDictionary.Create(
+                                                new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
+                                                    __v0.Parameters[0],
+                                                    __e2.Arguments[0]
+                                                )
+                                            )
+                                        )
+                                    }
+                                },
+                                __e1.Parameters
+                            )
+                        },
+                        (global::System.Linq.Expressions.LambdaExpression)(__e0.Arguments[2]) switch {
+                            var __e1 => global::System.Linq.Expressions.Expression.Lambda(
+                                (global::System.Linq.Expressions.MethodCallExpression)(__e1.Body) switch {
+                                    var __e2 => __data.NameSelector switch {
+                                        var __v1 => global::Arborist.ExpressionHelper.Replace(
+                                            __v1.Body,
+                                            global::Arborist.Internal.Collections.SmallDictionary.Create(
+                                                new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
+                                                    __v1.Parameters[0],
+                                                    __e2.Arguments[0]
+                                                )
+                                            )
+                                        )
+                                    }
+                                },
+                                __e1.Parameters
+                            )
+                        }
                     )
-                )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -303,9 +436,9 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_let_clause() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
+            ExpressionOn<Owner>.Interpolate(""Garfield"", (x, o) =>
                 from c in o.Cats
-                let n = o.Name
+                let n = x.SpliceValue(x.Data)
                 select c.Name + n
             );
         ");
@@ -313,52 +446,40 @@ public partial class InterpolatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Call(
-                    __m2,
-                    global::System.Linq.Expressions.Expression.Call(
-                        __m0,
-                        global::System.Linq.Expressions.Expression.Property(
-                            __p0,
-                            typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
-                        ),
-                        global::System.Linq.Expressions.Expression.Lambda(
-                            global::System.Linq.Expressions.Expression.New(
-                                __t0.Type.GetConstructors()[0],
-                                new global::System.Linq.Expressions.Expression[] {
-                                    __p1,
-                                    global::System.Linq.Expressions.Expression.Property(
-                                        __p0,
-                                        typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Name"")!
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Call(
+                        default(global::System.Linq.Expressions.Expression),
+                        __e0.Method,
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => global::System.Linq.Expressions.Expression.Call(
+                                default(global::System.Linq.Expressions.Expression),
+                                __e1.Method,
+                                __e1.Arguments[0],
+                                (global::System.Linq.Expressions.LambdaExpression)(__e1.Arguments[1]) switch {
+                                    var __e2 => global::System.Linq.Expressions.Expression.Lambda(
+                                        (global::System.Linq.Expressions.NewExpression)(__e2.Body) switch {
+                                            var __e3 => global::System.Linq.Expressions.Expression.New(
+                                                __e3.Constructor!,
+                                                new global::System.Linq.Expressions.Expression[] {
+                                                    __e3.Arguments[0],
+                                                    (global::System.Linq.Expressions.MethodCallExpression)(__e3.Arguments[1]) switch {
+                                                        var __e4 => global::System.Linq.Expressions.Expression.Constant(
+                                                            __data,
+                                                            __e4.Type
+                                                        )
+                                                    }
+                                                },
+                                                __e3.Members
+                                            )
+                                        },
+                                        __e2.Parameters
                                     )
-                                },
-                                new global::System.Reflection.MemberInfo[] {
-                                    __t0.Type.GetProperty(""c"")!,
-                                    __t0.Type.GetProperty(""n"")!
                                 }
-                            ),
-                            __p1
-                        )
-                    ),
-                    global::System.Linq.Expressions.Expression.Lambda(
-                        global::System.Linq.Expressions.Expression.MakeBinary(
-                            global::System.Linq.Expressions.ExpressionType.Add,
-                            global::System.Linq.Expressions.Expression.Property(
-                                global::System.Linq.Expressions.Expression.Property(
-                                    __p2,
-                                    __t0.Type.GetProperty(""c"")!
-                                ),
-                                typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Name"")!
-                            ),
-                            global::System.Linq.Expressions.Expression.Property(
-                                __p2,
-                                __t0.Type.GetProperty(""n"")!
-                            ),
-                            false,
-                            __m1
-                        ),
-                        __p2
+                            )
+                        },
+                        __e0.Arguments[1]
                     )
-                )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -370,7 +491,7 @@ public partial class InterpolatedSyntaxVisitorTests {
         .Generate(@"
             ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
                 from c in o.Cats
-                orderby c.Name ascending, c.Age descending
+                orderby x.SpliceValue(42) ascending, c.Age descending
                 select c.Name
             );
         ");
@@ -378,40 +499,38 @@ public partial class InterpolatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Call(
-                    __m2,
-                    global::System.Linq.Expressions.Expression.Call(
-                        __m1,
-                        global::System.Linq.Expressions.Expression.Call(
-                            __m0,
-                            global::System.Linq.Expressions.Expression.Property(
-                                __p0,
-                                typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
-                            ),
-                            global::System.Linq.Expressions.Expression.Lambda(
-                                global::System.Linq.Expressions.Expression.Property(
-                                    __p1,
-                                    typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Name"")!
-                                ),
-                                __p1
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Call(
+                        default(global::System.Linq.Expressions.Expression),
+                        __e0.Method,
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => global::System.Linq.Expressions.Expression.Call(
+                                default(global::System.Linq.Expressions.Expression),
+                                __e1.Method,
+                                (global::System.Linq.Expressions.MethodCallExpression)(__e1.Arguments[0]) switch {
+                                    var __e2 => global::System.Linq.Expressions.Expression.Call(
+                                        default(global::System.Linq.Expressions.Expression),
+                                        __e2.Method,
+                                        __e2.Arguments[0],
+                                        (global::System.Linq.Expressions.LambdaExpression)(__e2.Arguments[1]) switch {
+                                            var __e3 => global::System.Linq.Expressions.Expression.Lambda(
+                                                (global::System.Linq.Expressions.MethodCallExpression)(__e3.Body) switch {
+                                                    var __e4 => global::System.Linq.Expressions.Expression.Constant(
+                                                        42,
+                                                        __e4.Type
+                                                    )
+                                                },
+                                                __e3.Parameters
+                                            )
+                                        }
+                                    )
+                                },
+                                __e1.Arguments[1]
                             )
-                        ),
-                        global::System.Linq.Expressions.Expression.Lambda(
-                            global::System.Linq.Expressions.Expression.Property(
-                                __p1,
-                                typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Age"")!
-                            ),
-                            __p1
-                        )
-                    ),
-                    global::System.Linq.Expressions.Expression.Lambda(
-                        global::System.Linq.Expressions.Expression.Property(
-                            __p1,
-                            typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Name"")!
-                        ),
-                        __p1
+                        },
+                        __e0.Arguments[1]
                     )
-                )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -421,9 +540,9 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_where_clause() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
+            ExpressionOn<Owner>.Interpolate(ExpressionOn<string>.Identity, (x, o) =>
                 from c in o.Cats
-                where c.Age == 8
+                where c.Name == x.SpliceValue(""foo"")
                 select c.Name
             );
         ");
@@ -431,385 +550,79 @@ public partial class InterpolatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Call(
-                    __m2,
-                    global::System.Linq.Expressions.Expression.Call(
-                        __m1,
-                        global::System.Linq.Expressions.Expression.Property(
-                            __p0,
-                            typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
-                        ),
-                        global::System.Linq.Expressions.Expression.Lambda(
-                            global::System.Linq.Expressions.Expression.MakeBinary(
-                                global::System.Linq.Expressions.ExpressionType.Equal,
-                                global::System.Linq.Expressions.Expression.Property(
-                                    __p1,
-                                    typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Age"")!
-                                ),
-                                global::System.Linq.Expressions.Expression.Convert(
-                                    global::System.Linq.Expressions.Expression.Constant(
-                                        8,
-                                        typeof(global::System.Int32)
-                                    ),
-                                    typeof(global::System.Nullable<global::System.Int32>)
-                                ),
-                                false,
-                                __m0
-                            ),
-                            __p1
-                        )
-                    ),
-                    global::System.Linq.Expressions.Expression.Lambda(
-                        global::System.Linq.Expressions.Expression.Property(
-                            __p1,
-                            typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Name"")!
-                        ),
-                        __p1
-                    )
-                )
-            ",
-            actual: results.AnalysisResults[0].BodyTree.ToString()
-        );
-    }
-
-    [Fact]
-    public void Should_handle_transparent_identifiers_in_from_clauses() {
-        // Here the third from clause introduces a transparent identifier of the form
-        // new { * = new { a, b }, c }, however we need a fourth clause to force it to appear
-        // in the projection expression provided to SelectMany
-        var results = InterpolationInterceptorGeneratorTestBuilder.Create()
-        .Generate(@"
-            ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
-                from a in o.Cats
-                from b in o.Cats
-                from c in o.Cats
-                from d in o.Cats
-                select b
-            );
-        ");
-
-        Assert.Equal(1, results.AnalysisResults.Count);
-        CodeGenAssert.CodeEqual(
-            expected: @"
-                global::System.Linq.Expressions.Expression.Call(
-                    __m2,
-                    global::System.Linq.Expressions.Expression.Call(
-                        __m1,
-                        global::System.Linq.Expressions.Expression.Call(
-                            __m0,
-                            global::System.Linq.Expressions.Expression.Property(
-                                __p0,
-                                typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
-                            ),
-                            global::System.Linq.Expressions.Expression.Lambda(
-                                global::System.Linq.Expressions.Expression.Property(
-                                    __p0,
-                                    typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
-                                ),
-                                __p1
-                            ),
-                            global::System.Linq.Expressions.Expression.Lambda(
-                                global::System.Linq.Expressions.Expression.New(
-                                    __t0.Type.GetConstructors()[0],
-                                    new global::System.Linq.Expressions.Expression[] {
-                                        __p1,
-                                        __p2
-                                    },
-                                    new global::System.Reflection.MemberInfo[] {
-                                        __t0.Type.GetProperty(""a"")!,
-                                        __t0.Type.GetProperty(""b"")!
-                                    }
-                                ),
-                                __p1,
-                                __p2
-                            )
-                        ),
-                        global::System.Linq.Expressions.Expression.Lambda(
-                            global::System.Linq.Expressions.Expression.Property(
-                                __p0,
-                                typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
-                            ),
-                            __p3
-                        ),
-                        global::System.Linq.Expressions.Expression.Lambda(
-                            global::System.Linq.Expressions.Expression.New(
-                                __t3.Type.GetConstructors()[0],
-                                new global::System.Linq.Expressions.Expression[] {
-                                    __p3,
-                                    __p4
-                                },
-                                new global::System.Reflection.MemberInfo[] {
-                                    __t3.Type.GetProperty(""__v0"")!,
-                                    __t3.Type.GetProperty(""c"")!
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Call(
+                        default(global::System.Linq.Expressions.Expression),
+                        __e0.Method,
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => global::System.Linq.Expressions.Expression.Call(
+                                default(global::System.Linq.Expressions.Expression),
+                                __e1.Method,
+                                __e1.Arguments[0],
+                                (global::System.Linq.Expressions.LambdaExpression)(__e1.Arguments[1]) switch {
+                                    var __e2 => global::System.Linq.Expressions.Expression.Lambda(
+                                        (global::System.Linq.Expressions.BinaryExpression)(__e2.Body) switch {
+                                            var __e3 => global::System.Linq.Expressions.Expression.MakeBinary(
+                                                __e3.NodeType,
+                                                __e3.Left,
+                                                (global::System.Linq.Expressions.MethodCallExpression)(__e3.Right) switch {
+                                                    var __e4 => global::System.Linq.Expressions.Expression.Constant(
+                                                        ""foo"",
+                                                        __e4.Type
+                                                    )
+                                                },
+                                                __e3.IsLiftedToNull,
+                                                __e3.Method
+                                            )
+                                        },
+                                        __e2.Parameters
+                                    )
                                 }
-                            ),
-                            __p3,
-                            __p4
-                        )
-                    ),
-                    global::System.Linq.Expressions.Expression.Lambda(
-                        global::System.Linq.Expressions.Expression.Property(
-                            __p0,
-                            typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
-                        ),
-                        __p5
-                    ),
-                    global::System.Linq.Expressions.Expression.Lambda(
-                        global::System.Linq.Expressions.Expression.Property(
-                            global::System.Linq.Expressions.Expression.Property(
-                                __p5,
-                                __t3.Type.GetProperty(""__v0"")!
-                            ),
-                            __t0.Type.GetProperty(""b"")!
-                        ),
-                        __p5,
-                        __p6
+                            )
+                        },
+                        __e0.Arguments[1]
                     )
-                )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
     }
-
+    
     [Fact]
-    public void Should_handle_transparent_identifiers_in_let_clauses() {
-        // Here the second let clause introduces a transparent identifier of the form
-        // new { * = new { c, n }, m }
+    public void Should_handle_query_continuation() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
-                from c in o.Cats
-                let n = o.Name
-                let m = o.Id
-                select c.Name + n + m
+            ExpressionOn<Owner>.Interpolate(Array.Empty<Cat>(), (x, o) =>
+                from c in x.SpliceValue(x.Data)
+                select c.Name
+                into n
+                select n.Length
             );
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Call(
-                    __m4,
-                    global::System.Linq.Expressions.Expression.Call(
-                        __m1,
-                        global::System.Linq.Expressions.Expression.Call(
-                            __m0,
-                            global::System.Linq.Expressions.Expression.Property(
-                                __p0,
-                                typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
-                            ),
-                            global::System.Linq.Expressions.Expression.Lambda(
-                                global::System.Linq.Expressions.Expression.New(
-                                    __t0.Type.GetConstructors()[0],
-                                    new global::System.Linq.Expressions.Expression[] {
-                                        __p1,
-                                        global::System.Linq.Expressions.Expression.Property(
-                                            __p0,
-                                            typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Name"")!
-                                        )
-                                    },
-                                    new global::System.Reflection.MemberInfo[] {
-                                        __t0.Type.GetProperty(""c"")!,
-                                        __t0.Type.GetProperty(""n"")!
-                                    }
-                                ),
-                                __p1
-                            )
-                        ),
-                        global::System.Linq.Expressions.Expression.Lambda(
-                            global::System.Linq.Expressions.Expression.New(
-                                __t3.Type.GetConstructors()[0],
-                                new global::System.Linq.Expressions.Expression[] {
-                                    __p2,
-                                    global::System.Linq.Expressions.Expression.Property(
-                                        __p0,
-                                        typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Id"")!
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Call(
+                        default(global::System.Linq.Expressions.Expression),
+                        __e0.Method,
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => global::System.Linq.Expressions.Expression.Call(
+                                default(global::System.Linq.Expressions.Expression),
+                                __e1.Method,
+                                (global::System.Linq.Expressions.MethodCallExpression)(__e1.Arguments[0]) switch {
+                                    var __e2 => global::System.Linq.Expressions.Expression.Constant(
+                                        __data,
+                                        __e2.Type
                                     )
                                 },
-                                new global::System.Reflection.MemberInfo[] {
-                                    __t3.Type.GetProperty(""__v0"")!,
-                                    __t3.Type.GetProperty(""m"")!
-                                }
-                            ),
-                            __p2
-                        )
-                    ),
-                    global::System.Linq.Expressions.Expression.Lambda(
-                        global::System.Linq.Expressions.Expression.MakeBinary(
-                            global::System.Linq.Expressions.ExpressionType.Add,
-                            global::System.Linq.Expressions.Expression.MakeBinary(
-                                global::System.Linq.Expressions.ExpressionType.Add,
-                                global::System.Linq.Expressions.Expression.Property(
-                                    global::System.Linq.Expressions.Expression.Property(
-                                        global::System.Linq.Expressions.Expression.Property(
-                                            __p3,
-                                            __t3.Type.GetProperty(""__v0"")!
-                                        ),
-                                        __t0.Type.GetProperty(""c"")!
-                                    ),
-                                    typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Name"")!
-                                ),
-                                global::System.Linq.Expressions.Expression.Property(
-                                    global::System.Linq.Expressions.Expression.Property(
-                                        __p3,
-                                        __t3.Type.GetProperty(""__v0"")!
-                                    ),
-                                    __t0.Type.GetProperty(""n"")!
-                                ),
-                                false,
-                                __m2
-                            ),
-                            global::System.Linq.Expressions.Expression.Convert(
-                                global::System.Linq.Expressions.Expression.Property(
-                                    __p3,
-                                    __t3.Type.GetProperty(""m"")!
-                                ),
-                                typeof(global::System.Object)
-                            ),
-                            false,
-                            __m3
-                        ),
-                        __p3
-                    )
-                )
-            ",
-            actual: results.AnalysisResults[0].BodyTree.ToString()
-        );
-    }
-
-    [Fact]
-    public void Should_handle_transparent_identifiers_in_join_clause() {
-        var results = InterpolationInterceptorGeneratorTestBuilder.Create()
-        .Generate(@"
-            ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
-                from a in o.Cats
-                join b in o.Cats on a.Id equals b.Id
-                join c in o.Cats on a.Id equals c.Id
-                join d in o.Cats on a.Id equals d.Id
-                select a
-            );
-        ");
-
-        Assert.Equal(1, results.AnalysisResults.Count);
-        CodeGenAssert.CodeEqual(
-            expected: @"
-                global::System.Linq.Expressions.Expression.Call(
-                    __m2,
-                    global::System.Linq.Expressions.Expression.Call(
-                        __m1,
-                        global::System.Linq.Expressions.Expression.Call(
-                            __m0,
-                            global::System.Linq.Expressions.Expression.Property(
-                                __p0,
-                                typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
-                            ),
-                            global::System.Linq.Expressions.Expression.Property(
-                                __p0,
-                                typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
-                            ),
-                            global::System.Linq.Expressions.Expression.Lambda(
-                                global::System.Linq.Expressions.Expression.Property(
-                                    __p1,
-                                    typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Id"")!
-                                ),
-                                __p1
-                            ),
-                            global::System.Linq.Expressions.Expression.Lambda(
-                                global::System.Linq.Expressions.Expression.Property(
-                                    __p2,
-                                    typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Id"")!
-                                ),
-                                __p2
-                            ),
-                            global::System.Linq.Expressions.Expression.Lambda(
-                                global::System.Linq.Expressions.Expression.New(
-                                    __t0.Type.GetConstructors()[0],
-                                    new global::System.Linq.Expressions.Expression[] {
-                                        __p1,
-                                        __p2
-                                    },
-                                    new global::System.Reflection.MemberInfo[] {
-                                        __t0.Type.GetProperty(""a"")!,
-                                        __t0.Type.GetProperty(""b"")!
-                                    }
-                                ),
-                                __p1,
-                                __p2
+                                __e1.Arguments[1]
                             )
-                        ),
-                        global::System.Linq.Expressions.Expression.Property(
-                            __p0,
-                            typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
-                        ),
-                        global::System.Linq.Expressions.Expression.Lambda(
-                            global::System.Linq.Expressions.Expression.Property(
-                                global::System.Linq.Expressions.Expression.Property(
-                                    __p3,
-                                    __t0.Type.GetProperty(""a"")!
-                                ),
-                                typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Id"")!
-                            ),
-                            __p3
-                        ),
-                        global::System.Linq.Expressions.Expression.Lambda(
-                            global::System.Linq.Expressions.Expression.Property(
-                                __p4,
-                                typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Id"")!
-                            ),
-                            __p4
-                        ),
-                        global::System.Linq.Expressions.Expression.Lambda(
-                            global::System.Linq.Expressions.Expression.New(
-                                __t3.Type.GetConstructors()[0],
-                                new global::System.Linq.Expressions.Expression[] {
-                                    __p3,
-                                    __p4
-                                },
-                                new global::System.Reflection.MemberInfo[] {
-                                    __t3.Type.GetProperty(""__v0"")!,
-                                    __t3.Type.GetProperty(""c"")!
-                                }
-                            ),
-                            __p3,
-                            __p4
-                        )
-                    ),
-                    global::System.Linq.Expressions.Expression.Property(
-                        __p0,
-                        typeof(global::Arborist.TestFixtures.Owner).GetProperty(""Cats"")!
-                    ),
-                    global::System.Linq.Expressions.Expression.Lambda(
-                        global::System.Linq.Expressions.Expression.Property(
-                            global::System.Linq.Expressions.Expression.Property(
-                                global::System.Linq.Expressions.Expression.Property(
-                                    __p5,
-                                    __t3.Type.GetProperty(""__v0"")!
-                                ),
-                                __t0.Type.GetProperty(""a"")!
-                            ),
-                            typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Id"")!
-                        ),
-                        __p5
-                    ),
-                    global::System.Linq.Expressions.Expression.Lambda(
-                        global::System.Linq.Expressions.Expression.Property(
-                            __p6,
-                            typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Id"")!
-                        ),
-                        __p6
-                    ),
-                    global::System.Linq.Expressions.Expression.Lambda(
-                        global::System.Linq.Expressions.Expression.Property(
-                            global::System.Linq.Expressions.Expression.Property(
-                                __p5,
-                                __t3.Type.GetProperty(""__v0"")!
-                            ),
-                            __t0.Type.GetProperty(""a"")!
-                        ),
-                        __p5,
-                        __p6
+                        },
+                        __e0.Arguments[1]
                     )
-                )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );

@@ -13,10 +13,12 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    42,
-                    typeof(global::System.Int32)
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        42,
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -32,10 +34,12 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    new global::System.String('0', 3),
-                    typeof(global::System.String)
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        new global::System.String('0', 3),
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -45,16 +49,18 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_target_typed_constructor() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<MemberFixture>.Interpolate(default(object), (x, m) => x.SpliceValue(m.InstanceMethod(new('0', 3))));
+            ExpressionOnNone.Interpolate(default(MemberFixture)!, x => x.SpliceValue(x.Data.InstanceMethod(new('0', 3))));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    ???.InstanceMethod(new('0', 3)),
-                    typeof(global::System.Int32)
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        __data.InstanceMethod(new('0', 3)),
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -70,12 +76,12 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    new global::Arborist.TestFixtures.Cat() {
-                        Name = ""Garfield""
-                    },
-                    typeof(global::Arborist.TestFixtures.Cat)
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        new global::Arborist.TestFixtures.Cat() { Name = ""Garfield"" },
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -91,13 +97,15 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    new global::System.Collections.Generic.List<global::System.String>() {
-                        ""foo"",
-                        ""bar""
-                    },
-                    typeof(global::System.Collections.Generic.List<global::System.String>)
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        new global::System.Collections.Generic.List<global::System.String>() {
+                            ""foo"",
+                            ""bar""
+                        },
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -116,20 +124,22 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    new global::System.Collections.Generic.Dictionary<global::System.String, global::System.Int32>() {
-                        { ""foo"", 1 },
-                        { ""bar"", 2 }
-                    },
-                    typeof(global::System.Collections.Generic.Dictionary<global::System.String, global::System.Int32>)
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        new global::System.Collections.Generic.Dictionary<global::System.String, global::System.Int32>(){
+                            { ""foo"", 1 },
+                            { ""bar"", 2 }
+                        },
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
     }
     
     [Fact]
-    public void Should_handle_default_with_type() {
+    public void Should_handle_default_expression() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(default(string)));
@@ -138,17 +148,19 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    default(global::System.String),
-                    typeof(global::System.String)
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        default(global::System.String),
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
     }
     
     [Fact]
-    public void Should_handle_default_without_type() {
+    public void Should_handle_default_literal() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue<string>(default));
@@ -157,10 +169,12 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    default(global::System.String),
-                    typeof(global::System.String)
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        default(global::System.String),
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -179,10 +193,12 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    !__data.Cat.IsAlive,
-                    typeof(global::System.Boolean)
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        !__data.Cat.IsAlive,
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -201,10 +217,12 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    (__data.Cat.Name + ""foo""),
-                    typeof(global::System.String)
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        (__data.Cat.Name + ""foo""),
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -223,10 +241,12 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    (__data.Cat.IsAlive ? ""foo"" : ""bar""),
-                    typeof(global::System.String)
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        (__data.Cat.IsAlive ? ""foo"" : ""bar""),
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -245,10 +265,12 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    (global::System.Object)__data.Cat,
-                    typeof(global::System.Object)
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        (global::System.Object)__data.Cat,
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -267,10 +289,12 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    __data.InstanceMethod(""foo""),
-                    typeof(global::System.Int32)
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        __data.InstanceMethod(""foo""),
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -289,10 +313,12 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    global::Arborist.TestFixtures.MemberFixture.StaticMethod(""foo""),
-                    typeof(global::System.Int32)
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        global::Arborist.TestFixtures.MemberFixture.StaticMethod(""foo""),
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -311,10 +337,12 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    global::Arborist.TestFixtures.MemberFixture.GenericStaticMethod(42),
-                    typeof(global::System.Int32)
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        global::Arborist.TestFixtures.MemberFixture.GenericStaticMethod(42),
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -333,10 +361,12 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    __data.GenericInstanceMethod(""foo""),
-                    typeof(global::System.String)
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        __data.GenericInstanceMethod(""foo""),
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -355,10 +385,12 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    __data.GenericInstanceMethod<global::System.Collections.Generic.IEnumerable<global::System.Char>>(""foo""),
-                    typeof(global::System.Collections.Generic.IEnumerable<global::System.Char>)
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        __data.GenericInstanceMethod<global::System.Collections.Generic.IEnumerable<global::System.Char>>(""foo""),
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -377,10 +409,12 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    global::Arborist.TestFixtures.MemberFixture.GenericStaticMethod<global::System.Collections.Generic.IEnumerable<global::System.Char>>(""foo""),
-                    typeof(global::System.Collections.Generic.IEnumerable<global::System.Char>)
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        global::Arborist.TestFixtures.MemberFixture.GenericStaticMethod<global::System.Collections.Generic.IEnumerable<global::System.Char>>(""foo""),
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -399,10 +433,12 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    new { foo = ""foo"", bar = 42, global::System.String.Empty },
-                    __t0.Type
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        new { foo = ""foo"", bar = 42, global::System.String.Empty },
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -418,10 +454,12 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    checked((__data + 1)),
-                    typeof(global::System.Int32)
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        checked((__data + 1)),
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -437,10 +475,12 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant(
-                    unchecked((__data + 1)),
-                    typeof(global::System.Int32)
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        unchecked((__data + 1)),
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );

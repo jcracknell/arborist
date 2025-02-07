@@ -40,7 +40,7 @@ public class DiagnosticTests {
             ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Name == ""Garfield"");
         ");
 
-        Assert.Equal(1, results.AnalysisResults.Count);
+        Assert.Equal(0, results.AnalysisResults.Count);
         Assert.Contains(results.Diagnostics, diagnostic => diagnostic is {
             Id: InterpolationDiagnostics.ARB003_NoSplices,
             Severity: DiagnosticSeverity.Warning

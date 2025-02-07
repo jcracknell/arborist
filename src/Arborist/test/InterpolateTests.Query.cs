@@ -5,14 +5,19 @@ namespace Arborist;
 public partial class InterpolateTests {
     [Fact]
     public void Should_handle_select_clause() {
-        #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate(default(object),
-            (x, o) => from c in o.Cats select c.Name
+        var data = new {
+            OwnerCats = ExpressionOn<Owner>.Of(o => o.Cats),
+            CatName = ExpressionOn<Cat>.Of(c => c.Name)
+        };
+        
+        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+            from c in x.SpliceBody(o, x.Data.OwnerCats)
+            select x.SpliceBody(c, x.Data.CatName)
         );
-        #pragma warning restore
 
-        var expected = ExpressionOn<Owner>.Of(
-            o => o.Cats.Select(c => c.Name)
+        var expected = ExpressionOn<Owner>.Of(o =>
+            from c in o.Cats
+            select c.Name
         );
 
         Assert.Equivalent(expected, interpolated);
@@ -20,14 +25,41 @@ public partial class InterpolateTests {
 
     [Fact]
     public void Should_handle_from_clause_with_cast() {
-        #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate(default(object),
-            (x, o) => from object c in o.Cats select c.GetHashCode()
+        var data = new {
+            OwnerCats = ExpressionOn<Owner>.Of(o => o.Cats),
+            ObjectHashCode = ExpressionOn<object>.Of(o => o.GetHashCode())
+        };
+        
+        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+            from object c in x.SpliceBody(o, x.Data.OwnerCats)
+            select x.SpliceBody(c, x.Data.ObjectHashCode)
         );
-        #pragma warning restore
 
-        var expected = ExpressionOn<Owner>.Of(
-            o => o.Cats.Cast<object>().Select(c => c.GetHashCode())
+        var expected = ExpressionOn<Owner>.Of(o =>
+            from object c in o.Cats
+            select c.GetHashCode()
+        );
+
+        Assert.Equivalent(expected, interpolated);
+    }
+    
+    [Fact]
+    public void Should_handle_from_clause_with_cast_in_subsequent_clause() {
+        var data = new {
+            OwnerCats = ExpressionOn<Owner>.Of(o => o.Cats),
+            ObjectHashCode = ExpressionOn<object>.Of(o => o.GetHashCode())
+        };
+        
+        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+            from a in o.Cats
+            from object c in x.SpliceBody(o, x.Data.OwnerCats)
+            select x.SpliceBody(c, x.Data.ObjectHashCode)
+        );
+
+        var expected = ExpressionOn<Owner>.Of(o =>
+            from a in o.Cats
+            from object c in o.Cats
+            select c.GetHashCode()
         );
 
         Assert.Equivalent(expected, interpolated);
@@ -35,21 +67,21 @@ public partial class InterpolateTests {
 
     [Fact]
     public void Should_handle_join_clause() {
-        #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate(new Owner(), (x, o) =>
+        var data = new {
+            OwnerCats = ExpressionOn<Owner>.Of(o => o.Cats),
+            CatId = ExpressionOn<Cat>.Of(c => c.Id)
+        };
+    
+        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
             from c in o.Cats
-            join c1 in o.Cats on c.Id equals c1.Id
+            join c1 in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceValue(42)
             select c1.Name
         );
-        #pragma warning restore
 
-        var expected = ExpressionOn<Owner>.Of(
-            o => o.Cats.Join(
-                o.Cats,
-                c => c.Id,
-                c1 => c1.Id,
-                (c, c1) => c1.Name
-            )
+        var expected = ExpressionOn<Owner>.Of(o =>
+            from c in o.Cats
+            join c1 in o.Cats on c.Id equals 42
+            select c1.Name
         );
 
         Assert.Equivalent(expected, interpolated);
@@ -57,21 +89,21 @@ public partial class InterpolateTests {
 
     [Fact]
     public void Should_handle_join_clause_with_cast() {
-        #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
+        var data = new {
+            OwnerCats = ExpressionOn<Owner>.Of(o => o.Cats),
+            CatId = ExpressionOn<Cat>.Of(c => c.Id)
+        };
+        
+        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
             from c in o.Cats
-            join object c1 in o.Cats on c.Id equals c1.GetHashCode()
+            join object c1 in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceValue(42)
             select c1.GetHashCode()
         );
-        #pragma warning restore
 
-        var expected = ExpressionOn<Owner>.Of(
-            o => o.Cats.Join(
-                o.Cats.Cast<object>(),
-                c => c.Id,
-                c1 => c1.GetHashCode(),
-                (c, c1) => c1.GetHashCode()
-            )
+        var expected = ExpressionOn<Owner>.Of(o =>
+            from c in o.Cats
+            join object c1 in o.Cats on c.Id equals 42
+            select c1.GetHashCode()
         );
 
         Assert.Equivalent(expected, interpolated);
@@ -79,26 +111,18 @@ public partial class InterpolateTests {
 
     [Fact]
     public void Should_handle_join_into_clause() {
-        #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
+        var interpolated = ExpressionOn<Owner>.Interpolate(ExpressionOn<Owner>.Of(o => o.Cats), (x, o) =>
+            from c in x.SpliceBody(o, x.Data)
+            join c1 in x.SpliceBody(o, x.Data) on c.Id equals c1.Id into cs
+            from cc in cs
+            select cc.Age
+        );
+
+        var expected = ExpressionOn<Owner>.Of(o =>
             from c in o.Cats
             join c1 in o.Cats on c.Id equals c1.Id into cs
             from cc in cs
             select cc.Age
-        );
-        #pragma warning restore
-
-        var expected = ExpressionOn<Owner>.Of(
-            o => o.Cats.GroupJoin(
-                o.Cats,
-                c => c.Id,
-                c1 => c1.Id,
-                (c, cs) => new { c, cs }
-            )
-            .SelectMany(
-                __v0 => __v0.cs,
-                (__v0, cc) => cc.Age
-            )
         );
 
         Assert.Equivalent(expected, interpolated);
@@ -106,17 +130,21 @@ public partial class InterpolateTests {
 
     [Fact]
     public void Should_handle_let_clause() {
-        #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
-            from c in o.Cats
-            let n = o.Name
+        var data = new {
+            OwnerCats = ExpressionOn<Owner>.Of(o => o.Cats)        ,
+            CatName = ExpressionOn<Cat>.Of(c => c.Name)
+        };
+        
+        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+            from c in x.SpliceBody(o, x.Data.OwnerCats)
+            let n = x.SpliceBody(c, x.Data.CatName)
             select c.Name + n
         );
-        #pragma warning restore
 
-        var expected = ExpressionOn<Owner>.Of(
-            o => o.Cats.Select(c => new { c, n = o.Name })
-            .Select(__v0 => __v0.c.Name + __v0.n)
+        var expected = ExpressionOn<Owner>.Of(o =>
+            from c in o.Cats
+            let n = c.Name
+            select c.Name + n
         );
 
         Assert.Equivalent(expected, interpolated);
@@ -124,18 +152,21 @@ public partial class InterpolateTests {
 
     [Fact]
     public void Should_handle_orderby_clause() {
-        #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
+        var data = new {
+            OwnerCats = ExpressionOn<Owner>.Of(o => o.Cats),
+            CatAge = ExpressionOn<Cat>.Of(c => c.Age)
+        };
+        
+        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+            from c in x.SpliceBody(o, x.Data.OwnerCats)
+            orderby x.SpliceBody(c, ExpressionOn<Cat>.Identity).Name ascending, x.SpliceBody(c, x.Data.CatAge) descending
+            select c.Name
+        );
+
+        var expected = ExpressionOn<Owner>.Of(o =>
             from c in o.Cats
             orderby c.Name ascending, c.Age descending
             select c.Name
-        );
-        #pragma warning restore
-
-        var expected = ExpressionOn<Owner>.Of(
-            o => o.Cats.OrderBy(c => c.Name)
-            .ThenByDescending(c => c.Age)
-            .Select(c => c.Name)
         );
 
         Assert.Equivalent(expected, interpolated);
@@ -143,17 +174,21 @@ public partial class InterpolateTests {
 
     [Fact]
     public void Should_handle_where_clause() {
-        #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
+        var data = new {
+            OwnerCats = ExpressionOn<Owner>.Of(o => o.Cats),
+            CatAge = ExpressionOn<Cat>.Of(c => c.Age)
+        };
+        
+        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+            from c in x.SpliceBody(o, x.Data.OwnerCats)
+            where x.SpliceBody(c, x.Data.CatAge) == 8
+            select c.Name
+        );
+
+        var expected = ExpressionOn<Owner>.Of(o =>
             from c in o.Cats
             where c.Age == 8
             select c.Name
-        );
-        #pragma warning restore
-
-        var expected = ExpressionOn<Owner>.Of(
-            o => o.Cats.Where(c => c.Age == 8)
-            .Select(c => c.Name)
         );
 
         Assert.Equivalent(expected, interpolated);
@@ -161,20 +196,22 @@ public partial class InterpolateTests {
 
     [Fact]
     public void Should_handle_transparent_identifier_in_from_clause() {
-        #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
+        var data = ExpressionOn<Owner>.Of(o => o.Cats);
+    
+        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+            from a in x.SpliceBody(o, x.Data)
+            from b in o.Cats
+            from c in o.Cats
+            from d in o.Cats
+            select x.SpliceBody(b, ExpressionOn<Cat>.Identity)
+        );
+
+        var expected = ExpressionOn<Owner>.Of(o =>
             from a in o.Cats
             from b in o.Cats
             from c in o.Cats
             from d in o.Cats
             select b
-        );
-        #pragma warning restore
-
-        var expected = ExpressionOn<Owner>.Of(
-            o => o.Cats.SelectMany(a => o.Cats, (a, b) => new { a, b })
-            .SelectMany(__v0 => o.Cats, (__v0, c) => new { __v0, c })
-            .SelectMany(__v1 => o.Cats, (__v1, d) => __v1.__v0.b)
         );
 
         Assert.Equivalent(expected, interpolated);
@@ -182,19 +219,23 @@ public partial class InterpolateTests {
 
     [Fact]
     public void Should_handle_transparent_identifier_in_groupby_clause() {
-        #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
+        var data = new {
+            CatId = ExpressionOn<Cat>.Of(c => c.Id),
+            CatAge = ExpressionOn<Cat>.Of(c => c.Age)
+        };
+    
+        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
             from a in o.Cats
             from b in o.Cats
             from c in o.Cats
-            group a by a.Age
+            group x.SpliceBody(a, x.Data.CatId) by x.SpliceBody(a, x.Data.CatAge)
         );
-        #pragma warning restore
 
         var expected = ExpressionOn<Owner>.Of(o =>
-            o.Cats.SelectMany(a => o.Cats, (a, b) => new { a, b })
-            .SelectMany(__v0 => o.Cats, (__v0, c) => new { __v0, c })
-            .GroupBy(__v1 => __v1.__v0.a.Age, __v1 => __v1.__v0.a)
+            from a in o.Cats
+            from b in o.Cats
+            from c in o.Cats
+            group a.Id by a.Age
         );
 
         Assert.Equivalent(expected, interpolated);
@@ -202,19 +243,24 @@ public partial class InterpolateTests {
 
     [Fact]
     public void Should_handle_transparent_identifier_in_let_clause() {
-        #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
+        var data = new {
+            OwnerCats = ExpressionOn<Owner>.Of(o => o.Cats),
+            OwnerName = ExpressionOn<Owner>.Of(o => o.Name),
+            OwnerId = ExpressionOn<Owner>.Of(o => o.Id)
+        };
+        
+        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+            from c in x.SpliceBody(o, x.Data.OwnerCats)
+            let n = x.SpliceBody(o, x.Data.OwnerName)
+            let m = x.SpliceBody(o, x.Data.OwnerId)
+            select c.Name + n + m + x.SpliceValue("foo")
+        );
+
+        var expected = ExpressionOn<Owner>.Of(o =>
             from c in o.Cats
             let n = o.Name
             let m = o.Id
-            select c.Name + n + m
-        );
-        #pragma warning restore
-
-        var expected = ExpressionOn<Owner>.Of(
-            o => o.Cats.Select(c => new { c, n = o.Name })
-            .Select(__v0 => new { __v0, m = o.Id })
-            .Select(__v1 => __v1.__v0.c.Name + __v1.__v0.n + __v1.m)
+            select c.Name + n + m + "foo"
         );
 
         Assert.Equivalent(expected, interpolated);
@@ -222,21 +268,26 @@ public partial class InterpolateTests {
 
     [Fact]
     public void Should_handle_transparent_identifier_in_join_clause() {
-        #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
-            from a in o.Cats
+        var data = new {
+            OwnerCats = ExpressionOn<Owner>.Of(o => o.Cats),
+            CatId = ExpressionOn<Cat>.Of(c => c.Id)
+        };
+        
+        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+            from a in x.SpliceBody(o, x.Data.OwnerCats)
             join b in o.Cats on a.Id equals b.Id
-            join c in o.Cats on a.Id equals c.Id
-            join d in o.Cats on a.Id equals d.Id
+            join c in o.Cats on a.Id equals x.SpliceValue(42)
+            join d in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceBody(d, x.Data.CatId)
             select a
         );
-        #pragma warning restore
 
 
         var expected = ExpressionOn<Owner>.Of(o =>
-            o.Cats.Join(o.Cats, a => a.Id, b => b.Id, (a, b) => new { a, b })
-            .Join(o.Cats, __v0 => __v0.a.Id, c => c.Id, (__v0, c) => new { __v0, c })
-            .Join(o.Cats, __v1 => __v1.__v0.a.Id, d => d.Id, (__v1, d) => __v1.__v0.a)
+            from a in o.Cats
+            join b in o.Cats on a.Id equals b.Id
+            join c in o.Cats on a.Id equals 42
+            join d in o.Cats on c.Id equals d.Id
+            select a
         );
 
         Assert.Equivalent(expected, interpolated);
@@ -244,21 +295,25 @@ public partial class InterpolateTests {
 
     [Fact]
     public void Should_handle_transparent_identifier_in_orderby_clause() {
-        #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
+        var data = new {
+            OwnerCats = ExpressionOn<Owner>.Of(o => o.Cats),
+            CatName = ExpressionOn<Cat>.Of(c => c.Name)
+        };
+        
+        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+            from a in x.SpliceBody(o, x.Data.OwnerCats)
+            from b in o.Cats
+            from c in o.Cats
+            orderby x.SpliceBody(a, x.Data.CatName), x.SpliceValue(42)
+            select a
+        );
+
+        var expected = ExpressionOn<Owner>.Of(o =>
             from a in o.Cats
             from b in o.Cats
             from c in o.Cats
-            orderby a.Name
+            orderby a.Name, 42
             select a
-        );
-        #pragma warning restore
-
-        var expected = ExpressionOn<Owner>.Of(o =>
-            o.Cats.SelectMany(a => o.Cats, (a, b) => new { a, b })
-            .SelectMany(__v0 => o.Cats, (__v0, c) => new { __v0, c })
-            .OrderBy(__v1 => __v1.__v0.a.Name)
-            .Select(__v1 => __v1.__v0.a)
         );
 
         Assert.Equivalent(expected, interpolated);
@@ -266,21 +321,25 @@ public partial class InterpolateTests {
 
     [Fact]
     public void Should_handle_transparent_identifier_in_where_clause() {
-        #pragma warning disable ARB003
-        var interpolated = ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
+        var data = new {
+            OwnerCats = ExpressionOn<Owner>.Of(o => o.Cats),
+            CatId = ExpressionOn<Cat>.Of(c => c.Id)
+        };
+    
+        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+            from a in x.SpliceBody(o, x.Data.OwnerCats)
+            from b in o.Cats
+            from c in o.Cats
+            where x.SpliceBody(a, x.Data.CatId) % 2 == x.SpliceValue(0)
+            select a
+        );
+
+        var expected = ExpressionOn<Owner>.Of(o =>
             from a in o.Cats
             from b in o.Cats
             from c in o.Cats
             where a.Id % 2 == 0
             select a
-        );
-        #pragma warning restore
-
-        var expected = ExpressionOn<Owner>.Of(o =>
-            o.Cats.SelectMany(a => o.Cats, (a, b) => new { a, b })
-            .SelectMany(__v0 => o.Cats, (__v0, c) => new { __v0, c })
-            .Where(__v1 => __v1.__v0.a.Id % 2 == 0)
-            .Select(__v1 => __v1.__v0.a)
         );
 
         Assert.Equivalent(expected, interpolated);

@@ -13,10 +13,12 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant( 
-                    (__data as global::System.IFormattable),
-                    typeof(global::System.IFormattable)
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant( 
+                        (__data as global::System.IFormattable),
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
@@ -32,10 +34,12 @@ public partial class EvaluatedSyntaxVisitorTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                global::System.Linq.Expressions.Expression.Constant( 
-                    (__data is global::System.IFormattable),
-                    typeof(global::System.Boolean)
-                )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant( 
+                        (__data is global::System.IFormattable),
+                        __e0.Type
+                    )
+                }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );

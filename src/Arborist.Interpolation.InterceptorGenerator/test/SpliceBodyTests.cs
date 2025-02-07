@@ -1,5 +1,3 @@
-using Xunit;
-
 namespace Arborist.Interpolation.InterceptorGenerator;
 
 public class SpliceBodyTests {
@@ -17,19 +15,18 @@ public class SpliceBodyTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                __data.OwnerPredicate switch { var __v0 =>
-                    global::Arborist.ExpressionHelper.Replace(
-                        __v0.Body,
-                        global::Arborist.Internal.Collections.SmallDictionary.Create(
-                            new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
-                                __v0.Parameters[0],
-                                global::System.Linq.Expressions.Expression.Property(
-                                    __p0,
-                                    typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Owner"")!
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => __data.OwnerPredicate switch {
+                        var __v0 => global::Arborist.ExpressionHelper.Replace(
+                            __v0.Body,
+                            global::Arborist.Internal.Collections.SmallDictionary.Create(
+                                new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
+                                    __v0.Parameters[0],
+                                    __e0.Arguments[0]
                                 )
                             )
                         )
-                    )
+                    }
                 }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -48,19 +45,18 @@ public class SpliceBodyTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                __t0.Coerce((o) => (o.Name == ""Jon"")) switch { var __v0 =>
-                    global::Arborist.ExpressionHelper.Replace(
-                        __v0.Body,
-                        global::Arborist.Internal.Collections.SmallDictionary.Create(
-                            new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
-                                __v0.Parameters[0],
-                                global::System.Linq.Expressions.Expression.Property(
-                                    __p0,
-                                    typeof(global::Arborist.TestFixtures.Cat).GetProperty(""Owner"")!
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => __t0.Coerce((o) => (o.Name == ""Jon"")) switch {
+                        var __v0 => global::Arborist.ExpressionHelper.Replace(
+                            __v0.Body,
+                            global::Arborist.Internal.Collections.SmallDictionary.Create(
+                                new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
+                                    __v0.Parameters[0],
+                                    __e0.Arguments[0]
                                 )
                             )
                         )
-                    )
+                    }
                 }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()

@@ -1,5 +1,3 @@
-using Xunit;
-
 namespace Arborist.Interpolation.InterceptorGenerator;
 
 public class SpliceTests {
@@ -14,12 +12,15 @@ public class SpliceTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                __t0.Coerce(global::System.Linq.Expressions.Expression.Constant(3)) switch {
-                    var __v0 when typeof(global::System.Int32) == __v0.Type => __v0,
-                    var __v0 => global::System.Linq.Expressions.Expression.Convert(
-                        __v0,
-                        typeof(global::System.Int32)
-                    )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => __t0.Coerce(global::System.Linq.Expressions.Expression.Constant(3)) switch {
+                        var __v0 => (__e0.Type == __v0.Type
+                        ?   __v0
+                        :   global::System.Linq.Expressions.Expression.Convert(
+                                __v0,
+                                __e0.Type
+                            ))
+                    }
                 }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
@@ -37,12 +38,15 @@ public class SpliceTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
-                __t0.Coerce(__data) switch {
-                    var __v0 when typeof(global::System.Int32) == __v0.Type => __v0,
-                    var __v0 => global::System.Linq.Expressions.Expression.Convert(
-                        __v0,
-                        typeof(global::System.Int32)
-                    )
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => __t0.Coerce(__data) switch {
+                        var __v0 => (__e0.Type == __v0.Type
+                        ?   __v0
+                        :   global::System.Linq.Expressions.Expression.Convert(
+                                __v0,
+                                __e0.Type
+                            ))
+                    }
                 }
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()

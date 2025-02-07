@@ -35,7 +35,7 @@ public class InterpolateBenchmarks(ITestOutputHelper outputHelper) {
     public void Runtime() {
         var data = new { SpliceExpression, SpliceBodyExpression, SplicedValue };
 
-        Benchmark(nameof(CompileTime), data, static data => {
+        Benchmark(nameof(Runtime), data, static data => {
             ExpressionOn<Owner>.InterpolateRuntimeFallback(data, (x, o) =>
                 o.Name == x.SpliceValue(x.Data.SplicedValue)
                 && o.Cats.Any(c => x.SpliceBody(c.Name, x.Data.SpliceBodyExpression))

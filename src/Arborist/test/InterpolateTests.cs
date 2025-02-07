@@ -6,29 +6,7 @@ namespace Arborist;
 
 public partial class InterpolateTests {
     [Fact]
-    public void Should_handle_default_expression() {
-        var interpolated = ExpressionOn<Owner>.Interpolate(
-            new Cat { Id = 42 },
-            (x, o) => x.SpliceValue(x.Data.Id) == default
-        );
-
-        var ownerParameter = Expression.Parameter(typeof(Owner), "o");
-
-        Assert.Equivalent(
-            expected: Expression.Lambda<Func<Owner, bool>>(
-                Expression.MakeBinary(
-                    ExpressionType.Equal,
-                    Expression.Constant(42, typeof(int)),
-                    Expression.Constant(default(int), typeof(int))
-                ),
-                ownerParameter
-            ),
-            actual: interpolated
-        );
-    }
-
-    [Fact]
-    public void Interpolate_should_throw_InterpolatedParameterCaptureException() {
+    public void InterpolateRuntimeFallback_should_throw_InterpolatedParameterCaptureException() {
         var spliceBodyMethod = typeof(IInterpolationContext).GetMethods().Single(m => m.GetParameters().Length == 2);
         var parameters = spliceBodyMethod.GetParameters();
 
@@ -36,39 +14,41 @@ public partial class InterpolateTests {
         Assert.True(parameters[1].IsDefined(typeof(EvaluatedSpliceParameterAttribute), false));
 
         Assert.Throws<InterpolatedParameterCaptureException>(() => {
-            #pragma warning disable ARB002
-            ExpressionOn<Owner>.Interpolate(default(object), (x, o) => x.SpliceBody(o, y => o));
-            #pragma warning restore
+            ExpressionOn<Owner>.InterpolateRuntimeFallback(default(object), (x, o) => x.SpliceBody(o, y => o));
         });
     }
 
     [Fact]
-    public void Interpolate_should_throw_EvaluatedSpliceException() {
+    public void InterpolateRuntimeFallback_should_throw_EvaluatedSpliceException() {
         Assert.Throws<InterpolationContextEvaluationException>(() => {
-            #pragma warning disable ARB001
-            ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(x.SpliceValue(1) + 2));
-            #pragma warning restore
+            ExpressionOnNone.InterpolateRuntimeFallback(default(object), x => x.SpliceValue(x.SpliceValue(1) + 2));
         });
     }
 
     [Fact]
     public void Interpolate_Splice_should_work_as_expected() {
-        var add = Expression.Add(Expression.Constant(1), Expression.Constant(2));
-        #pragma warning disable ARB001
-        var interpolated = ExpressionOnNone.Interpolate(default(object), x => 2 * x.Splice<int>(add));
-        #pragma warning restore
+        var data = new {
+            Addition = Expression.Add(Expression.Constant(1), Expression.Constant(2))
+        };
+        
+        var interpolated = ExpressionOnNone.Interpolate(data, x =>
+            2 * x.Splice<int>(x.Data.Addition)
+        );
 
-        var expected = Expression.Lambda<Func<int>>(Expression.Multiply(Expression.Constant(2), add));
+        var expected = Expression.Lambda<Func<int>>(
+            Expression.Multiply(Expression.Constant(2), data.Addition)
+        );
 
         Assert.Equivalent(expected, interpolated);
     }
 
     [Fact]
     public void Interpolate_SpliceBody_should_work_as_expected_for_0_parameters() {
-        var spliced = ExpressionOnNone.Of(() => "foo");
-        #pragma warning disable ARB001
-        var interpolated = ExpressionOnNone.Interpolate(default(object), x => x.SpliceBody(spliced).Length);
-        #pragma warning restore
+        var data = new {
+            Spliced = ExpressionOnNone.Of(() => "foo")
+        };
+        
+        var interpolated = ExpressionOnNone.Interpolate(data, x => x.SpliceBody(x.Data.Spliced).Length);
 
         var expected = Expression.Lambda<Func<int>>(
             body: Expression.Property(
@@ -82,34 +62,28 @@ public partial class InterpolateTests {
 
     [Fact]
     public void Interpolate_SpliceBody_should_work_as_expected_for_1_parameter() {
-        var nameExpr = ExpressionOn<Owner>.Of(o => o.Name);
-        #pragma warning disable ARB001
-        var interpolated = ExpressionOn<Owner>.Interpolate(default(object), (x, o) => x.SpliceBody(o, nameExpr).Length);
-        #pragma warning restore
-
-        var expected = Expression.Lambda<Func<Owner, int>>(
-            body: Expression.Property(
-                Expression.Property(
-                    interpolated.Parameters[0],
-                    typeof(Owner).GetProperty(nameof(Owner.Name))!
-                ),
-                typeof(string).GetProperty("Length")!
-            ),
-            parameters: interpolated.Parameters
+        var data = new {
+            OwnerName = ExpressionOn<Owner>.Of(o => o.Name)
+        };
+        
+        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+            x.SpliceBody(o, x.Data.OwnerName).Length
         );
+
+        var expected = ExpressionOn<Owner>.Of(o => o.Name.Length);
 
         Assert.Equivalent(expected, interpolated);
     }
 
     [Fact]
     public void Interpolate_SpliceBody_should_work_within_a_lambda() {
-        var catNameExpr = ExpressionOn<Cat>.Of(c => c.Name);
+        var data = new {
+            CatName = ExpressionOn<Cat>.Of(c => c.Name)
+        };
 
-        #pragma warning disable ARB001
-        var interpolated = ExpressionOn<Owner>.Interpolate(default(object),
-            (x, o) => o.CatsEnumerable.Any(c => x.SpliceBody(c, catNameExpr) == "Garfield")
+        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+            o.CatsEnumerable.Any(c => x.SpliceBody(c, x.Data.CatName) == "Garfield")
         );
-        #pragma warning restore
 
         var compiled = interpolated.Compile();
 
@@ -119,35 +93,16 @@ public partial class InterpolateTests {
 
     [Fact]
     public void Interpolate_SpliceBody_should_work_within_a_subexpression() {
-        var catNameExpr = ExpressionOn<Cat>.Of(c => c.Name);
-        #pragma warning disable ARB001
-        var interpolated = ExpressionOn<Owner>.Interpolate(default(object),
-            (x, o) => o.CatsQueryable.Any(c => x.SpliceBody(c, catNameExpr) == "Garfield")
+        var data = new {
+            CatName = ExpressionOn<Cat>.Of(c => c.Name)
+        };
+        
+        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+            o.CatsQueryable.Any(c => x.SpliceBody(c, x.Data.CatName) == "Garfield")
         );
-        #pragma warning restore
 
-        var catParameter = Expression.Parameter(typeof(Cat), "c");
-        var expected = Expression.Lambda<Func<Owner, bool>>(
-            Expression.Call(
-                typeof(Queryable).GetMethods()
-                .Single(m => m.Name == "Any" && m.GetParameters().Length == 2)
-                .MakeGenericMethod(typeof(Cat)),
-                Expression.Property(
-                    interpolated.Parameters[0],
-                    typeof(Owner).GetProperty(nameof(Owner.CatsQueryable))!
-                ),
-                Expression.Lambda<Func<Cat, bool>>(
-                    Expression.Equal(
-                        Expression.Property(
-                            catParameter,
-                            typeof(Cat).GetProperty(nameof(Cat.Name))!
-                        ),
-                        Expression.Constant("Garfield")
-                    ),
-                    catParameter
-                )
-            ),
-            interpolated.Parameters
+        var expected = ExpressionOn<Owner>.Of(o =>
+            o.CatsQueryable.Any(c => c.Name == "Garfield")
         );
 
         Assert.Equivalent(expected, interpolated);
@@ -155,29 +110,15 @@ public partial class InterpolateTests {
 
     [Fact]
     public void Interpolate_SpliceQuoted_should_work_as_expected() {
-        var quoted = Expression.Lambda<Func<Cat, bool>>(
-            Expression.Constant(true),
-            Expression.Parameter(typeof(Cat))
+        var data = new {
+            Quoted = ExpressionOn<Cat>.Of(c => true)
+        };
+
+        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+            o.CatsQueryable.Any(x.SpliceQuoted(x.Data.Quoted))
         );
 
-        var interpolated = ExpressionOn<Owner>.Interpolate(
-            new { quoted },
-            static (x, o) => o.CatsQueryable.Any(x.SpliceQuoted(x.Data.quoted))
-        );
-
-        var expected = Expression.Lambda<Func<Owner, bool>>(
-            Expression.Call(
-                typeof(Queryable).GetMethods()
-                .Single(m => m.Name == "Any" && m.GetParameters().Length == 2)
-                .MakeGenericMethod(typeof(Cat)),
-                Expression.Property(
-                    interpolated.Parameters[0],
-                    typeof(Owner).GetProperty(nameof(Owner.CatsQueryable))!
-                ),
-                Expression.Quote(quoted)
-            ),
-            interpolated.Parameters
-        );
+        var expected = ExpressionOn<Owner>.Of(o => o.CatsQueryable.Any(c => true));
 
         Assert.Equivalent(expected, interpolated);
     }

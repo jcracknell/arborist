@@ -10,6 +10,8 @@ public class InterpolationAnalysisContext(
     InterpolationDiagnosticsCollector diagnostics,
     InterpolatedTreeBuilder treeBuilder,
     LambdaExpressionSyntax interpolatedExpression,
+    IParameterSymbol dataParameter,
+    IParameterSymbol expressionParameter,
     CancellationToken cancellationToken
 ) {
     public InvocationExpressionSyntax Invocation { get; } = invocation;
@@ -19,9 +21,9 @@ public class InterpolationAnalysisContext(
     public InterpolationDiagnosticsCollector Diagnostics { get; } = diagnostics;
     public InterpolatedTreeBuilder TreeBuilder { get; } = treeBuilder;
     public LambdaExpressionSyntax InterpolatedExpression { get; } = interpolatedExpression;
+    public IParameterSymbol DataParameter { get; } = dataParameter;
+    public IParameterSymbol ExpressionParameter { get; } = expressionParameter;
     public CancellationToken CancellationToken { get; } = cancellationToken;
-
-    public int SpliceCount { get; set; }
 
     /// <summary>
     /// Returns true if the provided <paramref name="node"/> is a reference to the

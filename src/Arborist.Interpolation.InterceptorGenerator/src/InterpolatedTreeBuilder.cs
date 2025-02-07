@@ -1,47 +1,28 @@
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Arborist.Interpolation.InterceptorGenerator;
 
-public partial class InterpolatedTreeBuilder {
+public class InterpolatedTreeBuilder {
     private int _identifierCount;
     private readonly InterpolationDiagnosticsCollector _diagnostics;
-    private readonly Dictionary<IMethodSymbol, InterpolatedValueDefinition> _methodInfos;
-    private readonly Dictionary<(string, ITypeSymbol), InterpolatedValueDefinition> _parameters;
     private readonly Dictionary<ITypeSymbol, InterpolatedValueDefinition> _typeRefs;
     private readonly Dictionary<ITypeSymbol, string> _typeRefFactories;
-    private readonly IReadOnlyList<IReadOnlyCollection<InterpolatedValueDefinition>> _valueDefinitionCollections;
     private readonly List<InterpolatedTree> _methodDefinitions;
     private readonly InterpolatedValueDefinition.Factory _definitionFactory;
 
     public InterpolatedTreeBuilder(InterpolationDiagnosticsCollector diagnostics) {
         _identifierCount = 0;
         _diagnostics = diagnostics;
-        _methodInfos = new(SymbolEqualityComparer.Default);
-        _parameters = new(ParameterDefinitionsKeyEqualityComparer.Instance);
         _typeRefs = new(SymbolEqualityComparer.IncludeNullability);
         _typeRefFactories = new(SymbolEqualityComparer.IncludeNullability);
         _methodDefinitions = new();
-
-        _valueDefinitionCollections = [
-            _methodInfos.Values,
-            _parameters.Values,
-            _typeRefs.Values
-        ];
-
-
-        _definitionFactory = new InterpolatedValueDefinition.Factory(GetValueDefinitionCount);
+        _definitionFactory = new InterpolatedValueDefinition.Factory(() => _typeRefs.Values.Count(static d => d.IsInitialized));
     }
 
     public string DataIdentifier { get; } = "__data";
 
-    protected int GetValueDefinitionCount() =>
-        _valueDefinitionCollections.Sum(static c => c.Count(static d => d.IsInitialized));
-
     public IEnumerable<InterpolatedValueDefinition> ValueDefinitions =>
-        _valueDefinitionCollections.SelectMany(static x => x)
-        .OrderBy(static r => r.Order);
+        _typeRefs.Values.OrderBy(r => r.Order);
 
     public IEnumerable<InterpolatedTree> MethodDefinitions =>
         _methodDefinitions;
@@ -53,30 +34,6 @@ public partial class InterpolatedTreeBuilder {
         _identifierCount += 1;
         return identifier;
     }
-
-    public InterpolatedTree CreateAnonymousClassExpression(ITypeSymbol type, IReadOnlyList<InterpolatedTree> parameters) =>
-        CreateExpression(nameof(Expression.New), [
-            InterpolatedTree.Indexer(
-                InterpolatedTree.InstanceCall(
-                    CreateType(type),
-                    InterpolatedTree.Verbatim("GetConstructors"),
-                    []
-                ),
-                InterpolatedTree.Verbatim("0")
-            ),
-            CreateExpressionArray(parameters),
-            // Bind the properties of the anonymous type in the order they are declared
-            InterpolatedTree.Concat(
-                InterpolatedTree.Verbatim("new global::System.Reflection.MemberInfo[] "),
-                InterpolatedTree.Initializer([..(
-                    from property in type.GetMembers().OfType<IPropertySymbol>()
-                    select InterpolatedTree.Concat(
-                        CreateType(type),
-                        InterpolatedTree.Verbatim($".GetProperty(\"{property.Name}\")!")
-                    )
-                )])
-            )
-        ]);
 
     public InterpolatedTree CreateExpression(string factoryName, params InterpolatedTree[] args) =>
         InterpolatedTree.StaticCall(
@@ -263,140 +220,6 @@ public partial class InterpolatedTreeBuilder {
             [..TypeSymbolHelpers.GetInheritedTypeArguments(type).Select(CreateTypeRef)]
         );
     }
-    
-
-    public InterpolatedTree CreateTypeArray(IEnumerable<ITypeSymbol> types) =>
-        types switch {
-            IReadOnlyCollection<ITypeSymbol> { Count: 0 } => InterpolatedTree.Verbatim("global::System.Type.EmptyTypes"),
-            _ => InterpolatedTree.Concat(
-                InterpolatedTree.Verbatim("new global::System.Type[] "),
-                InterpolatedTree.Initializer(types.Select(CreateType).ToList())
-            )
-        };
-
-    public InterpolatedTree CreateMethodInfo(
-        IMethodSymbol methodSymbol,
-        SyntaxNode? node,
-        bool requireTypeParameters = false
-    ) {
-        // The requireTypeParameters flag feels like a hack, however in the VAST majority of cases you don't
-        // want them, as you are more likely to be able to resolve the generic method. This is intended to be
-        // used for calls to Enumerable.Cast<T> originating from LINQ queries, which are implicit but MUST
-        // specify type parameters.
-        if(_methodInfos.TryGetValue(methodSymbol, out var cached))
-            return InterpolatedTree.Verbatim(cached.Identifier);
-
-        var definition = _definitionFactory.Create($"__m{_methodInfos.Count}");
-        _methodInfos[methodSymbol] = definition;
-
-        _definitionFactory.Set(definition, CreateMethodInfoUncached(methodSymbol, node, requireTypeParameters));
-        return InterpolatedTree.Verbatim(definition.Identifier);
-    }
-
-    private InterpolatedTree CreateMethodInfoUncached(
-        IMethodSymbol methodSymbol,
-        SyntaxNode? node,
-        bool requireTypeParameters
-    ) {
-        // It FEELS like this should be optimizable, however in practice it seems very difficult to improve on this,
-        // as without HEAVY caching the cost of resolving the method appears to be approximately equivalent to the
-        // cost of constructing the expression, which already contains the pre-resolved and constructed MethodInfo.
-        if(methodSymbol.IsGenericMethod && methodSymbol.MethodKind is not (MethodKind.BuiltinOperator or MethodKind.UserDefinedOperator))
-            return InterpolatedTree.StaticCall(
-                InterpolatedTree.Verbatim("global::Arborist.ExpressionOnNone.GetMethodInfo"),
-                [InterpolatedTree.Lambda([], CreateGenericMethodCall(methodSymbol, node, requireTypeParameters))]
-            );
-
-        var declaringType = CreateType(methodSymbol.ContainingType);
-        var parameterTypes = CreateTypeArray(methodSymbol.Parameters.Select(p => p.Type));
-
-        return InterpolatedTree.Concat(
-            InterpolatedTree.InstanceCall(
-                declaringType,
-                InterpolatedTree.Verbatim("GetMethod"), [
-                InterpolatedTree.Verbatim($"\"{methodSymbol.Name}\""),
-                parameterTypes
-            ]),
-            InterpolatedTree.Verbatim("!")
-        );
-    }
-
-    private InterpolatedTree CreateGenericMethodCall(
-        IMethodSymbol methodSymbol,
-        SyntaxNode? node,
-        bool requireTypeParameters
-    ) {
-        // Roslyn does a stupid thing where it represents extension methods as instance
-        // methods, which makes dealing with them a pain in the ass.
-        if(methodSymbol.ReducedFrom is not null)
-            return CreateGenericMethodCall(
-                methodSymbol.ReducedFrom.Construct(methodSymbol.TypeArguments, methodSymbol.TypeArgumentNullableAnnotations),
-                node,
-                requireTypeParameters
-            );
-
-        var typeArgs = CreateGenericMethodCallTypeArgs(methodSymbol, node, requireTypeParameters);
-        
-        var valueArgs = new InterpolatedTree[methodSymbol.Parameters.Length];
-        for(var i = 0; i < methodSymbol.Parameters.Length; i++)
-            valueArgs[i] = CreateDefaultValue(methodSymbol.Parameters[i].Type);
-
-        if(methodSymbol.IsStatic) {
-            var containingTypeName = CreateTypeName(methodSymbol.ContainingType, node);
-            
-            return InterpolatedTree.StaticCall(
-                InterpolatedTree.Interpolate($"{containingTypeName}.{methodSymbol.Name}{typeArgs}"),
-                valueArgs
-            );
-        } else {
-            return InterpolatedTree.InstanceCall(
-                CreateDefaultValue(methodSymbol.ContainingType),
-                InterpolatedTree.Interpolate($"{methodSymbol.Name}{typeArgs}"),
-                valueArgs
-            );
-        }
-    }
-
-    private InterpolatedTree CreateGenericMethodCallTypeArgs(
-        IMethodSymbol methodSymbol,
-        SyntaxNode? node,
-        bool requireTypeParameters
-    ) {
-        // Type arguments were not specified in the original invocation - if the node is not an invocation,
-        // the invocation is assumed to have been implicit.
-        if(!requireTypeParameters && !SyntaxHelpers.IsExplicitGenericMethodInvocation(node))
-            return InterpolatedTree.Empty;
-        
-        var parts = new List<InterpolatedTree>(2 * methodSymbol.TypeArguments.Length + 1);
-        parts.Add(InterpolatedTree.Verbatim("<"));
-        
-        for(var i = 0; i < methodSymbol.TypeArguments.Length; i++) {
-            if(i != 0)
-                parts.Add(InterpolatedTree.Verbatim(", "));
-
-            parts.Add(CreateTypeName(methodSymbol.TypeArguments[i], node));
-        }
-        
-        parts.Add(InterpolatedTree.Verbatim(">"));
-        return InterpolatedTree.Concat(parts);
-    }
-
-    public InterpolatedTree CreateParameter(ITypeSymbol type, string name) {
-        var cacheKey = (name, type);
-        if(_parameters.TryGetValue(cacheKey, out var cached))
-            return InterpolatedTree.Verbatim(cached.Identifier);
-
-        var definition = _definitionFactory.Create($"__p{_parameters.Count}");
-        _parameters[cacheKey] = definition;
-
-        var parameterExpression = CreateExpression(nameof(Expression.Parameter), [
-            CreateType(type),
-            InterpolatedTree.Verbatim($"\"{name}\"")
-        ]);
-
-        _definitionFactory.Set(definition, parameterExpression);
-        return InterpolatedTree.Verbatim(definition.Identifier);
-    }
 
     public IReadOnlyList<InterpolatedTree> GetReparametrizedTypeConstraints(
         ImmutableList<ITypeParameterSymbol> typeParameters,
@@ -432,22 +255,5 @@ public partial class InterpolatedTreeBuilder {
             constraints.Add(InterpolatedTree.Verbatim("new()"));
 
         return constraints;
-    }
-    
-    private sealed class ParameterDefinitionsKeyEqualityComparer : IEqualityComparer<(string, ITypeSymbol)> {
-        public static ParameterDefinitionsKeyEqualityComparer Instance { get; } = new();
-
-        private ParameterDefinitionsKeyEqualityComparer() { }
-
-        public bool Equals((string, ITypeSymbol) a, (string, ITypeSymbol) b) =>
-            StringComparer.Ordinal.Equals(a.Item1, b.Item1)
-            && SymbolEqualityComparer.Default.Equals(a.Item2, b.Item2);
-
-        public int GetHashCode((string, ITypeSymbol) obj) {
-            var hash = new HashCode();
-            hash.Add(obj.Item1);
-            hash.Add(obj.Item2, SymbolEqualityComparer.Default);
-            return hash.ToHashCode();
-        }
     }
 }

@@ -65,14 +65,18 @@ public static class InterpolationAnalyzer {
             diagnostics: diagnostics,
             treeBuilder: treeBuilder,
             interpolatedExpression: interpolatedExpression,
+            dataParameter: dataParameter,
+            expressionParameter: expressionParameter,
             cancellationToken: cancellationToken
         );
 
-        var bodyTree = new InterpolatedSyntaxVisitor(context).Visit(interpolatedExpression.Body);
+        var bodyTree = new InterpolatedSyntaxVisitor(context).Apply(interpolatedExpression);
 
         // Report an interpolated expression containing no splices, which is completely useless
-        if(context.SpliceCount == 0 && bodyTree.IsSupported)
+        if(!bodyTree.IsModified && bodyTree.IsSupported) {
             diagnostics.NoSplices(interpolatedExpression);
+            return default;
+        }
 
         var dataTypeRef = treeBuilder.CreateTypeRef(dataParameter.Type);
         var dataDeclaration = InterpolatedTree.Interpolate($"var {treeBuilder.DataIdentifier} = {dataTypeRef}.Cast({dataParameter.Name});");
@@ -86,7 +90,7 @@ public static class InterpolationAnalyzer {
             (IEqualityComparer<ITypeParameterSymbol>)SymbolEqualityComparer.Default
         );
 
-        var returnStatement = GenerateReturnStatement(treeBuilder, methodSymbol, typeParameterMappings, bodyTree, interpolatedExpression);
+        var returnStatement = GenerateReturnStatement(treeBuilder, methodSymbol, typeParameterMappings, bodyTree, expressionParameter, interpolatedExpression);
 
         var invocationId = GenerateInvocationId(invocation);
         var className = $"InterpolationInterceptor{invocationId}";
@@ -112,21 +116,9 @@ public static class InterpolationAnalyzer {
         IMethodSymbol methodSymbol,
         IReadOnlyDictionary<ITypeParameterSymbol, string> typeParameterMappings,
         InterpolatedTree bodyTree,
+        IParameterSymbol expressionParameter,
         LambdaExpressionSyntax interpolatedExpression
     ) {
-        var interpolatedExpressionParameters = GetInterpolatedExpressionParameters(interpolatedExpression);
-
-        var expressionType = (INamedTypeSymbol)methodSymbol.ReturnType;
-        var delegateType = (INamedTypeSymbol)expressionType.TypeArguments[0];
-
-        // Create trees for each parameter to the result expression
-        var parameterTrees = new List<InterpolatedTree>(interpolatedExpressionParameters.Count);
-        foreach(var (parameterSyntax, parameterIndex) in interpolatedExpressionParameters.ZipWithIndex())
-            parameterTrees.Add(builder.CreateParameter(
-                delegateType.TypeArguments[parameterIndex],
-                parameterSyntax.Identifier.Text
-            ));
-
         var resultDelegateType = ((INamedTypeSymbol)methodSymbol.OriginalDefinition.ReturnType).TypeArguments[0];
         var reparametrizedDelegateType = builder.CreateTypeName(resultDelegateType, interpolatedExpression, typeParameterMappings);
         if(!reparametrizedDelegateType.IsSupported)
@@ -134,10 +126,10 @@ public static class InterpolationAnalyzer {
         
         return InterpolatedTree.Concat(
             InterpolatedTree.Verbatim("return "),
-            builder.CreateExpression(
-                $"{nameof(Expression.Lambda)}<{reparametrizedDelegateType}>",
-                [bodyTree, ..parameterTrees]
-            ),
+            builder.CreateExpression($"{nameof(Expression.Lambda)}<{reparametrizedDelegateType}>", [
+                bodyTree,
+                InterpolatedTree.Interpolate($"global::System.Linq.Enumerable.Skip({expressionParameter.Name}.{nameof(LambdaExpression.Parameters)}, 1)")
+            ]),
             InterpolatedTree.Verbatim(";")
         );
     }

@@ -7,13 +7,13 @@ namespace Arborist.Interpolation.InterceptorGenerator;
 public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
     private readonly InterpolationAnalysisContext _context;
     private readonly InterpolatedTreeBuilder _builder;
-    private readonly ImmutableDictionary<string, InterpolatedTree> _interpolatableParameters;
+    private readonly ImmutableHashSet<string> _interpolatableParameters;
     private ImmutableDictionary<string, InterpolatedTree> _evaluableIdentifiers;
     private QueryContext _queryContext;
 
     public EvaluatedSyntaxVisitor(
         InterpolationAnalysisContext context,
-        ImmutableDictionary<string, InterpolatedTree> interpolatableParameters
+        ImmutableHashSet<string> interpolatableParameters
     ) {
         _context = context;
         _builder = context.TreeBuilder;
@@ -284,10 +284,10 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
         if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not {} symbol)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
 
-        if(_evaluableIdentifiers.TryGetValue(node.Identifier.Text, out var mappedTree))
+        if(_evaluableIdentifiers.TryGetValue(node.Identifier.ValueText, out var mappedTree))
             return mappedTree;
 
-        if(_interpolatableParameters.ContainsKey(node.Identifier.Text))
+        if(_interpolatableParameters.Contains(node.Identifier.ValueText))
             return _context.Diagnostics.EvaluatedParameter(node);
 
         return _context.Diagnostics.ClosureOverScopeReference(node);

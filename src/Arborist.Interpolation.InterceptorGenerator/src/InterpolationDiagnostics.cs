@@ -18,112 +18,98 @@ public static class InterpolationDiagnostics {
     public const string ARB004_InaccessibleSymbolReference = "ARB004";
     public const string ARB005_ReferencesCallSiteTypeParameter = "ARB005";
 
-    private static Diagnostic Create(
+    private static DiagnosticDescriptor Create(
         string code,
         DiagnosticSeverity severity,
         string title,
-        string message,
-        Location? location
+        string message
     ) =>
-        Diagnostic.Create(
-            descriptor: new DiagnosticDescriptor(
-                id: code,
-                title: title,
-                messageFormat: message,
-                category: Category,
-                defaultSeverity: severity,
-                isEnabledByDefault: true
-            ),
-            location: location
+        new DiagnosticDescriptor(
+            id: code,
+            title: title,
+            messageFormat: message,
+            category: Category,
+            defaultSeverity: severity,
+            isEnabledByDefault: true
         );
 
-    public static Diagnostic SetInterceptorsNamespaces(Location location) =>
+    public static DiagnosticDescriptor SetInterceptorsNamespaces(DiagnosticSeverity? severity) =>
         Create(
             code: ARB000_SetInterpolatorsNamespaces,
-            severity: DiagnosticSeverity.Info,
+            severity: severity ?? DiagnosticSeverity.Info,
             title: $"Add {InterpolationInterceptorGenerator.INTERCEPTOR_NAMESPACE} to the {InterpolationInterceptorGenerator.INTERCEPTORSNAMESPACES_BUILD_PROP} build property",
-            message: $"Add {InterpolationInterceptorGenerator.INTERCEPTOR_NAMESPACE} to the {InterpolationInterceptorGenerator.INTERCEPTORSNAMESPACES_BUILD_PROP} build property to enable compile-time expression interpolation.",
-            location: location
+            message: $"Add {InterpolationInterceptorGenerator.INTERCEPTOR_NAMESPACE} to the {InterpolationInterceptorGenerator.INTERCEPTORSNAMESPACES_BUILD_PROP} build property to enable compile-time expression interpolation."
         );
 
-    public static Diagnostic UnsupportedInterpolatedSyntax(SyntaxNode node) =>
+    public static DiagnosticDescriptor UnsupportedInterpolatedSyntax(DiagnosticSeverity? severity, SyntaxNode node) =>
         Create(
             code: ARB997_UnsupportedInterpolatedSyntax,
-            severity: DiagnosticSeverity.Info,
+            severity: severity ?? DiagnosticSeverity.Info,
             title: "Unsupported Syntax",
-            message: $"Syntax node {node} ({node.GetType()}) is not currently supported by compile-time interpolation.",
-            location: node.GetLocation()
+            message: $"Syntax node {node} ({node.GetType()}) is not currently supported by compile-time interpolation."
         );
 
-    public static Diagnostic UnsupportedInvocationSyntax(SyntaxNode node) =>
+    public static DiagnosticDescriptor UnsupportedInvocationSyntax(DiagnosticSeverity? severity, SyntaxNode node) =>
         Create(
             code: ARB998_UnsupportedInterpolatorInvocation,
-            severity: DiagnosticSeverity.Warning,
+            severity: severity ?? DiagnosticSeverity.Warning,
             title: "Unhandled expression interpolator method signature",
-            message: "",
-            location: node.GetLocation()
+            message: ""
         );
 
-    public static Diagnostic UnsupportedEvaluatedSyntax(SyntaxNode node) =>
+    public static DiagnosticDescriptor UnsupportedEvaluatedSyntax(DiagnosticSeverity? severity, SyntaxNode node) =>
         Create(
             code: ARB996_UnsupportedEvaluatedSyntax,
-            severity: DiagnosticSeverity.Info,
+            severity: severity ?? DiagnosticSeverity.Info,
             title: "Unsupported syntax in interpolated expression",
-            message: $"Syntax node {node} ({node.GetType()}) is not currently supported by compile-time interpolation.",
-            location: node.GetLocation()
+            message: $"Syntax node {node} ({node.GetType()}) is not currently supported by compile-time interpolation."
         );
 
-    public static Diagnostic UnsupportedType(ITypeSymbol typeSymbol, Location? location) =>
+    public static DiagnosticDescriptor UnsupportedType(DiagnosticSeverity? severity, ITypeSymbol typeSymbol) =>
         Create(
             code: ARB995_UnsupportedType,
-            severity: DiagnosticSeverity.Info,
+            severity: severity ?? DiagnosticSeverity.Info,
             title: "Unsupported type in interpolated expression",
-            message: $"Interpolated expression contains unsupported type symbol {typeSymbol} and cannot be interpolated at compile time.",
-            location: location
+            message: $"Interpolated expression contains unsupported type symbol {typeSymbol} and cannot be interpolated at compile time."
         );
 
-    public static Diagnostic ClosureOverScopeReference(IdentifierNameSyntax node) =>
+    public static DiagnosticDescriptor ClosureOverScopeReference(DiagnosticSeverity? severity, IdentifierNameSyntax node) =>
         Create(
             code: ARB001_ClosureOverScopeReference,
-            severity: DiagnosticSeverity.Warning,
+            severity: severity ?? DiagnosticSeverity.Warning,
             title: "Closure",
-            message: $"Interpolated expression closes over identifier `{node}` defined in an enclosing scope.",
-            location: node.GetLocation()
+            message: $"Interpolated expression closes over identifier `{node}` defined in an enclosing scope."
         );
 
-    public static Diagnostic EvaluatedParameter(IdentifierNameSyntax node) =>
+    public static DiagnosticDescriptor EvaluatedParameter(DiagnosticSeverity? severity, IdentifierNameSyntax node) =>
         Create(
             code: ARB002_EvaluatedInterpolatedParameter,
-            severity: DiagnosticSeverity.Error,
+            severity: severity ?? DiagnosticSeverity.Error,
             title: "Evaluated Parameter",
-            message: $"Evaluated splice argument references identifier `{node}` defined in the enclosing interpolated expression.",
-            location: node.GetLocation()
+            message: $"Evaluated splice argument references identifier `{node}` defined in the enclosing interpolated expression."
         );
 
-    public static Diagnostic NoSplices(SyntaxNode node) =>
+    public static DiagnosticDescriptor NoSplices(DiagnosticSeverity? severity, SyntaxNode node) =>
         Create(
             code: ARB003_NoSplices,
-            severity: DiagnosticSeverity.Warning,
+            severity: severity ?? DiagnosticSeverity.Warning,
             title: "Interpolated expression contains no splices",
-            message: $"Interpolated expression contains no splices, and has no effect.",
-            location: node.GetLocation()
+            message: $"Interpolated expression contains no splices, and has no effect."
         );
 
-    public static Diagnostic InaccessibleSymbol(ISymbol symbol, Location? location) =>
+    public static DiagnosticDescriptor InaccessibleSymbol(DiagnosticSeverity? severity, ISymbol symbol) =>
         Create(
             code: ARB004_InaccessibleSymbolReference,
-            severity: DiagnosticSeverity.Info,
+            severity: severity ?? DiagnosticSeverity.Info,
             title: "Inaccesible Symbol Reference",
-            message: $"Interpolated expression references inaccessible symbol {symbol} and cannot be interpolated at compile time.",
-            location: location
+            message: $"Interpolated expression references inaccessible symbol {symbol} and cannot be interpolated at compile time."
         );
 
-    public static Diagnostic ReferencesCallSiteTypeParameter(ITypeSymbol symbol, SyntaxNode? node) =>
+    public static DiagnosticDescriptor ReferencesCallSiteTypeParameter(DiagnosticSeverity? severity, ITypeSymbol symbol, SyntaxNode? node) =>
         Create(
             code: ARB005_ReferencesCallSiteTypeParameter,
-            severity: DiagnosticSeverity.Info,
+            severity: severity ?? DiagnosticSeverity.Info,
             title: "Interpolated expression references call-site type parameter",
-            message: $"The interpolated expression contains a reference to call-site type parameter {symbol} and cannot be interpolated at compile time.",
-            location: node?.GetLocation()
+            message: $"The interpolated expression contains a reference to call-site type parameter {symbol} and cannot be interpolated at compile time."
         );
 }

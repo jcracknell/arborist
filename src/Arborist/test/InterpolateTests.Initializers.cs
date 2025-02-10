@@ -5,7 +5,7 @@ namespace Arborist;
 public partial class InterpolateTests {
     [Fact]
     public void Should_handle_array_initializer() {
-        var interpolated = ExpressionOnNone.Interpolate(default(object),
+        var interpolated = InterpolationTestOnNone.Interpolate(default(object),
             x => new[] { x.SpliceValue("foo"), "bar", x.SpliceValue("baz") }
         );
         
@@ -16,7 +16,7 @@ public partial class InterpolateTests {
     
     [Fact]
     public void Should_work_for_object_initializer() {
-        var interpolated = ExpressionOnNone.Interpolate(default(object), x =>
+        var interpolated = InterpolationTestOnNone.Interpolate(default(object), x =>
             new Cat { Id = x.SpliceValue(42), Name = x.SpliceValue("Garfield") }
         );
         
@@ -27,7 +27,7 @@ public partial class InterpolateTests {
     
     [Fact]
     public void Should_work_for_collection_initializer() {
-        var interpolated = ExpressionOnNone.Interpolate(default(object), x =>
+        var interpolated = InterpolationTestOnNone.Interpolate(default(object), x =>
             new List<int> { x.SpliceValue(42) }
         );
         
@@ -38,7 +38,7 @@ public partial class InterpolateTests {
     
     [Fact]
     public void Should_work_for_object_initializer_in_collection_initializer() {
-        var interpolated = ExpressionOnNone.Interpolate(default(object), x =>
+        var interpolated = InterpolationTestOnNone.Interpolate(default(object), x =>
             new List<Cat> { new Cat { Name = x.SpliceValue("Garfield") } }
         );
         

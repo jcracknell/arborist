@@ -6,6 +6,7 @@ public class InterpolationAnalysisResult(
     Location invocationLocation,
     string fileName,
     string className,
+    bool interceptionRequired,
     InterpolatedTree interceptsLocationAttribute,
     InterpolatedTree interceptorMethodDeclaration,
     InterpolatedTree bodyTree,
@@ -18,6 +19,7 @@ public class InterpolationAnalysisResult(
     public Location InvocationLocation { get; } = invocationLocation;
     public string FileName { get; } = fileName;
     public string ClassName { get; } = className;
+    public bool InterceptionRequired { get; } = interceptionRequired;
     public InterpolatedTree InterceptsLocationAttribute { get; } = interceptsLocationAttribute;
     public InterpolatedTree InterceptorMethodDeclaration { get; } = interceptorMethodDeclaration;
     public InterpolatedTree BodyTree { get; } = bodyTree;

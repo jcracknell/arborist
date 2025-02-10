@@ -101,7 +101,7 @@ public static class ExpressionOnNone {
     /// <typeparam name="R">
     /// The expression result type.
     /// </typeparam>
-    [CompileTimeExpressionInterpolator]
+    [InterceptedExpressionInterpolator]
     public static Expression<Func<R>> Interpolate<TData, R>(
         TData data,
         Expression<Func<IInterpolationContext<TData>, R>> expression
@@ -120,7 +120,7 @@ public static class ExpressionOnNone {
     /// <typeparam name="TData">
     /// The type of the data provided to the interpolation process.
     /// </typeparam>
-    [CompileTimeExpressionInterpolator]
+    [InterceptedExpressionInterpolator]
     public static Expression<Action> Interpolate<TData>(
         TData data,
         Expression<Action<IInterpolationContext<TData>>> expression

@@ -7,9 +7,8 @@ using System.Text;
 namespace Arborist.Interpolation.InterceptorGenerator;
 
 public static class InterpolationAnalyzer {
-    public static InterpolationAnalysisResult? Analyze(
+    public static (InterpolationDiagnosticsCollector, InterpolationAnalysisResult?)? Analyze(
         SemanticModel semanticModel,
-        InterpolationDiagnosticsCollector diagnostics,
         InvocationExpressionSyntax invocation,
         CancellationToken cancellationToken
     ) {
@@ -18,28 +17,33 @@ public static class InterpolationAnalyzer {
 
         var typeSymbols = InterpolationTypeSymbols.Create(semanticModel.Compilation);
 
-        // Assert that the input invocation actually calls a method with [CompileTimeExpressionInterpolator]
-        var methodAttrs = methodSymbol.GetAttributes();
-        if(!methodAttrs.Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, typeSymbols.CompileTimeExpressionInterpolatorAttribute)))
+        // Assert that the input invocation actually calls a method with [InterceptedExpressionInterpolator]
+        if(!TryGetInterceptedExpressionInterpolatorAttribute(methodSymbol, typeSymbols, out var interceptionRequired))
             return default;
+            
+        var diagnostics = new InterpolationDiagnosticsCollector(
+            defaultLocation: invocation.GetLocation(),
+            severityOverride: interceptionRequired ? DiagnosticSeverity.Error : null
+        );
 
         switch(invocation.ArgumentList.Arguments.Count) {
             case 2 when TryGetLambdaParameter(methodSymbol, methodSymbol.Parameters[1], out var dataType, typeSymbols)
                 && TypeSymbolHelpers.IsSubtype(dataType, methodSymbol.Parameters[0].Type):
-                return AnalyzeInterpolation(
+                return (diagnostics, AnalyzeInterpolation(
                     semanticModel,
                     diagnostics,
                     invocation,
+                    interceptionRequired,
                     methodSymbol,
                     methodSymbol.Parameters[0],
                     methodSymbol.Parameters[1],
                     typeSymbols,
                     cancellationToken
-                );
+                ));
 
             default:
                 diagnostics.UnsupportedInvocationSyntax(invocation);
-                return default;
+                return (diagnostics, default);
         }
     }
 
@@ -47,6 +51,7 @@ public static class InterpolationAnalyzer {
         SemanticModel semanticModel,
         InterpolationDiagnosticsCollector diagnostics,
         InvocationExpressionSyntax invocation,
+        bool interceptionRequired,
         IMethodSymbol methodSymbol,
         IParameterSymbol dataParameter,
         IParameterSymbol expressionParameter,
@@ -101,6 +106,7 @@ public static class InterpolationAnalyzer {
             invocationLocation: invocation.GetLocation(),
             fileName: $"{InterpolationInterceptorGenerator.INTERCEPTOR_NAMESPACE}.{fileBaseName}.g.cs",
             className: className,
+            interceptionRequired: interceptionRequired,
             interceptsLocationAttribute: GenerateInterceptsLocationAttribute(invocation),
             interceptorMethodDeclaration: GenerateInterceptorMethodDeclaration(treeBuilder, invocationId, methodSymbol, typeParameters, typeParameterMappings),
             bodyTree: bodyTree,
@@ -175,22 +181,21 @@ public static class InterpolationAnalyzer {
         );
     }
 
-    /// <summary>
-    /// Gets the <see cref="ParameterSyntax"/> nodes from the provided interpolated
-    /// <paramref name="expressionSyntax"/> to be included in the output expression,
-    /// discarding the interpolation context parameter.
-    /// </summary>
-    private static IReadOnlyList<ParameterSyntax> GetInterpolatedExpressionParameters(
-        LambdaExpressionSyntax expressionSyntax
+    private static bool TryGetInterceptedExpressionInterpolatorAttribute(
+        IMethodSymbol methodSymbol,
+        InterpolationTypeSymbols typeSymbols,
+        out bool interceptionRequired
     ) {
-        switch(expressionSyntax) {
-            case SimpleLambdaExpressionSyntax lambda:
-                return Array.Empty<ParameterSyntax>();
-            case ParenthesizedLambdaExpressionSyntax lambda:
-                return lambda.ParameterList.Parameters.Skip(1).ToList();
-            default:
-                throw new NotImplementedException();
+        foreach(var attribute in methodSymbol.GetAttributes()) {
+            if(!SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, typeSymbols.InterceptedExpressionInterpolatorAttribute))
+                continue;
+                
+            interceptionRequired = attribute.NamedArguments.Any(a => a is { Key: "InterceptionRequired", Value.Value: true });
+            return true;
         }
+        
+        interceptionRequired = default;
+        return false;
     }
 
     private static bool TryGetLambdaParameter(

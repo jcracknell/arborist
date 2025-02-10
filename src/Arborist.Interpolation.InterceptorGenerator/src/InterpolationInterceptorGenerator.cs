@@ -63,7 +63,11 @@ public class InterpolationInterceptorGenerator : IIncrementalGenerator {
                 return;
 
             if(!interceptorsEnabled) {
-                spc.ReportDiagnostic(InterpolationDiagnostics.SetInterceptorsNamespaces(analysis.InvocationLocation));
+                var severity = analysis.InterceptionRequired ? DiagnosticSeverity.Error : DiagnosticSeverity.Info;
+                spc.ReportDiagnostic(Diagnostic.Create(
+                    descriptor: InterpolationDiagnostics.SetInterceptorsNamespaces(severity),
+                    location: analysis.InvocationLocation
+                ));
             } else {
                 var rendered = RenderInterceptor(analysis, true, spc.CancellationToken);
                 spc.AddSource(analysis.FileName, rendered);
@@ -86,11 +90,11 @@ public class InterpolationInterceptorGenerator : IIncrementalGenerator {
     }
 
     private static bool SyntaxProviderPredicate(SyntaxNode node, CancellationToken cancellationToken) =>
-        // Run the transform on every invocation of a method named "Interpolate".
+        // Run the transform on every invocation of a method whose name starts with "Interpolate".
         // This restriction dramatically reduces the number of input nodes to the source generator.
         node is InvocationExpressionSyntax invocation
         && TryGetInvocationMethodIdentifier(invocation, out var identifier)
-        && StringComparer.Ordinal.Equals(identifier.ValueText, "Interpolate");
+        && identifier.ValueText.StartsWith("Interpolate");
 
     private static (InterpolationDiagnosticsCollector, InterpolationAnalysisResult?)? SyntaxProviderTransform(
         GeneratorSyntaxContext context,
@@ -102,9 +106,7 @@ public class InterpolationInterceptorGenerator : IIncrementalGenerator {
         if(!methodSymbol.GetAttributes().Any(IsExpressionInterpolatorAttribute))
             return null;
 
-        var diagnostics = new InterpolationDiagnosticsCollector(invocation.GetLocation());
-        var analysis = InterpolationAnalyzer.Analyze(context.SemanticModel, diagnostics, invocation, cancellationToken);
-        return (diagnostics, analysis);
+        return InterpolationAnalyzer.Analyze(context.SemanticModel, invocation, cancellationToken);
     }
 
     internal static bool TryGetInvocationMethodIdentifier(InvocationExpressionSyntax invocation, out SyntaxToken identifier) {
@@ -125,7 +127,7 @@ public class InterpolationInterceptorGenerator : IIncrementalGenerator {
 
     private static bool IsExpressionInterpolatorAttribute(AttributeData a) =>
         a.AttributeClass is {
-            Name: "CompileTimeExpressionInterpolatorAttribute",
+            Name: "InterceptedExpressionInterpolatorAttribute",
             ContainingNamespace: {
                 Name: "Internal",
                 ContainingNamespace: {

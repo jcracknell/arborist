@@ -31,7 +31,7 @@ public partial class InterpolateTests {
             Addition = Expression.Add(Expression.Constant(1), Expression.Constant(2))
         };
         
-        var interpolated = ExpressionOnNone.Interpolate(data, x =>
+        var interpolated = InterpolationTestOnNone.Interpolate(data, x =>
             2 * x.Splice<int>(x.Data.Addition)
         );
 
@@ -48,7 +48,7 @@ public partial class InterpolateTests {
             Spliced = ExpressionOnNone.Of(() => "foo")
         };
         
-        var interpolated = ExpressionOnNone.Interpolate(data, x => x.SpliceBody(x.Data.Spliced).Length);
+        var interpolated = InterpolationTestOnNone.Interpolate(data, x => x.SpliceBody(x.Data.Spliced).Length);
 
         var expected = Expression.Lambda<Func<int>>(
             body: Expression.Property(
@@ -66,7 +66,7 @@ public partial class InterpolateTests {
             OwnerName = ExpressionOn<Owner>.Of(o => o.Name)
         };
         
-        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+        var interpolated = InterpolationTestOn<Owner>.Interpolate(data, (x, o) =>
             x.SpliceBody(o, x.Data.OwnerName).Length
         );
 
@@ -81,7 +81,7 @@ public partial class InterpolateTests {
             CatName = ExpressionOn<Cat>.Of(c => c.Name)
         };
 
-        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+        var interpolated = InterpolationTestOn<Owner>.Interpolate(data, (x, o) =>
             o.CatsEnumerable.Any(c => x.SpliceBody(c, x.Data.CatName) == "Garfield")
         );
 
@@ -97,7 +97,7 @@ public partial class InterpolateTests {
             CatName = ExpressionOn<Cat>.Of(c => c.Name)
         };
         
-        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+        var interpolated = InterpolationTestOn<Owner>.Interpolate(data, (x, o) =>
             o.CatsQueryable.Any(c => x.SpliceBody(c, x.Data.CatName) == "Garfield")
         );
 
@@ -114,7 +114,7 @@ public partial class InterpolateTests {
             Quoted = ExpressionOn<Cat>.Of(c => true)
         };
 
-        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+        var interpolated = InterpolationTestOn<Owner>.Interpolate(data, (x, o) =>
             o.CatsQueryable.Any(x.SpliceQuoted(x.Data.Quoted))
         );
 
@@ -125,7 +125,7 @@ public partial class InterpolateTests {
 
     [Fact]
     public void Interpolate_SpliceValue_should_embed_constants() {
-        var interpolated = ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue("foo"));
+        var interpolated = InterpolationTestOnNone.Interpolate(default(object), x => x.SpliceValue("foo"));
 
         var expected = Expression.Lambda<Func<string>>(Expression.Constant("foo"));
 

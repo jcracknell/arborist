@@ -10,7 +10,7 @@ public partial class InterpolateTests {
             CatName = ExpressionOn<Cat>.Of(c => c.Name)
         };
         
-        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+        var interpolated = InterpolationTestOn<Owner>.Interpolate(data, (x, o) =>
             from c in x.SpliceBody(o, x.Data.OwnerCats)
             select x.SpliceBody(c, x.Data.CatName)
         );
@@ -30,7 +30,7 @@ public partial class InterpolateTests {
             ObjectHashCode = ExpressionOn<object>.Of(o => o.GetHashCode())
         };
         
-        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+        var interpolated = InterpolationTestOn<Owner>.Interpolate(data, (x, o) =>
             from object c in x.SpliceBody(o, x.Data.OwnerCats)
             select x.SpliceBody(c, x.Data.ObjectHashCode)
         );
@@ -50,7 +50,7 @@ public partial class InterpolateTests {
             ObjectHashCode = ExpressionOn<object>.Of(o => o.GetHashCode())
         };
         
-        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+        var interpolated = InterpolationTestOn<Owner>.Interpolate(data, (x, o) =>
             from a in o.Cats
             from object c in x.SpliceBody(o, x.Data.OwnerCats)
             select x.SpliceBody(c, x.Data.ObjectHashCode)
@@ -72,7 +72,7 @@ public partial class InterpolateTests {
             CatId = ExpressionOn<Cat>.Of(c => c.Id)
         };
     
-        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+        var interpolated = InterpolationTestOn<Owner>.Interpolate(data, (x, o) =>
             from c in o.Cats
             join c1 in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceValue(42)
             select c1.Name
@@ -94,7 +94,7 @@ public partial class InterpolateTests {
             CatId = ExpressionOn<Cat>.Of(c => c.Id)
         };
         
-        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+        var interpolated = InterpolationTestOn<Owner>.Interpolate(data, (x, o) =>
             from c in o.Cats
             join object c1 in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceValue(42)
             select c1.GetHashCode()
@@ -111,7 +111,7 @@ public partial class InterpolateTests {
 
     [Fact]
     public void Should_handle_join_into_clause() {
-        var interpolated = ExpressionOn<Owner>.Interpolate(ExpressionOn<Owner>.Of(o => o.Cats), (x, o) =>
+        var interpolated = InterpolationTestOn<Owner>.Interpolate(ExpressionOn<Owner>.Of(o => o.Cats), (x, o) =>
             from c in x.SpliceBody(o, x.Data)
             join c1 in x.SpliceBody(o, x.Data) on c.Id equals c1.Id into cs
             from cc in cs
@@ -135,7 +135,7 @@ public partial class InterpolateTests {
             CatName = ExpressionOn<Cat>.Of(c => c.Name)
         };
         
-        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+        var interpolated = InterpolationTestOn<Owner>.Interpolate(data, (x, o) =>
             from c in x.SpliceBody(o, x.Data.OwnerCats)
             let n = x.SpliceBody(c, x.Data.CatName)
             select c.Name + n
@@ -157,7 +157,7 @@ public partial class InterpolateTests {
             CatAge = ExpressionOn<Cat>.Of(c => c.Age)
         };
         
-        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+        var interpolated = InterpolationTestOn<Owner>.Interpolate(data, (x, o) =>
             from c in x.SpliceBody(o, x.Data.OwnerCats)
             orderby x.SpliceBody(c, ExpressionOn<Cat>.Identity).Name ascending, x.SpliceBody(c, x.Data.CatAge) descending
             select c.Name
@@ -179,7 +179,7 @@ public partial class InterpolateTests {
             CatAge = ExpressionOn<Cat>.Of(c => c.Age)
         };
         
-        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+        var interpolated = InterpolationTestOn<Owner>.Interpolate(data, (x, o) =>
             from c in x.SpliceBody(o, x.Data.OwnerCats)
             where x.SpliceBody(c, x.Data.CatAge) == 8
             select c.Name
@@ -198,7 +198,7 @@ public partial class InterpolateTests {
     public void Should_handle_transparent_identifier_in_from_clause() {
         var data = ExpressionOn<Owner>.Of(o => o.Cats);
     
-        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+        var interpolated = InterpolationTestOn<Owner>.Interpolate(data, (x, o) =>
             from a in x.SpliceBody(o, x.Data)
             from b in o.Cats
             from c in o.Cats
@@ -224,7 +224,7 @@ public partial class InterpolateTests {
             CatAge = ExpressionOn<Cat>.Of(c => c.Age)
         };
     
-        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+        var interpolated = InterpolationTestOn<Owner>.Interpolate(data, (x, o) =>
             from a in o.Cats
             from b in o.Cats
             from c in o.Cats
@@ -249,7 +249,7 @@ public partial class InterpolateTests {
             OwnerId = ExpressionOn<Owner>.Of(o => o.Id)
         };
         
-        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+        var interpolated = InterpolationTestOn<Owner>.Interpolate(data, (x, o) =>
             from c in x.SpliceBody(o, x.Data.OwnerCats)
             let n = x.SpliceBody(o, x.Data.OwnerName)
             let m = x.SpliceBody(o, x.Data.OwnerId)
@@ -273,7 +273,7 @@ public partial class InterpolateTests {
             CatId = ExpressionOn<Cat>.Of(c => c.Id)
         };
         
-        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+        var interpolated = InterpolationTestOn<Owner>.Interpolate(data, (x, o) =>
             from a in x.SpliceBody(o, x.Data.OwnerCats)
             join b in o.Cats on a.Id equals b.Id
             join c in o.Cats on a.Id equals x.SpliceValue(42)
@@ -300,7 +300,7 @@ public partial class InterpolateTests {
             CatName = ExpressionOn<Cat>.Of(c => c.Name)
         };
         
-        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+        var interpolated = InterpolationTestOn<Owner>.Interpolate(data, (x, o) =>
             from a in x.SpliceBody(o, x.Data.OwnerCats)
             from b in o.Cats
             from c in o.Cats
@@ -326,7 +326,7 @@ public partial class InterpolateTests {
             CatId = ExpressionOn<Cat>.Of(c => c.Id)
         };
     
-        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+        var interpolated = InterpolationTestOn<Owner>.Interpolate(data, (x, o) =>
             from a in x.SpliceBody(o, x.Data.OwnerCats)
             from b in o.Cats
             from c in o.Cats

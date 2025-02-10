@@ -75,7 +75,7 @@ public static class ExpressionOn<A, B, C> {
     /// <typeparam name="R">
     /// The expression result type.
     /// </typeparam>
-    [CompileTimeExpressionInterpolator]
+    [InterceptedExpressionInterpolator]
     public static Expression<Func<A, B, C, R>> Interpolate<TData, R>(
         TData data,
         Expression<Func<IInterpolationContext<TData>, A, B, C, R>> expression
@@ -94,7 +94,7 @@ public static class ExpressionOn<A, B, C> {
     /// <typeparam name="TData">
     /// The type of the data provided to the interpolation process.
     /// </typeparam>
-    [CompileTimeExpressionInterpolator]
+    [InterceptedExpressionInterpolator]
     public static Expression<Action<A, B, C>> Interpolate<TData>(
         TData data,
         Expression<Action<IInterpolationContext<TData>, A, B, C>> expression

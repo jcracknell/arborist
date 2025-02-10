@@ -1,5 +1,4 @@
 using Microsoft.CodeAnalysis;
-using Xunit;
 
 namespace Arborist.Interpolation.InterceptorGenerator;
 
@@ -40,7 +39,9 @@ public class DiagnosticTests {
             ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Name == ""Garfield"");
         ");
 
-        Assert.Equal(0, results.AnalysisResults.Count);
+        Assert.Equal(1, results.AnalysisResults.Count);
+        Assert.False(results.AnalysisResults[0].BodyTree.IsModified);
+        Assert.True(results.AnalysisResults[0].IsSupported);
         Assert.Contains(results.Diagnostics, diagnostic => diagnostic is {
             Id: InterpolationDiagnostics.ARB003_NoSplices,
             Severity: DiagnosticSeverity.Warning

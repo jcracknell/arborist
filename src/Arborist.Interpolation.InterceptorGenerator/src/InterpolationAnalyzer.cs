@@ -77,11 +77,11 @@ public static class InterpolationAnalyzer {
 
         var bodyTree = new InterpolatedSyntaxVisitor(context).Apply(interpolatedExpression);
 
-        // Report an interpolated expression containing no splices, which is completely useless
-        if(!bodyTree.IsModified && bodyTree.IsSupported) {
+        // Report an interpolated expression containing no splices, which is completely useless.
+        // In this case we still emit the interceptor, as this will be more performant than having the runtime
+        // fallback rewrite the expression.
+        if(!bodyTree.IsModified)
             diagnostics.NoSplices(interpolatedExpression);
-            return default;
-        }
 
         var dataTypeRef = treeBuilder.CreateTypeRef(dataParameter.Type);
         var dataDeclaration = InterpolatedTree.Interpolate($"var {treeBuilder.DataIdentifier} = {dataTypeRef}.Cast({dataParameter.Name});");

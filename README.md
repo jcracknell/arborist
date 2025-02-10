@@ -78,18 +78,17 @@ any arbitrary expression node provided it does not capture any parameter referen
 expression.
 
 ```csharp
-var projection = ExpressionOn<string>.Of(v => v.Length);
-
 ExpressionOn<IEnumerable<string>>.Interpolate(
-    new { projection },
-    static (x, a) => a.Select(x.Splice(x.Data.projection))
+    new { Projection = ExpressionOn<string>.Of(v => v.Length) },
+    static (x, e) => e.Select(x.Splice(x.Data.Projection))
 );
-// a => a.Select(v => v.Length);
+// e => e.Select(v => v.Length);
 
 ExpressionOnNone.Interpolate(
-    static x => Math.Abs(x.Splice<int>(Expression.Constant(2)))
+    new { Expr = Expression.Constant(42) },
+    static x => Math.Abs(x.Splice<int>(x.Data.Expr))
 );
-// () => Math.Abs(2)
+// () => Math.Abs(42)
 ```
 
 #### SpliceBody
@@ -100,7 +99,8 @@ tree.
 
 ```csharp
 ExpressionOn<Cat>.Interpolate(
-    static (x, c) => x.SpliceBody(c.Owner, o => o.Name == "Jon")
+    new { Predicate = ExpressionOn<Owner>.Of(o => o.Name == "Jon") },
+    static (x, c) => x.SpliceBody(c.Owner, x.Data.Predicate)
 );
 // c => c.Owner.Name == "Jon"
 ```
@@ -114,6 +114,14 @@ scenarios where you need to splice an analyzable expression tree into a method o
 IQueryable&lt;T&gt; instance (typically when writing a manual join or union on EntityFramework
 DbSets).
 
+```csharp
+ExpressionOn<IQueryable<Cat>>.Interpolate(
+  new { Predicate = ExpressionOn<Cat>.Of(c => c.Age == 8) },
+  static (x, q) => q.Any(x.SpliceQuoted(x.Data.Predicate))
+);
+// q => q.Any(c => c.Age == 8)
+```
+
 #### SpliceValue
 
 Splices the value of the provided argument into the expression tree as a constant value using
@@ -122,8 +130,8 @@ the concept of `const` in C#, but is also used to represent "constant references
 
 ```csharp
 ExpressionOnNone.Interpolate(
-    new { value = 42 },
-    static x => x.SpliceValue(x.Data.value)
+    new { Value = 42 },
+    static x => x.SpliceValue(x.Data.Value)
 );
 // () => 42
 ```

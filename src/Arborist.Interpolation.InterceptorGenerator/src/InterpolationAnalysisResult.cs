@@ -3,9 +3,9 @@ using Microsoft.CodeAnalysis;
 namespace Arborist.Interpolation.InterceptorGenerator;
 
 public class InterpolationAnalysisResult(
+    string assemblyName,
+    string sourceFilePath,
     Location invocationLocation,
-    string fileName,
-    string className,
     bool interceptionRequired,
     InterpolatedTree interceptsLocationAttribute,
     InterpolatedTree interceptorMethodDeclaration,
@@ -15,10 +15,10 @@ public class InterpolationAnalysisResult(
     IReadOnlyList<InterpolatedValueDefinition> valueDefinitions,
     IReadOnlyList<InterpolatedTree> methodDefinitions
 ) : IEquatable<InterpolationAnalysisResult> {
+    public string AssemblyName { get; } = assemblyName;
+    public string SourceFilePath { get; } = sourceFilePath;
     // N.B. Microsoft.CodeAnalysis.Location is 100% equatable, but does not implement IEquatable
     public Location InvocationLocation { get; } = invocationLocation;
-    public string FileName { get; } = fileName;
-    public string ClassName { get; } = className;
     public bool InterceptionRequired { get; } = interceptionRequired;
     public InterpolatedTree InterceptsLocationAttribute { get; } = interceptsLocationAttribute;
     public InterpolatedTree InterceptorMethodDeclaration { get; } = interceptorMethodDeclaration;
@@ -41,6 +41,8 @@ public class InterpolationAnalysisResult(
     public bool Equals(InterpolationAnalysisResult? that) =>
         that is not null
         && this.InvocationLocation.Equals(that.InvocationLocation)
+        && this.SourceFilePath.Equals(that.SourceFilePath)
+        && this.AssemblyName.Equals(that.AssemblyName)
         && this.InterceptsLocationAttribute.Equals(that.InterceptsLocationAttribute)
         && this.ReturnStatement.Equals(that.ReturnStatement)
         && this.InterceptorMethodDeclaration.Equals(that.InterceptorMethodDeclaration)

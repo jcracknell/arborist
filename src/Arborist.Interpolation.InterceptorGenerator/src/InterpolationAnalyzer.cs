@@ -98,14 +98,11 @@ public static class InterpolationAnalyzer {
         var returnStatement = GenerateReturnStatement(treeBuilder, methodSymbol, typeParameterMappings, bodyTree, expressionParameter, interpolatedExpression);
 
         var invocationId = GenerateInvocationId(invocation);
-        var className = $"InterpolationInterceptor{invocationId}";
-        var assemblyName = semanticModel.Compilation.AssemblyName;
-        var fileBaseName = $"{assemblyName?.Replace("_", "__").Replace('.', '_')}_{className}";
 
         return new InterpolationAnalysisResult(
+            assemblyName: semanticModel.Compilation.AssemblyName ?? "",
+            sourceFilePath: invocation.SyntaxTree.FilePath,
             invocationLocation: invocation.GetLocation(),
-            fileName: $"{InterpolationInterceptorGenerator.INTERCEPTOR_NAMESPACE}.{fileBaseName}.g.cs",
-            className: className,
             interceptionRequired: interceptionRequired,
             interceptsLocationAttribute: GenerateInterceptsLocationAttribute(invocation),
             interceptorMethodDeclaration: GenerateInterceptorMethodDeclaration(treeBuilder, invocationId, methodSymbol, typeParameters, typeParameterMappings),
@@ -263,10 +260,7 @@ public static class InterpolationAnalyzer {
     }
 
     private static string GenerateInvocationId(InvocationExpressionSyntax node) {
-        var lineSpan = node.GetLocation().GetLineSpan();
-        var filePath = node.SyntaxTree.FilePath;
-        var bufferSize = Math.Max(64, Encoding.UTF8.GetByteCount(filePath));
-        var buffer = ArrayPool<byte>.Shared.Rent(bufferSize);
+        var buffer = ArrayPool<byte>.Shared.Rent(1024);
         try {
             using var hash = System.Security.Cryptography.SHA256.Create();
 
@@ -278,13 +272,13 @@ public static class InterpolationAnalyzer {
             }
 
             // Call position
+            var lineSpan = node.GetLocation().GetLineSpan();
             BinaryPrimitives.WriteInt32LittleEndian(buffer.AsSpan(0), lineSpan.StartLinePosition.Line);
             BinaryPrimitives.WriteInt32LittleEndian(buffer.AsSpan(4), lineSpan.StartLinePosition.Character);
             hash.TransformBlock(buffer, 0, 8, default, 0);
 
             // UTF-8 encoded file path
-            var pathBytes = Encoding.UTF8.GetBytes(filePath, 0, filePath.Length, buffer, 0);
-            hash.TransformBlock(buffer, 0, pathBytes, default, 0);
+            hash.TransformString(node.SyntaxTree.FilePath, Encoding.UTF8, buffer);
 
             hash.TransformFinalBlock(buffer, 0, 0);
 

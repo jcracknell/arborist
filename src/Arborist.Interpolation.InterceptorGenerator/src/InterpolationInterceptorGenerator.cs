@@ -15,9 +15,9 @@ public class InterpolationInterceptorGenerator : IIncrementalGenerator {
     public Action<InterpolationAnalysisResult>? AnalysisResultHandler { get; set; }
 
     public static class StepNames {
+        public const string Analyses = nameof(Analyses);
         public const string AnalyzerOptions = nameof(AnalyzerOptions);
-        public const string InterpolationAnalysis = nameof(InterpolationAnalysis);
-        public const string SuccessfulAnalyses = nameof(SuccessfulAnalyses);
+        public const string GroupedAnalyses = nameof(GroupedAnalyses);
     }
 
     // The design for this source generator is partially based on the ASP.net Core RequestDelegateGenerator
@@ -31,10 +31,13 @@ public class InterpolationInterceptorGenerator : IIncrementalGenerator {
     // IDE experience); however it seems inadvisable to explore more aggressive caching solutions as I have
     // concerns around potential impacts to e.g. hot reload.
     public void Initialize(IncrementalGeneratorInitializationContext context) {
-        var candidateInvocations = context.SyntaxProvider.CreateSyntaxProvider(SyntaxProviderPredicate, SyntaxProviderTransform)
+        var analysisResults = context.SyntaxProvider.CreateSyntaxProvider(
+            predicate: SyntaxProviderPredicate,
+            transform: SyntaxProviderTransform
+        )
         .Where(static tup => tup is not null)
         .Select(static (tup, _) => tup!.Value)
-        .WithTrackingName(StepNames.InterpolationAnalysis);
+        .WithTrackingName(StepNames.Analyses);
 
         // It's interesting that there does not appear to be a way to access AnalyzerConfigOptionsProvider
         // from the GeneratorSyntaxContext, which makes it very difficult to apply options to your syntax
@@ -42,36 +45,46 @@ public class InterpolationInterceptorGenerator : IIncrementalGenerator {
         var interceptorsEnabledProvider = context.AnalyzerConfigOptionsProvider
         .Select(static (analyzerOptions, _) => GetInterceptorsEnabled(analyzerOptions))
         .WithTrackingName(StepNames.AnalyzerOptions);
-
-        var diagnostics = candidateInvocations.SelectMany(static (tup, _) => tup.Item1.CollectedDiagnostics);
-
-        context.RegisterSourceOutput(diagnostics, static (spc, diagnostic) => {
-            spc.ReportDiagnostic(diagnostic);
-        });
-
-        var analyses = candidateInvocations.Where(static tup => tup.Item2 is not null)
-        .Select(static (tup, _) => tup.Item2!)
-        .WithTrackingName(StepNames.SuccessfulAnalyses);
-
-        var analysesAndEnabled = analyses.Combine(interceptorsEnabledProvider);
-
+        
+        var analysesAndEnabled = analysisResults.Combine(interceptorsEnabledProvider);
+        
         context.RegisterSourceOutput(analysesAndEnabled, (spc, inputs) => {
-            var (analysis, interceptorsEnabled) = inputs;
-            AnalysisResultHandler?.Invoke(analysis);
-
-            if(!analysis.IsSupported)
-                return;
-
-            if(!interceptorsEnabled) {
-                var severity = analysis.InterceptionRequired ? DiagnosticSeverity.Error : DiagnosticSeverity.Info;
+            var ((diagnostics, analysis), interceptorsEnabled) = inputs;
+            
+            // Report the analysis result to the configured handler
+            if(analysis is not null)
+                AnalysisResultHandler?.Invoke(analysis);
+                
+            // If interceptors are disabled, emit an informational diagnostic for each successful analysis
+            // prompting the user to enable them.
+            if(!interceptorsEnabled && analysis?.IsSupported is true)
                 spc.ReportDiagnostic(Diagnostic.Create(
-                    descriptor: InterpolationDiagnostics.SetInterceptorsNamespaces(severity),
+                    descriptor: InterpolationDiagnostics.SetInterceptorsNamespaces(
+                        severity: analysis.InterceptionRequired ? DiagnosticSeverity.Error : null
+                    ),
                     location: analysis.InvocationLocation
                 ));
-            } else {
-                var rendered = RenderInterceptor(analysis, true, spc.CancellationToken);
-                spc.AddSource(analysis.FileName, rendered);
-            }
+            
+            foreach(var diagnostic in diagnostics.CollectedDiagnostics.Distinct())
+                spc.ReportDiagnostic(diagnostic);
+        });
+
+        var groupedAnalyses = analysisResults
+        .Where(static tup => tup.Item2 is not null && tup.Item2.IsSupported)
+        .Select(static (tup, _) => tup.Item2!)
+        .Collect()
+        .SelectMany(InterpolationAnalysisGroup.CreateGroups)
+        .WithTrackingName(StepNames.GroupedAnalyses);
+
+        var analysisGroupsAndEnabled = groupedAnalyses.Combine(interceptorsEnabledProvider);
+        
+        context.RegisterSourceOutput(analysisGroupsAndEnabled, (spc, inputs) => {
+            var (analysisGroup, interceptorsEnabled) = inputs;
+            if(interceptorsEnabled) 
+                spc.AddSource(
+                    hintName: analysisGroup.GeneratedSourceName,
+                    source: RenderInterceptorGroup(analysisGroup, spc.CancellationToken)
+                );
         });
 
         context.RegisterSourceOutput(interceptorsEnabledProvider, static (spc, interceptorsEnabled) => {
@@ -149,33 +162,44 @@ public class InterpolationInterceptorGenerator : IIncrementalGenerator {
         return false;
     }
 
-    private static string RenderInterceptor(
-        InterpolationAnalysisResult analysis,
-        bool interceptorsEnabled,
+    private static string RenderInterceptorGroup(
+        InterpolationAnalysisGroup analysisGroup,
         CancellationToken cancellationToken
     ) {
         using var writer = PooledStringWriter.Rent();
 
         writer.WriteLine("#nullable enable");
-        writer.WriteLine("");
+        writer.WriteLine();
         writer.WriteLine("namespace System.Runtime.CompilerServices {");
         writer.WriteLine("    [global::System.AttributeUsage(global::System.AttributeTargets.Method, AllowMultiple = true)]");
         writer.WriteLine("    file sealed class InterceptsLocationAttribute : global::System.Attribute {");
         writer.WriteLine("        public InterceptsLocationAttribute(string filePath, int line, int column) { }");
         writer.WriteLine("    }");
         writer.WriteLine("}");
-        writer.WriteLine("");
+        writer.WriteLine();
         writer.WriteLine($"namespace {INTERCEPTOR_NAMESPACE} {{");
 
-        writer.WriteLine($"    file static class {analysis.ClassName} {{");
-
-        if(interceptorsEnabled) {
-            analysis.InterceptsLocationAttribute.WriteTo(writer, 2);
-            writer.WriteLine("");
-        } else {
-            writer.WriteLine($"        // Add {InterpolationInterceptorGenerator.INTERCEPTOR_NAMESPACE} to the {InterpolationInterceptorGenerator.INTERCEPTORSNAMESPACES_BUILD_PROP} build property");
-            writer.WriteLine($"        // to enable compile-time expression interpolation.");
+        writer.WriteLine($"    file static class {analysisGroup.ClassName} {{");
+        
+        foreach(var analysis in analysisGroup.Analyses) {
+            cancellationToken.ThrowIfCancellationRequested();
+            
+            writer.WriteLine();
+            RenderInterceptor(writer, analysis);
         }
+
+        writer.WriteLine($"    }}");
+        writer.WriteLine($"}}");
+
+        return writer.ToString();
+    }
+    
+    private static void RenderInterceptor(
+        PooledStringWriter writer,
+        InterpolationAnalysisResult analysis
+    ) {
+        analysis.InterceptsLocationAttribute.WriteTo(writer, 2);
+        writer.WriteLine();
         analysis.InterceptorMethodDeclaration.WriteTo(writer, 2);
         writer.WriteLine($"        {{");
 
@@ -186,21 +210,17 @@ public class InterpolationInterceptorGenerator : IIncrementalGenerator {
         }
 
         analysis.DataDeclaration.WriteTo(writer, 3);
-        writer.WriteLine("");
-        writer.WriteLine("");
+        writer.WriteLine();
+        writer.WriteLine();
         analysis.ReturnStatement.WriteTo(writer, 3);
-        writer.WriteLine("");
+        writer.WriteLine();
 
         foreach(var definition in analysis.MethodDefinitions) {
-            writer.WriteLine("");
+            writer.WriteLine();
             definition.WriteTo(writer, 3);
-            writer.WriteLine("");
+            writer.WriteLine();
         }
 
         writer.WriteLine($"        }}");
-        writer.WriteLine($"    }}");
-        writer.WriteLine($"}}");
-
-        return writer.ToString();
     }
 }

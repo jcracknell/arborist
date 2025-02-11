@@ -11,6 +11,7 @@ tab_width = 2
 indent_size = 4
 max_line_length = 120
 tab_width = 4
+trim_trailing_whitespace = true
 
 #### .NET Coding Conventions ####
 

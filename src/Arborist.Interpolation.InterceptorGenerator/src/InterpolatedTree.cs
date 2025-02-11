@@ -1,21 +1,6 @@
 namespace Arborist.Interpolation.InterceptorGenerator;
 
 public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
-    private static readonly IReadOnlyDictionary<string, InterpolatedTree> CommonVerbatimInstances =
-        new[] {
-            "",
-            ".",
-            "!",
-            ",", ", ",
-            "<", ">",
-            "(", ")",
-            "[", "]",
-            "[0]", "[1]",
-            "global::",
-            "var "
-        }
-        .ToDictionary<string, string, InterpolatedTree>(v => v, v => new VerbatimNode(v), StringComparer.Ordinal);
-    
     public static InterpolatedTree Unsupported { get; } = new UnsupportedNode();
 
     /// <summary>
@@ -24,7 +9,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
     public static InterpolatedTree Empty { get; } = Verbatim("");
 
     public static InterpolatedTree Verbatim(string value) =>
-        CommonVerbatimInstances.TryGetValue(value, out var common) ? common : new VerbatimNode(value);
+        VerbatimNode.Create(value);
 
     public static InterpolatedTree AnonymousClass(IReadOnlyList<InterpolatedTree> propertyInitializers) =>
         Concat(Verbatim("new "), Initializer(propertyInitializers));
@@ -38,7 +23,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         InterpolatedTree right
     ) =>
         new BinaryNode(@operator, left, right);
-        
+
     /// <summary>
     /// Binds the provided <paramref name="value"/> to a variable with the specified <paramref name="identifier"/>
     /// using a single-arm switch expression with the provided <paramref name="body"/>.
@@ -61,7 +46,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         IReadOnlyList<InterpolatedTree> args
     ) =>
         new CallNode(Concat(expression, Verbatim("."), method), args);
-    
+
     /// <summary>
     /// Creates an <see cref="InterpolatedTree"/> from the provided interpolated string, interpolating
     /// non-<see cref="InterpolatedTree"/> values as <see cref="Verbatim"/> trees.
@@ -120,7 +105,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
     public abstract InterpolatedTree AsModified();
     protected abstract bool ChildrenModified();
     public abstract void Render(ref RenderingContext context);
-    
+
     public bool IsModified {
         get { return _isModified || ChildrenModified(); }
         protected set { _isModified = value; }
@@ -199,11 +184,11 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         public UnsupportedNode() {
             IsModified = true;
         }
-    
+
         public override bool IsSupported => false;
 
         public override InterpolatedTree AsModified() => this;
-        
+
         protected override bool ChildrenModified() => false;
 
         public override void Render(ref RenderingContext context) {
@@ -217,25 +202,56 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             obj is UnsupportedNode;
     }
 
-    private class VerbatimNode(string expr) : InterpolatedTree {
-        public string Expr { get; } = expr;
+    private sealed class VerbatimNode : InterpolatedTree {
+        private static ImmutableDictionary<string, VerbatimNode> _instances =
+            ImmutableDictionary<string, VerbatimNode>.Empty;
+
+        public static VerbatimNode Create(string value) {
+            if(_instances.TryGetValue(value, out var instance))
+                return instance;
+
+            instance = new VerbatimNode(value);
+            if(IsCacheable(value))
+                _instances = _instances.SetItem(value, instance);
+
+            return instance;
+        }
+
+        private static bool IsCacheable(string value) {
+            if(8 < value.Length)
+                return false;
+
+            for(var i = 0; i < value.Length; i++) {
+                var c = value[i];
+                if(!Char.IsWhiteSpace(c) && !Char.IsPunctuation(c))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private VerbatimNode(string value) {
+            Value = value;
+        }
+
+        public string Value { get; }
 
         public override bool IsSupported => true;
-        
+
         public override InterpolatedTree AsModified() =>
-            new VerbatimNode(Expr) { IsModified = true };
-            
+            new VerbatimNode(Value) { IsModified = true };
+
         protected override bool ChildrenModified() => false;
 
         public override void Render(ref RenderingContext context) {
-            context.AppendIndent(Expr);
+            context.AppendIndent(Value);
         }
 
         public override int GetHashCode() =>
-            Expr.GetHashCode();
+            Value.GetHashCode();
 
         public override bool Equals(InterpolatedTree? obj) =>
-            obj is VerbatimNode that && this.Expr.Equals(that.Expr);
+            obj is VerbatimNode that && this.Value.Equals(that.Value);
     }
 
     private class ArrowBodyNode(InterpolatedTree expression) : InterpolatedTree {
@@ -246,7 +262,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
 
         public override InterpolatedTree AsModified() =>
             new ArrowBodyNode(Expression) { IsModified = true };
-            
+
         protected override bool ChildrenModified() =>
             Expression.IsModified;
 
@@ -300,7 +316,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             && this.Left.Equals(that.Left)
             && this.Right.Equals(that.Right);
     }
-    
+
     private class LambdaNode(IReadOnlyList<InterpolatedTree> args, InterpolatedTree body)
         : InterpolatedTree
     {
@@ -351,7 +367,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
 
         public override InterpolatedTree AsModified() =>
             new InitializerNode(Initializers) { IsModified = true };
-            
+
         protected override bool ChildrenModified() =>
             Initializers.Any(i => i.IsModified);
 
@@ -436,7 +452,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
 
         public override InterpolatedTree AsModified() =>
             new ConcatNode(Nodes) { IsModified = true };
-            
+
         protected override bool ChildrenModified() =>
             Nodes.Any(n => n.IsModified);
 
@@ -623,7 +639,7 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             _writer = PooledStringWriter.Rent();
             _consumed = false;
         }
-        
+
         private void AssertUnconsumed() {
             if(_consumed)
                 throw new InvalidOperationException($"Attempt to access consumed {nameof(InterpolationHandler)}.");
@@ -631,36 +647,36 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
 
         public InterpolatedTree GetTree() {
             AssertUnconsumed();
-            
+
             AppendBufferedLiteral();
             _writer.Dispose();
             _consumed = true;
-        
+
             return _trees.Count switch {
                 0 => Empty,
                 1 => _trees[0],
                 _ => Concat(_trees)
             };
         }
-        
+
         private void AppendBufferedLiteral() {
             if(_writer.Length == 0)
                 return;
-                
+
             _trees.Add(Verbatim(_writer.ToString()));
             _writer.Clear();
         }
-        
+
         public void AppendLiteral(string? literal) {
             AssertUnconsumed();
-            
+
             if(literal is not null && literal.Length != 0)
                 _writer.Write(literal);
         }
 
         public void AppendFormatted(object? obj) {
             AssertUnconsumed();
-            
+
             if(obj is InterpolatedTree tree) {
                 AppendBufferedLiteral();
                 _trees.Add(tree);

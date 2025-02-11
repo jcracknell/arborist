@@ -130,10 +130,10 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
             var typeArgument = generic.TypeArgumentList.Arguments[i];
             if(_context.SemanticModel.GetTypeInfo(typeArgument).Type is not {} typeArgumentSymbol)
                 return _context.Diagnostics.UnsupportedEvaluatedSyntax(typeArgument);
-            
+
             if(i != 0)
                 typeArgumentParts.Add(InterpolatedTree.Verbatim(", "));
-            
+
             typeArgumentParts.Add(_builder.CreateTypeName(typeArgumentSymbol, typeArgument));
         }
 
@@ -158,14 +158,14 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
     public override InterpolatedTree VisitDefaultExpression(DefaultExpressionSyntax node) {
         if(_context.SemanticModel.GetTypeInfo(node).Type is not {} typeSymbol)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
-        
+
         return _builder.CreateDefaultValue(typeSymbol.WithNullableAnnotation(NullableAnnotation.Annotated));
     }
 
     public override InterpolatedTree VisitCastExpression(CastExpressionSyntax node) {
         if(_context.SemanticModel.GetTypeInfo(node).Type is not {} nodeType)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
-        
+
         var nodeTypeName = _builder.CreateTypeName(nodeType, node);
         return InterpolatedTree.Interpolate($"({nodeTypeName}){Visit(node.Expression)}");
     }
@@ -206,12 +206,12 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
         var elementType = TypeSymbolHelpers.GetRootArrayElementType(typeSymbol);
         if(!_builder.TryCreateTypeName(elementType, out var elementTypeName))
             return _context.Diagnostics.UnsupportedType(typeSymbol, node);
-            
+
         // Multi-dimensional array initializers are forbidden in expression trees, so if there is
         // an initializer then it's an implicit single-dimensional array
         if(node.Initializer is not null)
             return InterpolatedTree.Interpolate($"new {elementTypeName}[] {Visit(node.Initializer)}");
-            
+
         var rankSpecifiers = InterpolatedTree.Concat(node.Type.RankSpecifiers.SelectEager(Visit));
         return InterpolatedTree.Interpolate($"new {elementTypeName}{rankSpecifiers}");
     }
@@ -219,14 +219,14 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
     public override InterpolatedTree VisitArrayRankSpecifier(ArrayRankSpecifierSyntax node) {
         var parts = new List<InterpolatedTree>(2 * node.Sizes.Count + 1);
         parts.Add(InterpolatedTree.Verbatim("["));
-        
+
         for(var i = 0; i < node.Sizes.Count; i++) {
             if(i != 0)
                 parts.Add(InterpolatedTree.Verbatim(", "));
-                
+
             parts.Add(Visit(node.Sizes[i]));
         }
-        
+
         parts.Add(InterpolatedTree.Verbatim("]"));
         return InterpolatedTree.Concat(parts);
     }
@@ -338,7 +338,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
 
         var parameterTypeName = _builder.CreateTypeName(parameterType, node);
-        
+
         return InterpolatedTree.Interpolate($"{parameterTypeName} {node.Identifier.Text}");
     }
 
@@ -399,7 +399,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
             Visit(node.Operand),
             InterpolatedTree.Verbatim(node.OperatorToken.ToString())
         );
-        
+
     public override InterpolatedTree VisitParenthesizedExpression(ParenthesizedExpressionSyntax node) =>
         Visit(node.Expression);
 
@@ -408,11 +408,11 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
             SyntaxKind.DefaultLiteralExpression => VisitDefaultLiteralExpression(node),
             _ => InterpolatedTree.Verbatim(node.ToString().Trim())
         };
-    
+
     private InterpolatedTree VisitDefaultLiteralExpression(LiteralExpressionSyntax node) {
         if(_context.SemanticModel.GetTypeInfo(node).Type is not {} typeSymbol)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
-            
+
         return _builder.CreateDefaultValue(typeSymbol.WithNullableAnnotation(NullableAnnotation.Annotated));
     }
 }

@@ -22,7 +22,7 @@ public static class ExpressionOn<A> {
     /// </remarks>
     public static Expression<Action<A>> Of(Expression<Action<A>> expression) =>
         expression;
-        
+
     /// <summary>
     /// Wraps the body of the provided lambda <paramref name="expression"/> in a
     /// <see cref="System.Linq.Expressions.ExpressionType.TypeAs"/> node of the form
@@ -30,7 +30,7 @@ public static class ExpressionOn<A> {
     /// </summary>
     public static Expression<Func<A, T>> As<T>(LambdaExpression expression) =>
         ExpressionHelper.AsCore<Func<A, T>>(typeof(T), expression);
-        
+
     /// <summary>
     /// Wraps the body of the provided lambda <paramref name="expression"/> in a 
     /// <see cref="System.Linq.Expressions.ExpressionType.Convert"/> node of the form
@@ -38,7 +38,7 @@ public static class ExpressionOn<A> {
     /// </summary>
     public static Expression<Func<A, T>> Convert<T>(LambdaExpression expression) =>
         ExpressionHelper.ConvertCore<Func<A, T>>(typeof(T), expression);
-        
+
     /// <summary>
     /// Wraps the body of the provided lambda <paramref name="expression"/> in a
     /// <see cref="System.Linq.Expressions.ExpressionType.ConvertChecked"/> node (or
@@ -78,7 +78,7 @@ public static class ExpressionOn<A> {
             body: ExpressionHelper.Replace(branch.Body, branch.Parameters[0], root.Body),
             parameters: root.Parameters
         );
-        
+
     /// <summary>
     /// The identity expression: <c>a => a</c>.
     /// </summary>

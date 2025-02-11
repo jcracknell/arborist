@@ -31,43 +31,43 @@ public class ReadmeTests {
             new { Projection = ExpressionOn<string>.Of(v => v.Length) },
             static (x, e) => e.Select(x.Splice(x.Data.Projection))
         );
-        
+
         Assert.Equivalent(
             expected: ExpressionOn<IEnumerable<string>>.Of(e => e.Select(v => v.Length)),
             actual: interpolated0
         );
-    
+
         var interpolated1 = ExpressionOnNone.Interpolate(
             new { Expr = Expression.Constant(42) },
             static x => Math.Abs(x.Splice<int>(x.Data.Expr))
         );
-    
+
         Assert.Equivalent(
             expected: ExpressionOnNone.Of(() => Math.Abs(42)),
             actual: interpolated1
         );
     }
-    
+
     [Fact]
     public void SpliceBody_example_should_work() {
         var interpolated = ExpressionOn<Cat>.Interpolate(
             new { Predicate = ExpressionOn<Owner>.Of(o => o.Name == "Jon") },
             static (x, c) => x.SpliceBody(c.Owner, x.Data.Predicate)
         );
-        
+
         Assert.Equivalent(
             expected: ExpressionOn<Cat>.Of(c => c.Owner.Name == "Jon"),
             actual: interpolated
         );
     }
-    
+
     [Fact]
     public void SpliceQuoted_example_should_work() {
         var interpolated = ExpressionOn<IQueryable<Cat>>.Interpolate(
             new { Predicate = ExpressionOn<Cat>.Of(c => c.Age == 8) },
             static (x, q) => q.Any(x.SpliceQuoted(x.Data.Predicate))
         );
-        
+
         Assert.Equivalent(
             expected: ExpressionOn<IQueryable<Cat>>.Of(q => q.Any(c => c.Age == 8)),
             actual: interpolated

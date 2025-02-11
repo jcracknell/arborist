@@ -27,7 +27,7 @@ public sealed class SmallDictionary4<K, V> : SmallDictionary<K, V>
             throw DuplicateKeyException(e2.Key);
         if(keyComparer.Equals(e3.Key, e2.Key) || keyComparer.Equals(e3.Key, e1.Key) || keyComparer.Equals(e3.Key, e0.Key))
             throw DuplicateKeyException(e3.Key);
-            
+
         _e0 = e0;
         _e1 = e1;
         _e2 = e2;
@@ -35,7 +35,7 @@ public sealed class SmallDictionary4<K, V> : SmallDictionary<K, V>
     }
 
     public override int Count => 4;
-    
+
     public override bool TryGetValue(K key, [MaybeNullWhen(false)] out V value) {
         if(KeyComparer.Equals(_e0.Key, key)) {
             value = _e0.Value;
@@ -54,7 +54,7 @@ public sealed class SmallDictionary4<K, V> : SmallDictionary<K, V>
             return false;
         }
     }
-    
+
     protected override KeyValuePair<K, V> GetEnumeratedEntry(int index) => index switch {
         0 => _e0,
         1 => _e1,
@@ -69,11 +69,11 @@ public sealed class SmallDictionary4<K, V> : SmallDictionary<K, V>
         builder.Add(entry);
         return new SmallDictionaryN<K, V>(builder.ToImmutable());
     }
-    
+
     public override SmallDictionary<K, V> AddRange(IEnumerable<KeyValuePair<K, V>> entries) {
         if(entries is IReadOnlyCollection<KeyValuePair<K, V>> { Count: 0 })
             return this;
-        
+
         return AddRangeEnumerated(entries);
     }
 

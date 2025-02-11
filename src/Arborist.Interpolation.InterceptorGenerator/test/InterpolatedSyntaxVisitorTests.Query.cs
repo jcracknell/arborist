@@ -9,7 +9,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                 OwnerCats = ExpressionOn<Owner>.Of(o => o.Cats),
                 CatName = ExpressionOn<Cat>.Of(c => c.Name)
             };
-            
+
             ExpressionOn<Owner>.Interpolate(data, (x, o) =>
                 from c in x.SpliceBody(o, x.Data.OwnerCats)
                 select x.SpliceBody(c, x.Data.CatName)
@@ -69,7 +69,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                 OwnerCats = ExpressionOn<Owner>.Of(o => o.Cats),
                 ObjectHashCode = ExpressionOn<object>.Of(o => o.GetHashCode())
             };
-            
+
             ExpressionOn<Owner>.Interpolate(data, (x, o) =>
                 from object c in x.SpliceBody(o, x.Data.OwnerCats)
                 select x.SpliceBody(c, x.Data.ObjectHashCode)
@@ -136,7 +136,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                 OwnerCats = ExpressionOn<Owner>.Of(o => o.Cats),
                 CatId = ExpressionOn<Cat>.Of(c => c.Id)
             };
-        
+
             ExpressionOn<Owner>.Interpolate(data, (x, o) =>
                 from c in o.Cats
                 join c1 in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceValue(42)
@@ -210,7 +210,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                 OwnerCats = ExpressionOn<Owner>.Of(o => o.Cats),
                 CatId = ExpressionOn<Cat>.Of(c => c.Id)
             };
-            
+
             ExpressionOn<Owner>.Interpolate(data, (x, o) =>
                 from c in o.Cats
                 join object c1 in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceValue(42)
@@ -290,7 +290,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                 OwnerCats = ExpressionOn<Owner>.Of(o => o.Cats),
                 CatId = ExpressionOn<Cat>.Of(c => c.Id)
             };
-            
+
             ExpressionOn<Owner>.Interpolate(data, (x, o) =>
                 from c in o.Cats
                 join c1 in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceValue(42)
@@ -374,7 +374,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                 NameSelector = ExpressionOn<Cat>.Of(c => c.Name),
                 AgeSelector = ExpressionOn<Cat>.Of(c => c.Age)
             };
-            
+
             ExpressionOn<Owner>.Interpolate(data, (x, o) =>
                 from c in o.Cats
                 group x.SpliceBody(c, x.Data.NameSelector) by x.SpliceBody(c, x.Data.AgeSelector)
@@ -587,7 +587,7 @@ public partial class InterpolatedSyntaxVisitorTests {
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
     }
-    
+
     [Fact]
     public void Should_handle_query_continuation() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()

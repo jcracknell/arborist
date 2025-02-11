@@ -9,7 +9,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                 x => new[] { x.SpliceValue(""foo""), ""bar"", x.SpliceValue(""baz"") }
             );
         ");
-        
+
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
@@ -37,7 +37,7 @@ public partial class InterpolatedSyntaxVisitorTests {
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
     }
-    
+
     [Fact]
     public void Should_handle_array_initializer_with_explicit_dimensions() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
@@ -47,7 +47,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                 x => new string[2] { x.SpliceValue(""foo""), ""bar"" }
             );
         ");
-        
+
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
@@ -69,7 +69,7 @@ public partial class InterpolatedSyntaxVisitorTests {
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
     }
-    
+
     [Fact]
     public void Should_handle_array_with_explicit_dimensions() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
@@ -79,7 +79,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                 x => new string[x.SpliceValue(3), 42]
             );
         ");
-        
+
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
@@ -226,7 +226,7 @@ public partial class InterpolatedSyntaxVisitorTests {
         );
 
     }
-    
+
     [Fact]
     public void Should_handle_collection_initializer_in_object_initializer() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
@@ -273,7 +273,7 @@ public partial class InterpolatedSyntaxVisitorTests {
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
     }
-    
+
     [Fact]
     public void Should_handle_object_initializer_in_collection_initializer() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()

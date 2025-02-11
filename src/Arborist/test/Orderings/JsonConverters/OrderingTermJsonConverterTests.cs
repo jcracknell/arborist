@@ -8,7 +8,7 @@ public class OrderingTermJsonConverterTests {
         var actual = JsonSerializer.Serialize(OrderingTerm.Create("foo", OrderingDirection.Ascending));
         Assert.Equal("[\"foo\",\"asc\"]", actual);
     }
-    
+
     [Fact]
     public void Should_deserialize_as_expected() {
         var actual = JsonSerializer.Deserialize<OrderingTerm<string>>("[\"foo\",\"asc\"]");

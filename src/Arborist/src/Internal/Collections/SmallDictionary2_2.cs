@@ -18,13 +18,13 @@ public sealed class SmallDictionary2<K, V> : SmallDictionary<K, V>
     ) : base(keyComparer) {
         if(keyComparer.Equals(e1.Key, e0.Key))
             throw DuplicateKeyException(e1.Key);
-            
+
         _e0 = e0;
         _e1 = e1;
     }
 
     public override int Count => 2;
-    
+
     public override bool TryGetValue(K key, [MaybeNullWhen(false)] out V value) {
         if(KeyComparer.Equals(_e0.Key, key)) {
             value = _e0.Value;
@@ -37,7 +37,7 @@ public sealed class SmallDictionary2<K, V> : SmallDictionary<K, V>
             return false;
         }
     }
-    
+
     protected override KeyValuePair<K, V> GetEnumeratedEntry(int index) => index switch {
         0 => _e0,
         1 => _e1,
@@ -46,7 +46,7 @@ public sealed class SmallDictionary2<K, V> : SmallDictionary<K, V>
 
     public override SmallDictionary<K, V> Add(KeyValuePair<K, V> entry) =>
         SmallDictionary.Create(KeyComparer, _e0, _e1, entry);
-        
+
     public override SmallDictionary<K, V> AddRange(IEnumerable<KeyValuePair<K, V>> entries) {
         if(entries is IReadOnlyList<KeyValuePair<K, V>> list)
             switch(list.Count) {
@@ -54,7 +54,7 @@ public sealed class SmallDictionary2<K, V> : SmallDictionary<K, V>
                 case 1: return SmallDictionary.Create(KeyComparer, _e0, _e1, list[0]);
                 case 2: return SmallDictionary.Create(KeyComparer, _e0, _e1, list[0], list[1]);
             }
-            
+
         return AddRangeEnumerated(entries);
     }
 

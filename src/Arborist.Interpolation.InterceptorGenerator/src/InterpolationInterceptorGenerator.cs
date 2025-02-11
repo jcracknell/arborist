@@ -45,16 +45,16 @@ public class InterpolationInterceptorGenerator : IIncrementalGenerator {
         var interceptorsEnabledProvider = context.AnalyzerConfigOptionsProvider
         .Select(static (analyzerOptions, _) => GetInterceptorsEnabled(analyzerOptions))
         .WithTrackingName(StepNames.AnalyzerOptions);
-        
+
         var analysesAndEnabled = analysisResults.Combine(interceptorsEnabledProvider);
-        
+
         context.RegisterSourceOutput(analysesAndEnabled, (spc, inputs) => {
             var ((diagnostics, analysis), interceptorsEnabled) = inputs;
-            
+
             // Report the analysis result to the configured handler
             if(analysis is not null)
                 AnalysisResultHandler?.Invoke(analysis);
-                
+
             // If interceptors are disabled, emit an informational diagnostic for each successful analysis
             // prompting the user to enable them.
             if(!interceptorsEnabled && analysis?.IsSupported is true)
@@ -64,7 +64,7 @@ public class InterpolationInterceptorGenerator : IIncrementalGenerator {
                     ),
                     location: analysis.InvocationLocation
                 ));
-            
+
             foreach(var diagnostic in diagnostics.CollectedDiagnostics.Distinct())
                 spc.ReportDiagnostic(diagnostic);
         });
@@ -77,7 +77,7 @@ public class InterpolationInterceptorGenerator : IIncrementalGenerator {
         .WithTrackingName(StepNames.GroupedAnalyses);
 
         var analysisGroupsAndEnabled = groupedAnalyses.Combine(interceptorsEnabledProvider);
-        
+
         context.RegisterSourceOutput(analysisGroupsAndEnabled, (spc, inputs) => {
             var (analysisGroup, interceptorsEnabled) = inputs;
             if(interceptorsEnabled) 
@@ -180,10 +180,10 @@ public class InterpolationInterceptorGenerator : IIncrementalGenerator {
         writer.WriteLine($"namespace {INTERCEPTOR_NAMESPACE} {{");
 
         writer.WriteLine($"    file static class {analysisGroup.ClassName} {{");
-        
+
         foreach(var analysis in analysisGroup.Analyses) {
             cancellationToken.ThrowIfCancellationRequested();
-            
+
             writer.WriteLine();
             RenderInterceptor(writer, analysis);
         }
@@ -193,7 +193,7 @@ public class InterpolationInterceptorGenerator : IIncrementalGenerator {
 
         return writer.ToString();
     }
-    
+
     private static void RenderInterceptor(
         PooledStringWriter writer,
         InterpolationAnalysisResult analysis

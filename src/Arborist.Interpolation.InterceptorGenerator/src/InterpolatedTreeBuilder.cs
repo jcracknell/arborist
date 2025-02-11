@@ -75,7 +75,7 @@ public class InterpolatedTreeBuilder {
         var typeRef = CreateTypeRef(type);
         return InterpolatedTree.Member(typeRef, InterpolatedTree.Verbatim("Type"));
     }
-    
+
     /// <summary>
     /// Creates an <see cref="InterpolatedTree"/> containing the name of the provided <paramref name="typeSymbol"/>.
     /// Reports a diagnostic message in the event that the <paramref name="typeSymbol"/> cannot be named or referenced.
@@ -90,23 +90,23 @@ public class InterpolatedTreeBuilder {
             typeParameterMappings: typeParameterMappings ?? ImmutableDictionary<ITypeParameterSymbol, string>.Empty,
             out var typeName
         );
-        
+
         if(result.IsSuccess)
             return InterpolatedTree.Verbatim(typeName);
-        
+
         switch(result.Reason) {
             case TypeSymbolHelpers.TypeNameFailureReason.Unhandled:
             case TypeSymbolHelpers.TypeNameFailureReason.AnonymousType:
                 return _diagnostics.UnsupportedType(result.TypeSymbol, node);
-            
+
             case TypeSymbolHelpers.TypeNameFailureReason.TypeParameter:
                 // A type parameter symbol must be from the call site, as declaration site type parameters are
                 // obviously only in scope within the declaration.
                 return _diagnostics.ReferencesCallSiteTypeParameter(result.TypeSymbol, node);
-            
+
             case TypeSymbolHelpers.TypeNameFailureReason.Inaccessible:
                 return _diagnostics.InaccessibleSymbol(result.TypeSymbol, node);
-                
+
             default:
                 throw new NotImplementedException(result.Reason.ToString());
         }
@@ -126,7 +126,7 @@ public class InterpolatedTreeBuilder {
             typeParameterMappings: typeParameterMappings ?? ImmutableDictionary<ITypeParameterSymbol, string>.Empty,
             out var typeNameString
         );
-        
+
         if(result.IsSuccess) {
             typeName = InterpolatedTree.Verbatim(typeNameString);
             return true;
@@ -161,7 +161,7 @@ public class InterpolatedTreeBuilder {
                 // A type parameter symbol must be from the call site, as declaration site type parameters are
                 // obviously only in scope within the declaration.
                 return _diagnostics.ReferencesCallSiteTypeParameter(type, default);
-        
+
             case { IsAnonymousType: true }:
                 return InterpolatedTree.StaticCall(
                     InterpolatedTree.Verbatim("global::Arborist.Interpolation.Internal.TypeRef.Create"),
@@ -181,7 +181,7 @@ public class InterpolatedTreeBuilder {
             // function to construct the required typeref from other typeref instances
             case INamedTypeSymbol { IsGenericType: true } named:
                 return CreateTypeRefFactory(named);
-                
+
             default:
                 return _diagnostics.UnsupportedType(type, default);
         }
@@ -199,7 +199,7 @@ public class InterpolatedTreeBuilder {
                 tup => $"TR{tup.Index}",
                 (IEqualityComparer<ITypeParameterSymbol>)SymbolEqualityComparer.Default
             );
-            
+
             var typeArguments = Enumerable.Range(0, typeParameters.Count).MkString("<", i => $"TR{i}", ", ", ">");
             var reparametrizedTypeName = CreateTypeName(constructedFrom, default, typeParameterMappings);
 

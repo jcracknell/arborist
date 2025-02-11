@@ -18,7 +18,7 @@ public partial class InterpolatedSyntaxVisitor {
         splicingMethod = methodSymbol;
         return true;
     }
-    
+
     private InterpolatedTree VisitSplicingInvocation(InvocationExpressionSyntax node, IMethodSymbol method) {
         var spliced = method.Name switch {
             "Splice" => VisitSplice(node, method),
@@ -27,7 +27,7 @@ public partial class InterpolatedSyntaxVisitor {
             "SpliceQuoted" => VisitSpliceQuoted(node, method),
             _ => _context.Diagnostics.UnsupportedInterpolatedSyntax(node)
         };
-        
+
         return spliced.AsModified();
     }
 
@@ -114,7 +114,7 @@ public partial class InterpolatedSyntaxVisitor {
 
         // Otherwise we need to provide the target expression type for the lambda
         var expressionType = method.Parameters.Last().Type;
-        
+
         return InterpolatedTree.InstanceCall(
             _builder.CreateTypeRef(expressionType),
             InterpolatedTree.Verbatim("Coerce"),

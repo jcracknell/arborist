@@ -12,7 +12,7 @@ public class SpliceBodyTests {
                 x => x.SpliceBody(x.Data.Thunk) + 1
             );
         ");
-        
+
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
@@ -33,7 +33,7 @@ public class SpliceBodyTests {
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
     }
-    
+
     [Fact]
     public void Should_work_for_Func1_provided_as_literal() {
         // This test case is necessary because the call to replace is no longer required (and you cannot rely
@@ -45,7 +45,7 @@ public class SpliceBodyTests {
                 x => x.SpliceBody(() => 41) + 1
             );
         ");
-        
+
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"

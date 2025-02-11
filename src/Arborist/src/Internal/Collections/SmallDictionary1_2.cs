@@ -18,7 +18,7 @@ public sealed class SmallDictionary1<K, V> : SmallDictionary<K, V>
     }
 
     public override int Count => 1;
-    
+
     public override bool TryGetValue(K key, [MaybeNullWhen(false)] out V value) {
         if(KeyComparer.Equals(_e0.Key, key)) {
             value = _e0.Value;
@@ -36,7 +36,7 @@ public sealed class SmallDictionary1<K, V> : SmallDictionary<K, V>
 
     public override SmallDictionary<K, V> Add(KeyValuePair<K, V> entry) =>
         SmallDictionary.Create(KeyComparer, _e0, entry);
-        
+
     public override SmallDictionary<K, V> AddRange(IEnumerable<KeyValuePair<K, V>> entries) {
         if(entries is IReadOnlyList<KeyValuePair<K, V>> list)
             switch(list.Count) {
@@ -45,7 +45,7 @@ public sealed class SmallDictionary1<K, V> : SmallDictionary<K, V>
                 case 2: return SmallDictionary.Create(KeyComparer, _e0, list[0], list[1]);
                 case 3: return SmallDictionary.Create(KeyComparer, _e0, list[0], list[1], list[2]);
             }
-        
+
         return AddRangeEnumerated(entries);
     }
 

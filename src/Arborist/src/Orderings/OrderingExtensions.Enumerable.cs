@@ -34,5 +34,5 @@ public static partial class OrderingExtensions {
                 _ => throw new Exception($"Unhandled {nameof(OrderingDirection)} value: {ordering.Term.Direction}.")
             }
         };
-    
+
 }

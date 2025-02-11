@@ -10,7 +10,7 @@ public partial class EvaluatedSyntaxVisitorTests {
                 x => x.SpliceValue(new[] { ""foo"", ""bar"" })
             );
         ");
-        
+
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
@@ -34,7 +34,7 @@ public partial class EvaluatedSyntaxVisitorTests {
                 x => x.SpliceValue(new string[2] { ""foo"", ""bar"" })
             );
         ");
-        
+
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
@@ -48,7 +48,7 @@ public partial class EvaluatedSyntaxVisitorTests {
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
     }
-    
+
     [Fact]
     public void Should_handle_array_with_explicit_dimensions() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
@@ -58,7 +58,7 @@ public partial class EvaluatedSyntaxVisitorTests {
                 x => x.SpliceValue(new string[3, 42])
             );
         ");
-        
+
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
@@ -72,7 +72,7 @@ public partial class EvaluatedSyntaxVisitorTests {
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
     }
-    
+
     [Fact]
     public void Should_handle_nested_array_with_explicit_dimensions() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
@@ -82,7 +82,7 @@ public partial class EvaluatedSyntaxVisitorTests {
                 x => x.SpliceValue(new string[2, 42][])
             );
         ");
-        
+
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
@@ -96,7 +96,7 @@ public partial class EvaluatedSyntaxVisitorTests {
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
     }
-    
+
     [Fact]
     public void Should_handle_object_initializer() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()

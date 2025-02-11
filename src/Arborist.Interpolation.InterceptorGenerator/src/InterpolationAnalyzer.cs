@@ -20,7 +20,7 @@ public static class InterpolationAnalyzer {
         // Assert that the input invocation actually calls a method with [InterceptedExpressionInterpolator]
         if(!TryGetInterceptedExpressionInterpolatorAttribute(methodSymbol, typeSymbols, out var interceptionRequired))
             return default;
-            
+
         var diagnostics = new InterpolationDiagnosticsCollector(
             defaultLocation: invocation.GetLocation(),
             severityOverride: interceptionRequired ? DiagnosticSeverity.Error : null
@@ -88,7 +88,7 @@ public static class InterpolationAnalyzer {
 
         var typeParameters = TypeSymbolHelpers.GetInheritedTypeParameters(methodSymbol.ContainingType.OriginalDefinition)
         .AddRange(methodSymbol.OriginalDefinition.TypeParameters);
-        
+
         var typeParameterMappings = typeParameters.ZipWithIndex().ToDictionary(
             tup => (ITypeParameterSymbol)tup.Value.WithNullableAnnotation(NullableAnnotation.None),
             tup => $"T{tup.Index}",
@@ -126,7 +126,7 @@ public static class InterpolationAnalyzer {
         var reparametrizedDelegateType = builder.CreateTypeName(resultDelegateType, interpolatedExpression, typeParameterMappings);
         if(!reparametrizedDelegateType.IsSupported)
             return InterpolatedTree.Unsupported;
-        
+
         return InterpolatedTree.Concat(
             InterpolatedTree.Verbatim("return "),
             builder.CreateExpression($"{nameof(Expression.Lambda)}<{reparametrizedDelegateType}>", [
@@ -186,11 +186,11 @@ public static class InterpolationAnalyzer {
         foreach(var attribute in methodSymbol.GetAttributes()) {
             if(!SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, typeSymbols.InterceptedExpressionInterpolatorAttribute))
                 continue;
-                
+
             interceptionRequired = attribute.NamedArguments.Any(a => a is { Key: "InterceptionRequired", Value.Value: true });
             return true;
         }
-        
+
         interceptionRequired = default;
         return false;
     }

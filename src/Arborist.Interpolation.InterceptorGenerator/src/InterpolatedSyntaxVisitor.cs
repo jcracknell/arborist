@@ -16,7 +16,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         _queryContext = QueryContext.Create(this);
         _interpolatableIdentifiers = ImmutableHashSet.Create<string>(IdentifierEqualityComparer.Instance);
     }
-    
+
     private void AddInterpolatableIdentifier(string identifier) {
         _interpolatableIdentifiers = _interpolatableIdentifiers.Add(identifier);
     }
@@ -27,7 +27,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         var parameters = GetLambdaParameters(lambda);
         for(var i = 1; i < parameters.Count; i++)
             AddInterpolatableIdentifier(parameters[i].Identifier.ValueText);
-            
+
         CurrentExpr = new ExpressionBinding(
             parent: default,
             visitor: this,
@@ -35,7 +35,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
             binding: InterpolatedTree.Interpolate($"{_context.ExpressionParameter.Name}.{nameof(LambdaExpression.Body)}"),
             expressionType: default
         );
-        
+
         return CurrentExpr.WithValue(Visit(lambda.Body));
     }
 
@@ -45,7 +45,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
             ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.ParameterList.Parameters,
             _ => throw new NotImplementedException()
         };
-    
+
     [return: NotNullIfNotNull("node")]
     public override InterpolatedTree? Visit(SyntaxNode? node) {
         // Check for cancellation every time we visit (iterate) over a node
@@ -136,7 +136,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
 
     public override InterpolatedTree VisitArrayCreationExpression(ArrayCreationExpressionSyntax node) {
         SetBoundType(typeof(NewArrayExpression));
-        
+
         // If the node has an initializer, then the array dimensions are required to be constants
         // and the expression is a NewArrayInit because the length is effectively implied by the
         // initializer
@@ -147,7 +147,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
                     (expr, i) => Bind($"{nameof(NewArrayExpression.Expressions)}[{i}]").WithValue(Visit(expr))
                 ))
             ]);
-            
+
         // Otherwise the array dimensions are not required to be constants, and the expression is a
         // NewArrayBounds. Note that only the first rank specifier of the array can contain dimensions
         // (if there are multiple specifiers it is a nested array type).
@@ -158,11 +158,11 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
             ))
         ]);
     }
-    
+
     public override InterpolatedTree VisitInvocationExpression(InvocationExpressionSyntax node) {
         if(TryGetSplicingMethod(node, out var spliceMethod))
             return VisitSplicingInvocation(node, spliceMethod);
-            
+
         return VisitInvocation(node);
     }
 
@@ -288,25 +288,25 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         switch(node.Initializer?.Kind()) {
             case null:
                 return CreateNewTree(node);
-                
+
             case SyntaxKind.ObjectInitializerExpression:
                 SetBoundType(typeof(MemberInitExpression));
                 return _builder.CreateExpression(nameof(Expression.MemberInit), [
                     Bind($"{nameof(MemberInitExpression.NewExpression)}").WithValue(CreateNewTree(node)),
                     Visit(node.Initializer)
                 ]);
-                
+
             case SyntaxKind.CollectionInitializerExpression:
                 SetBoundType(typeof(ListInitExpression));
                 return _builder.CreateExpression(nameof(Expression.ListInit), [
                     Bind($"{nameof(ListInitExpression.NewExpression)}").WithValue(CreateNewTree(node)),
                     Visit(node.Initializer)
                 ]);
-                
+
             default:
                 return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
         }
-        
+
         InterpolatedTree CreateNewTree(BaseObjectCreationExpressionSyntax node) {
             SetBoundType(typeof(NewExpression));
             return _builder.CreateExpression(nameof(Expression.New), [
@@ -334,7 +334,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
                         .WithValue(VisitObjectInitializerElement(init))
                     ))
                 );
-                
+
             case SyntaxKind.CollectionInitializerExpression:
                 return InterpolatedTree.Concat(
                     InterpolatedTree.Verbatim("new global::System.Linq.Expressions.ElementInit[] "),
@@ -343,7 +343,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
                         .WithValue(VisitCollectionInitializerElement(init))
                     ))
                 );
-                
+
             default:
                 return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
         }
@@ -391,27 +391,27 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
 
     public override InterpolatedTree VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node) =>
         VisitLambdaExpression(node);
-    
+
     private InterpolatedTree VisitLambdaExpression(LambdaExpressionSyntax node) {
         if(_context.SemanticModel.GetTypeInfo(node).ConvertedType is not {} typeSymbol)
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
         // If the lambda is an expression, then it is enclosed in a quoted UnaryExpression
         if(!TypeSymbolHelpers.IsSubtype(typeSymbol, _context.TypeSymbols.Expression))
             return VisitLambdaExpressionUnquoted(node);
-        
+
         SetBoundType(typeof(UnaryExpression));
         return _builder.CreateExpression(nameof(Expression.Quote), [
             Bind($"{nameof(UnaryExpression.Operand)}")
             .WithValue(VisitLambdaExpressionUnquoted(node))
         ]);
     }
-    
+
     private InterpolatedTree VisitLambdaExpressionUnquoted(LambdaExpressionSyntax node) {
         var snapshot = _interpolatableIdentifiers;
         try {
             foreach(var parameter in GetLambdaParameters(node))
                 AddInterpolatableIdentifier(parameter.Identifier.ValueText);
-            
+
             SetBoundType(typeof(LambdaExpression));
             return _builder.CreateExpression(nameof(Expression.Lambda), [
                 Bind($"{nameof(LambdaExpression.Body)}").WithValue(Visit(node.Body)),
@@ -484,11 +484,11 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
 
     public override InterpolatedTree VisitPostfixUnaryExpression(PostfixUnaryExpressionSyntax node) =>
         VisitUnaryExpression(node, node.Operand);
-        
+
     private InterpolatedTree VisitUnaryExpression(ExpressionSyntax node, ExpressionSyntax operand) {
         if(TryVisitUnarySpecialExpression(node, operand, out var special))
             return special;
-    
+
         SetBoundType(typeof(UnaryExpression));
         return _builder.CreateExpression(nameof(Expression.MakeUnary),
             BindValue($"{nameof(UnaryExpression.NodeType)}"),
@@ -497,7 +497,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
             BindValue($"{nameof(UnaryExpression.Method)}")
         );
     }
-    
+
     private bool TryVisitUnarySpecialExpression(
         ExpressionSyntax node,
         ExpressionSyntax operand,

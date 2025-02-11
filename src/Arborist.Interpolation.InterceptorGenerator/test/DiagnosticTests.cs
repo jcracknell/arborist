@@ -59,14 +59,14 @@ public class DiagnosticTests {
                 }
             }
         ");
-        
+
         Assert.Equal(1, results.AnalysisResults.Count);
         Assert.Contains(results.Diagnostics, diagnostic => diagnostic is {
             Id: InterpolationDiagnostics.ARB005_ReferencesCallSiteTypeParameter,
             Severity: DiagnosticSeverity.Info
         });
     }
-    
+
     [Fact]
     public void Should_produce_ARB005_for_expression_referencing_type_param_from_callsite_class() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
@@ -78,7 +78,7 @@ public class DiagnosticTests {
                 }
             }
         ");
-        
+
         Assert.Equal(1, results.AnalysisResults.Count);
         Assert.Contains(results.Diagnostics, diagnostic => diagnostic is {
             Id: InterpolationDiagnostics.ARB005_ReferencesCallSiteTypeParameter,

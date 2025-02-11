@@ -13,8 +13,8 @@ public sealed class InterpolationDiagnosticsCollector(Location defaultLocation, 
             null => Diagnostic.Create(descriptor, location),
             not null => Diagnostic.Create(descriptor, location, severityOverride.Value)
         });
-        
-        
+
+
         return InterpolatedTree.Unsupported;
     }
 

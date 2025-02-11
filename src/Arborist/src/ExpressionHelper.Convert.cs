@@ -9,13 +9,13 @@ public static partial class ExpressionHelper {
     {
         AssertFuncType(expression.Type);
         AssertParameterTypesCompatible(expression.Type, GetParameterTypes(typeof(TDelegate)));
-        
+
         return Expression.Lambda<TDelegate>(
             Expression.TypeAs(expression.Body, targetType),
             expression.Parameters
         );
     }
-    
+
     internal static Expression<TDelegate> ConvertCore<TDelegate>(
         Type targetType,
         LambdaExpression expression
@@ -24,13 +24,13 @@ public static partial class ExpressionHelper {
     {
         AssertFuncType(expression.Type);
         AssertParameterTypesCompatible(expression.Type, GetParameterTypes(typeof(TDelegate)));
-        
+
         return Expression.Lambda<TDelegate>(
             Expression.Convert(expression.Body, targetType),
             expression.Parameters
         );
     }
-    
+
     internal static Expression<TDelegate> ConvertCheckedCore<TDelegate>(
         Type targetType,
         LambdaExpression expression
@@ -39,7 +39,7 @@ public static partial class ExpressionHelper {
     {
         AssertFuncType(expression.Type);
         AssertParameterTypesCompatible(expression.Type, GetParameterTypes(typeof(TDelegate)));
-        
+
         return Expression.Lambda<TDelegate>(
             Expression.ConvertChecked(expression.Body, targetType),
             expression.Parameters

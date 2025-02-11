@@ -22,7 +22,7 @@ public static class ExpressionOnNone {
     /// </remarks>
     public static Expression<Action> Of(Expression<Action> expression) =>
         expression;
-        
+
     /// <summary>
     /// Wraps the body of the provided lambda <paramref name="expression"/> in a
     /// <see cref="System.Linq.Expressions.ExpressionType.TypeAs"/> node of the form
@@ -30,7 +30,7 @@ public static class ExpressionOnNone {
     /// </summary>
     public static Expression<Func<T>> As<T>(LambdaExpression expression) =>
         ExpressionHelper.AsCore<Func<T>>(typeof(T), expression);
-        
+
     /// <summary>
     /// Wraps the body of the provided lambda <paramref name="expression"/> in a 
     /// <see cref="System.Linq.Expressions.ExpressionType.Convert"/> node of the form
@@ -38,7 +38,7 @@ public static class ExpressionOnNone {
     /// </summary>
     public static Expression<Func<T>> Convert<T>(LambdaExpression expression) =>
         ExpressionHelper.ConvertCore<Func<T>>(typeof(T), expression);
-        
+
     /// <summary>
     /// Wraps the body of the provided lambda <paramref name="expression"/> in a
     /// <see cref="System.Linq.Expressions.ExpressionType.ConvertChecked"/> node (or

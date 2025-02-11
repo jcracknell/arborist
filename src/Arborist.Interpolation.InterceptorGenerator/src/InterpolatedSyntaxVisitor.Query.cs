@@ -13,46 +13,46 @@ public partial class InterpolatedSyntaxVisitor {
         // Drill all the way down to the last query continuation (the outermost call)
         if(node.Continuation is not null)
             return VisitQueryBody(node.Continuation.Body);
-            
+
         // Process the nodes from outermost to innermost in a traversal managed by the query context
         _queryContext = _queryContext.BeginQuery(node);
         var result = _queryContext.VisitNext();
         _queryContext = _queryContext.Restore();
-        
+
         return result;
     }
-    
+
     public override InterpolatedTree VisitFromClause(FromClauseSyntax node) {
         var qci = _context.SemanticModel.GetQueryClauseInfo(node);
-        
+
         // If there is no method associated with the operation, then this is the initial from clause
         if(qci.OperationInfo.Symbol is not IMethodSymbol method) {
             // Register the identifier defined by this clause for consumption by subsequent clauses
             AddInterpolatableIdentifier(node.Identifier.ValueText);
             if(qci.CastInfo.Symbol is not IMethodSymbol castMethod)
                 return Visit(node.Expression);
-            
+
             // The clause maps to an expression of the form {expr}.Cast<T>()
             return CreateQueryCall(node, castMethod, [
                 BindCallArg(castMethod, 0).WithValue(Visit(node.Expression))
             ]);
         }
-        
+
         var inputTree = BindCallArg(method, 0).WithValue(_queryContext.VisitNext());
         var selectorTree = CreateFromSelector(node, method, qci.CastInfo.Symbol as IMethodSymbol);
-        
+
         // Register the identifier defined by this clause for consumption by subsequent clauses
         AddInterpolatableIdentifier(node.Identifier.ValueText);
-        
+
         var projectionTree = CreateFromProjection(node, method);
-        
+
         return CreateQueryCall(node, method, [inputTree, selectorTree, projectionTree]);
     }
-    
+
     private InterpolatedTree CreateFromSelector(FromClauseSyntax node, IMethodSymbol method, IMethodSymbol? castMethod) {
         if(castMethod is null)
             return CreateQueryLambda(method, 1, node.Expression);
-        
+
         // The selector has the form _ => {expr}.Cast<T>()
         return BindCallArg(typeof(LambdaExpression), method, 1)
         .WithValue(_builder.CreateExpression(nameof(Expression.Lambda), [
@@ -63,7 +63,7 @@ public partial class InterpolatedSyntaxVisitor {
             BindValue($"{nameof(LambdaExpression.Parameters)}")
         ]));
     }
-    
+
     private InterpolatedTree CreateFromProjection(FromClauseSyntax node, IMethodSymbol method) {
         if(
             ReferenceEquals(node, _queryContext.QueryBody.Clauses.LastOrDefault())
@@ -71,21 +71,21 @@ public partial class InterpolatedSyntaxVisitor {
             && _context.SemanticModel.GetSymbolInfo(selectClause).Symbol is not IMethodSymbol
         )
             return CreateQueryLambda(method, 2, selectClause.Expression);
-            
+
         // If this is a join projection, we don't need to do anything as the expression is not present in code
         // and thus cannot contain interpolations.
         return BindCallArg(typeof(LambdaExpression), method, 2)
         .WithValue(CurrentExpr.Identifier);
     }
-    
+
     public override InterpolatedTree VisitGroupClause(GroupClauseSyntax node) {
         if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not IMethodSymbol method)
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
-            
+
         var inputTree = BindCallArg(method, 0).WithValue(_queryContext.VisitNext());
         var keySelectorTree = CreateQueryLambda(method, 1, node.ByExpression);
         var elementSelectorTree = CreateQueryLambda(method, 2, node.GroupExpression);
-        
+
         return CreateQueryCall(node, method, [inputTree, keySelectorTree, elementSelectorTree]);
     }
 
@@ -93,13 +93,13 @@ public partial class InterpolatedSyntaxVisitor {
         var qci = _context.SemanticModel.GetQueryClauseInfo(node);
         if(qci.OperationInfo.Symbol is not IMethodSymbol method)
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
-            
+
         var inputTree = BindCallArg(method, 0).WithValue(_queryContext.VisitNext());
         var selectorTree = CreateJoinSelector(node, method, qci.CastInfo.Symbol as IMethodSymbol);
         var outerKeySelectorTree = CreateQueryLambda(method, 2, node.LeftExpression);
         var innerKeySelectorTree = CreateJoinInnerKeySelector(node, method);
         var resultProjectionTree = CreateJoinResultProjection(node, method);
-        
+
         return CreateQueryCall(node, method, [
             inputTree,
             selectorTree,
@@ -108,17 +108,17 @@ public partial class InterpolatedSyntaxVisitor {
             resultProjectionTree
         ]);
     }
-    
+
     private InterpolatedTree CreateJoinSelector(JoinClauseSyntax node, IMethodSymbol method, IMethodSymbol? castMethod) {
         if(castMethod is null)
             return BindCallArg(method, 1).WithValue(Visit(node.InExpression));
-            
+
         return BindCallArg(typeof(MethodCallExpression), method, 1)
         .WithValue(CreateQueryCall(node, castMethod, [
             BindCallArg(castMethod, 0).WithValue(Visit(node.InExpression))
         ]));
     }
-    
+
     private InterpolatedTree CreateJoinInnerKeySelector(JoinClauseSyntax node, IMethodSymbol method) {
         // The input identifier into the inner key selector is discarded in the event that the clause
         // is a GroupJoin, so we create the binding manually here and bind the joined identifier when
@@ -131,13 +131,13 @@ public partial class InterpolatedSyntaxVisitor {
             _interpolatableIdentifiers = snapshot;
         }
     }
-    
+
     private InterpolatedTree CreateJoinResultProjection(JoinClauseSyntax node, IMethodSymbol method) {
         // Join and GroupJoin are actually more or less identical - the only difference between the two
         // is the joined identifier which is specified by the into clause
         var joinedIdentifier = node.Into?.Identifier ?? node.Identifier;
         AddInterpolatableIdentifier(joinedIdentifier.ValueText);
-        
+
         // As an optimization, if the final clause preceding the select has a result projection,
         // then the final output projection occurs here instead of in a trailing select
         if(
@@ -146,7 +146,7 @@ public partial class InterpolatedSyntaxVisitor {
             && _context.SemanticModel.GetSymbolInfo(selectClause).Symbol is not IMethodSymbol
         )
             return CreateQueryLambda(method, 4, selectClause.Expression);
-            
+
         // Otherwise the result projection does not appear in code and does not need to be interpolated
         return BindCallArg(typeof(LambdaExpression), method, 4)
         .WithValue(CurrentExpr.Identifier);
@@ -156,9 +156,9 @@ public partial class InterpolatedSyntaxVisitor {
         var qci = _context.SemanticModel.GetQueryClauseInfo(node);
         if(qci.OperationInfo.Symbol is not IMethodSymbol method)
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
-            
+
         var inputTree = BindCallArg(method, 0).WithValue(_queryContext.VisitNext());
-        
+
         var projectionTree = BindCallArg(typeof(LambdaExpression), method, 1)
         .WithValue(_builder.CreateExpression(nameof(Expression.Lambda), [
             Bind(typeof(NewExpression), $"{nameof(LambdaExpression.Body)}")
@@ -173,10 +173,10 @@ public partial class InterpolatedSyntaxVisitor {
             ])),
             BindValue($"{nameof(LambdaExpression.Parameters)}")
         ]));
-        
+
         // Register the identifier defined by this clause for consumption by subsequent clauses
         AddInterpolatableIdentifier(node.Identifier.ValueText);
-        
+
         return CreateQueryCall(node, method, [inputTree, projectionTree]);
     }
 
@@ -187,14 +187,14 @@ public partial class InterpolatedSyntaxVisitor {
         var node = orderBy.Orderings[index];
         if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not IMethodSymbol method)
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
-            
+
         var inputTree = BindCallArg(method, 0).WithValue(index switch {
             0 => _queryContext.VisitNext(),
             _ => VisitOrderByOrdering(orderBy, index - 1)
         });
-        
+
         var selectorTree = CreateQueryLambda(method, 1, node.Expression);
-        
+
         return CreateQueryCall(node, method, [inputTree, selectorTree]);
     }
 
@@ -203,33 +203,33 @@ public partial class InterpolatedSyntaxVisitor {
         // is handled by the last query clause
         if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not IMethodSymbol method)
             return _queryContext.VisitNext();
-            
+
         var inputTree = BindCallArg(method, 0).WithValue(_queryContext.VisitNext());
         var projectionTree = CreateQueryLambda(method, 1, node.Expression);
-            
+
         return CreateQueryCall(node, method, [inputTree, projectionTree]);
     }
 
     public override InterpolatedTree VisitWhereClause(WhereClauseSyntax node) {
         if(_context.SemanticModel.GetQueryClauseInfo(node).OperationInfo.Symbol is not IMethodSymbol method)
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
-            
+
         var inputTree = BindCallArg(method, 0).WithValue(_queryContext.VisitNext());
         var predicateTree = CreateQueryLambda(method, 1, node.Condition);
-        
+
         return CreateQueryCall(node, method, [inputTree, predicateTree]);
     }
-    
+
     private InterpolatedTree CreateQueryLambda(IMethodSymbol method, int index, SyntaxNode bodyNode) =>
         BindCallArg(typeof(LambdaExpression), method, index)
         .WithValue(_builder.CreateExpression(nameof(Expression.Lambda), [
             Bind($"{nameof(LambdaExpression.Body)}").WithValue(Visit(bodyNode)),
             BindValue($"{nameof(LambdaExpression.Parameters)}")
         ]));
-    
+
     private InterpolatedTree CreateQueryCall(SyntaxNode node, IMethodSymbol method, IReadOnlyList<InterpolatedTree> args) {
         SetBoundType(typeof(MethodCallExpression));
-        
+
         return method switch {
             { ReducedFrom: { } } => _builder.CreateExpression(nameof(Expression.Call), [
                 _builder.CreateDefaultValue(_context.TypeSymbols.Expression.WithNullableAnnotation(NullableAnnotation.Annotated)),
@@ -265,54 +265,54 @@ public partial class InterpolatedSyntaxVisitor {
         public QueryBodySyntax QueryBody { get; private set; }
         private int _clauseIndex;
         private readonly ImmutableHashSet<string> _identifiersSnapshot;
-        
+
         public QueryContext BeginQuery(QueryBodySyntax queryBody) =>
             new(_visitor, this, queryBody);
-            
+
         public QueryContext Restore() {
             if(_parentContext is null)
                 throw new InvalidOperationException();
-                
+
             _visitor._interpolatableIdentifiers = _identifiersSnapshot;
             return _parentContext;
         }
-        
+
         public InterpolatedTree VisitNext() {
             var clauseIndex = _clauseIndex;
             _clauseIndex -= 1;
-            
+
             if(clauseIndex == QueryBody.Clauses.Count) {
                 // We are starting processing of the query body, so add the continuation identifier if 
                 // this is a query continuation
                 if(QueryBody.Parent is QueryContinuationSyntax qc)
                     _visitor.AddInterpolatableIdentifier(qc.Identifier.ValueText);
-                
+
                 return _visitor.Visit(QueryBody.SelectOrGroup);
             }
-            
+
             if(clauseIndex == -1) switch(QueryBody.Parent) {
                 case QueryExpressionSyntax qe:
                     return _visitor.Visit(qe.FromClause);
-                    
+
                 case QueryContinuationSyntax qc:
                     QueryBody = (QueryBodySyntax)qc.Parent!;
                     _clauseIndex = QueryBody.Clauses.Count;
-                    
+
                     // Take a snapshot of the identifiers defined by the current query body so that we can
                     // restore it when we have finished processing the preceding query body (identifiers are
                     // scoped to the query in which they are defined)
                     var snapshot = _visitor._interpolatableIdentifiers;
                     _visitor._interpolatableIdentifiers = _identifiersSnapshot;
-                    
+
                     var result = VisitNext();
-                    
+
                     _visitor._interpolatableIdentifiers = snapshot;
                     return result;
             }
-            
+
             if(clauseIndex < 0)
                 throw new InvalidOperationException();
-                
+
             return _visitor.Visit(QueryBody.Clauses[clauseIndex]);
         }
     }

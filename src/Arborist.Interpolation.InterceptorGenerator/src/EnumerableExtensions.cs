@@ -14,11 +14,11 @@ internal static class EnumerableExtensions {
             hash.Add(element, equalityComparer);
             length += 1;
         }
-        
+
         hash.Add(length);
         return hash;
     }
-    
+
     [Pure]
     public static HashCode AddRange<A>(
         this HashCode hash,
@@ -28,11 +28,11 @@ internal static class EnumerableExtensions {
         var length = list.Count;
         for(var i = 0; i < length; i++)
             hash.Add(list[i], equalityComparer);
-            
+
         hash.Add(length);
         return hash;
     }
-    
+
     [Pure]
     public static HashCode AddRange<A>(
         this HashCode hash,
@@ -42,7 +42,7 @@ internal static class EnumerableExtensions {
         var length = span.Length;
         for(var i = 0; i < length; i++)
             hash.Add(span[i], equalityComparer);
-            
+
         hash.Add(length);
         return hash;
     }
@@ -82,7 +82,7 @@ internal static class EnumerableExtensions {
 
     public static IReadOnlyList<A> NullToEmpty<A>(this IReadOnlyList<A>? list) =>
         list ?? Array.Empty<A>();
-        
+
     /// <summary>
     /// Eagerly applies the provided <paramref name="projection"/> to the subject <paramref name="collection"/>
     /// with known length, returning the results.
@@ -105,10 +105,10 @@ internal static class EnumerableExtensions {
                 index += 1;
             }
         }
-        
+
         return results;
     }
-    
+
     /// <summary>
     /// Eagerly applies the provided <paramref name="projection"/> to the subject <paramref name="collection"/>
     /// with known length, returning the results.
@@ -131,10 +131,10 @@ internal static class EnumerableExtensions {
                 index += 1;
             }
         }
-        
+
         return results;
     }
-    
+
     public static bool TryGetFirst<A>(
         this IEnumerable<A> collection,
         [MaybeNullWhen(false)] out A result

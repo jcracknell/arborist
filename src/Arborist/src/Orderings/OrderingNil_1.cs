@@ -8,12 +8,12 @@ internal sealed class OrderingNil<TSelector> : Ordering<TSelector> {
     private static OrderingEnumerator<TSelector> Enumerator { get; } = new(Instance);
 
     private OrderingNil() { }
-    
+
     public bool IsEmpty => true;
 
     public OrderingTerm<TSelector> Term =>
         throw new InvalidOperationException($"{nameof(Ordering<TSelector>.Unordered)}.{nameof(Term)}");
-        
+
     public Ordering<TSelector> Rest =>
         throw new InvalidOperationException($"{nameof(Ordering<TSelector>.Unordered)}.{nameof(Rest)}");
 

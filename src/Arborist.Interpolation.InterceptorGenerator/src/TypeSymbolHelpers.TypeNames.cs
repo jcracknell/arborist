@@ -15,7 +15,7 @@ internal static partial class TypeSymbolHelpers {
 
         public static TypeNameResult Failure(TypeNameFailureReason reason, ITypeSymbol typeSymbol) =>
             new(reason, typeSymbol);
-        
+
         private readonly TypeNameFailureReason _reason;
         private readonly ITypeSymbol _typeSymbol;
 
@@ -34,7 +34,7 @@ internal static partial class TypeSymbolHelpers {
             get {
                 if(_typeSymbol is null)
                     throw new InvalidOperationException(nameof(Reason));
-                
+
                 return _reason;
             }
         }
@@ -51,7 +51,7 @@ internal static partial class TypeSymbolHelpers {
             }
         }
     }
-    
+
     /// <summary>
     /// Attempts to render the name of the provided <paramref name="typeSymbol"/>, returning a
     /// <see cref="TypeNameResult"/> indicating whether or not the type was nameable, and the reason
@@ -63,13 +63,13 @@ internal static partial class TypeSymbolHelpers {
         out string typeName
     ) {
         using var writer = PooledStringWriter.Rent();
-        
+
         var result = TryWriteTypeName(writer, typeSymbol, typeParameterMappings)    ;
         typeName = writer.ToString();
-        
+
         return result;
     }
-    
+
     private static TypeNameResult TryWriteTypeName(
         PooledStringWriter writer,
         ITypeSymbol typeSymbol,
@@ -82,13 +82,13 @@ internal static partial class TypeSymbolHelpers {
             case INamedTypeSymbol named:
                 if(!IsAccessible(named))
                     return TypeNameResult.Failure(TypeNameFailureReason.Inaccessible, typeSymbol);
-                
+
                 var containingTypeResult = TryWriteContainingTypeName(writer, named, typeParameterMappings);
                 if(containingTypeResult.IsFailure)
                     return containingTypeResult;
-                
+
                 writer.Write(named.Name);
-                
+
                 if(named.IsGenericType) {
                     writer.Write('<');
                     for(var i = 0; i < named.TypeArguments.Length; i++) {
@@ -102,32 +102,32 @@ internal static partial class TypeSymbolHelpers {
                     writer.Write('>');
                 }
                 break;
-                
-            
+
+
             case IArrayTypeSymbol array:
                 var elementTypeResult = TryWriteTypeName(writer, array.ElementType, typeParameterMappings);
                 if(elementTypeResult.IsFailure)
                     return elementTypeResult;
-                
+
                 // TODO: multi-dimensional arrays
                 writer.Write("[]");
                 break;
-                
+
             case ITypeParameterSymbol typeParameter:
                 if(!typeParameterMappings.TryGetValue((ITypeParameterSymbol)typeParameter.WithNullableAnnotation(NullableAnnotation.None), out var mappedTypeParameter))
                     return TypeNameResult.Failure(TypeNameFailureReason.TypeParameter, typeSymbol);
-                
+
                 writer.Write(mappedTypeParameter);
                 break;
-            
+
             case IDynamicTypeSymbol:
                 writer.Write("dynamic");
                 break;
-            
+
             default:
                 return TypeNameResult.Failure(TypeNameFailureReason.Unhandled, typeSymbol);
         }
-        
+
         if(typeSymbol is { NullableAnnotation: NullableAnnotation.Annotated, IsValueType: false })
             writer.Write('?');
 
@@ -143,7 +143,7 @@ internal static partial class TypeSymbolHelpers {
             WriteNamespaceName(writer, typeSymbol.ContainingNamespace);
             return TypeNameResult.Success;
         }
-        
+
         var result = TryWriteTypeName(writer, typeSymbol.ContainingType, typeParameterMappings);
         if(result.IsFailure)
             return result;

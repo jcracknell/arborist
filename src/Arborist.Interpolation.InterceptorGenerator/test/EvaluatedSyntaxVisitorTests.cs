@@ -66,14 +66,14 @@ public partial class EvaluatedSyntaxVisitorTests {
         );
     }
 
-    
+
     [Fact]
     public void Should_handle_default_expression() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(default(string)));
         ");
-        
+
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"
@@ -87,14 +87,14 @@ public partial class EvaluatedSyntaxVisitorTests {
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
     }
-    
+
     [Fact]
     public void Should_handle_default_literal() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue<string>(default));
         ");
-        
+
         Assert.Equal(1, results.AnalysisResults.Count);
         CodeGenAssert.CodeEqual(
             expected: @"

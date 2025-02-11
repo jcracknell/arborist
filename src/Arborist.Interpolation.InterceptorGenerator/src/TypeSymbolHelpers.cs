@@ -32,7 +32,7 @@ internal static partial class TypeSymbolHelpers {
 
         return typeSymbol;
     }
-    
+
     public static ITypeSymbol GetRootArrayElementType(IArrayTypeSymbol arrayType) =>
         arrayType.ElementType switch {
             IArrayTypeSymbol childArrayType => GetRootArrayElementType(childArrayType),

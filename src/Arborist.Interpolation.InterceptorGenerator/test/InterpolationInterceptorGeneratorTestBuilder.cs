@@ -115,7 +115,7 @@ public sealed class InterpolationInterceptorGeneratorTestBuilder {
 
         sb.AppendLine($"namespace {_namespace};");
         sb.AppendLine($"");
-        
+
         if(_omitEnclosingDefinitions) {
             sb.AppendLine(invocations);
         } else {

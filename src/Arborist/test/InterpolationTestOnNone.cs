@@ -14,7 +14,7 @@ public static class InterpolationTestOnNone {
         Expression<Func<IInterpolationContext<TData>, R>> expression
     ) =>
         throw new NotImplementedException();
-        
+
     /// <summary>
     /// Expression interpolator provided for unit-testing purposes.
     /// Generates errors in the event that the source generator fails to create an interceptor for any reason.

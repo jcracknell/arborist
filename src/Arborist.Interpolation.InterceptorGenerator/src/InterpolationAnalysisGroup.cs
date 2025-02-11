@@ -16,7 +16,7 @@ public sealed class InterpolationAnalysisGroup : IEquatable<InterpolationAnalysi
         var groups = new Dictionary<(string, string), List<InterpolationAnalysisResult>>();
         foreach(var analysis in analyses) {
             cancellationToken.ThrowIfCancellationRequested();
-            
+
             // Group invocations by source file and assembly, as the assembly name is used in
             // the generated file name - I mean you never know? Maybe it's possible for a
             // compilation to span assemblies?
@@ -25,18 +25,18 @@ public sealed class InterpolationAnalysisGroup : IEquatable<InterpolationAnalysi
                 group = new List<InterpolationAnalysisResult>(1);
                 groups.Add(key, group);
             }
-                
+
             group.Add(analysis);
         }
-        
+
         var builder = ImmutableArray.CreateBuilder<InterpolationAnalysisGroup>(groups.Count);
         foreach(var entry in groups) {
             cancellationToken.ThrowIfCancellationRequested();
-            
+
             var group = entry.Value;
             builder.Add(CreateGroup(group[0], group));
         }
-        
+
         return builder.ToImmutable();
     }
 
@@ -47,7 +47,7 @@ public sealed class InterpolationAnalysisGroup : IEquatable<InterpolationAnalysi
         var groupId = CreateGroupId(exemplar);
         var className = $"InterpolationInterceptors{groupId}";
         var fileBaseName = $"{exemplar.AssemblyName.Replace("_", "__").Replace('.', '_')}_{className}";
-        
+
         return new InterpolationAnalysisGroup(
             assemblyName: exemplar.AssemblyName,
             sourceFilePath: exemplar.SourceFilePath,
@@ -60,22 +60,22 @@ public sealed class InterpolationAnalysisGroup : IEquatable<InterpolationAnalysi
                 .ToList()
         );
     }
-    
+
     private static string CreateGroupId(InterpolationAnalysisResult exemplar) {
         var buffer = ArrayPool<byte>.Shared.Rent(1024);
         try {
             using var hash = System.Security.Cryptography.SHA256.Create();
-            
+
             hash.TransformString(exemplar.SourceFilePath, Encoding.Unicode, buffer);
             hash.TransformString(exemplar.AssemblyName, Encoding.Unicode, buffer);
             hash.TransformFinalBlock(buffer, 0, 0);
-            
+
             return hash.Hash.Take(8).MkString(static b => b.ToString("x2"), "");
         } finally {
             ArrayPool<byte>.Shared.Return(buffer);
         }
     }
-    
+
     private InterpolationAnalysisGroup(
         string assemblyName,
         string sourceFilePath,

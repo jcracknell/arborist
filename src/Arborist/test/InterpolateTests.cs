@@ -11,7 +11,7 @@ public partial class InterpolateTests {
             default(object),
             (x, o) => o.CatsEnumerable.Any(c => c.Name == x.SpliceValue("Garfield"))
         );
-        
+
         var expected = ExpressionOn<Owner>.Of(o => o.CatsEnumerable.Any(c => c.Name == "Garfield"));
 
         Assert.Equivalent(expected, interpolated);
@@ -23,12 +23,12 @@ public partial class InterpolateTests {
             default(object),
             (x, o) => o.CatsQueryable.Any(c => c.Name == x.SpliceValue("Garfield"))
         );
-        
+
         var expected = ExpressionOn<Owner>.Of(o => o.CatsQueryable.Any(c => c.Name == "Garfield"));
 
         Assert.Equivalent(expected, interpolated);
     }
-    
+
     [Fact]
     public void InterpolateRuntimeFallback_should_throw_InterpolatedParameterCaptureException() {
         var spliceBodyMethod = typeof(IInterpolationContext).GetMethods().Single(m => m.GetParameters().Length == 2);

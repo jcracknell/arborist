@@ -32,6 +32,12 @@ internal static partial class TypeSymbolHelpers {
 
         return typeSymbol;
     }
+    
+    public static ITypeSymbol GetRootArrayElementType(IArrayTypeSymbol arrayType) =>
+        arrayType.ElementType switch {
+            IArrayTypeSymbol childArrayType => GetRootArrayElementType(childArrayType),
+            _ => arrayType.ElementType.WithNullableAnnotation(arrayType.ElementNullableAnnotation)
+        };
 
     /// <summary>
     /// Gets the complete set of type arguments for the provided <paramref name="type"/>,

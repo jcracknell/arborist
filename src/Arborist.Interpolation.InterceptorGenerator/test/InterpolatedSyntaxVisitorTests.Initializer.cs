@@ -37,6 +37,70 @@ public partial class InterpolatedSyntaxVisitorTests {
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
     }
+    
+    [Fact]
+    public void Should_handle_array_initializer_with_explicit_dimensions() {
+        var results = InterpolationInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOnNone.Interpolate(
+                default(object),
+                x => new string[2] { x.SpliceValue(""foo""), ""bar"" }
+            );
+        ");
+        
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                (global::System.Linq.Expressions.NewArrayExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.NewArrayInit(
+                        __e0.Type.GetElementType()!,
+                        new global::System.Linq.Expressions.Expression[] {
+                            (global::System.Linq.Expressions.MethodCallExpression)(__e0.Expressions[0]) switch {
+                                var __e1 => global::System.Linq.Expressions.Expression.Constant(
+                                    ""foo"",
+                                    __e1.Type
+                                )
+                            },
+                            __e0.Expressions[1]
+                        }
+                    )
+                }
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+    
+    [Fact]
+    public void Should_handle_array_with_explicit_dimensions() {
+        var results = InterpolationInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOnNone.Interpolate(
+                default(object),
+                x => new string[x.SpliceValue(3), 42]
+            );
+        ");
+        
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                (global::System.Linq.Expressions.NewArrayExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.NewArrayBounds(
+                        __e0.Type.GetElementType()!,
+                        new global::System.Linq.Expressions.Expression[] {
+                            (global::System.Linq.Expressions.MethodCallExpression)(__e0.Expressions[0]) switch {
+                                var __e1 => global::System.Linq.Expressions.Expression.Constant(
+                                    3,
+                                    __e1.Type
+                                )
+                            },
+                            __e0.Expressions[1]
+                        }
+                    )
+                }
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
 
     [Fact]
     public void Should_handle_object_initializer() {

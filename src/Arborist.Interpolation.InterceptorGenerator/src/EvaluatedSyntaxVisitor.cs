@@ -197,6 +197,43 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
         return InterpolatedTree.Concat(newExpr, Visit(node.Initializer));
     }
 
+    public override InterpolatedTree VisitImplicitArrayCreationExpression(ImplicitArrayCreationExpressionSyntax node) =>
+        InterpolatedTree.Interpolate($"new[] {Visit(node.Initializer)}");
+
+    public override InterpolatedTree VisitArrayCreationExpression(ArrayCreationExpressionSyntax node) {
+        if(_context.SemanticModel.GetTypeInfo(node).Type is not IArrayTypeSymbol typeSymbol)
+            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
+        var elementType = TypeSymbolHelpers.GetRootArrayElementType(typeSymbol);
+        if(!_builder.TryCreateTypeName(elementType, out var elementTypeName))
+            return _context.Diagnostics.UnsupportedType(typeSymbol, node);
+            
+        // Multi-dimensional array initializers are forbidden in expression trees, so if there is
+        // an initializer then it's an implicit single-dimensional array
+        if(node.Initializer is not null)
+            return InterpolatedTree.Interpolate($"new {elementTypeName}[] {Visit(node.Initializer)}");
+            
+        var rankSpecifiers = InterpolatedTree.Concat(node.Type.RankSpecifiers.SelectEager(Visit));
+        return InterpolatedTree.Interpolate($"new {elementTypeName}{rankSpecifiers}");
+    }
+
+    public override InterpolatedTree VisitArrayRankSpecifier(ArrayRankSpecifierSyntax node) {
+        var parts = new List<InterpolatedTree>(2 * node.Sizes.Count + 1);
+        parts.Add(InterpolatedTree.Verbatim("["));
+        
+        for(var i = 0; i < node.Sizes.Count; i++) {
+            if(i != 0)
+                parts.Add(InterpolatedTree.Verbatim(", "));
+                
+            parts.Add(Visit(node.Sizes[i]));
+        }
+        
+        parts.Add(InterpolatedTree.Verbatim("]"));
+        return InterpolatedTree.Concat(parts);
+    }
+
+    public override InterpolatedTree VisitOmittedArraySizeExpression(OmittedArraySizeExpressionSyntax node) =>
+        InterpolatedTree.Empty;
+
     public override InterpolatedTree VisitInitializerExpression(InitializerExpressionSyntax node) =>
         InterpolatedTree.Initializer([..node.Expressions.Select(VisitInitializerElement)]);
 

@@ -134,6 +134,31 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         ]);
     }
 
+    public override InterpolatedTree VisitArrayCreationExpression(ArrayCreationExpressionSyntax node) {
+        SetBoundType(typeof(NewArrayExpression));
+        
+        // If the node has an initializer, then the array dimensions are required to be constants
+        // and the expression is a NewArrayInit because the length is effectively implied by the
+        // initializer
+        if(node.Initializer is not null)
+            return _builder.CreateExpression(nameof(Expression.NewArrayInit), [
+                BindValue($"{nameof(NewArrayExpression.Type)}.{nameof(Type.GetElementType)}()!"),
+                _builder.CreateExpressionArray(node.Initializer.Expressions.SelectEager(
+                    (expr, i) => Bind($"{nameof(NewArrayExpression.Expressions)}[{i}]").WithValue(Visit(expr))
+                ))
+            ]);
+            
+        // Otherwise the array dimensions are not required to be constants, and the expression is a
+        // NewArrayBounds. Note that only the first rank specifier of the array can contain dimensions
+        // (if there are multiple specifiers it is a nested array type).
+        return _builder.CreateExpression(nameof(Expression.NewArrayBounds), [
+            BindValue($"{nameof(NewArrayExpression.Type)}.{nameof(Type.GetElementType)}()!"),
+            _builder.CreateExpressionArray(node.Type.RankSpecifiers[0].Sizes.SelectEager(
+                (size, i) => Bind($"{nameof(NewArrayExpression.Expressions)}[{i}]").WithValue(Visit(size))
+            ))
+        ]);
+    }
+    
     public override InterpolatedTree VisitInvocationExpression(InvocationExpressionSyntax node) {
         if(TryGetSplicingMethod(node, out var spliceMethod))
             return VisitSplicingInvocation(node, spliceMethod);

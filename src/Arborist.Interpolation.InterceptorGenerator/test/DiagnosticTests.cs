@@ -49,6 +49,95 @@ public class DiagnosticTests {
     }
 
     [Fact]
+    public void Should_produce_ARB004_for_evaluated_private_field_access() {
+        var results = InterpolationInterceptorGeneratorTestBuilder.Create()
+        .OmitEnclosingDefinitions()
+        .Generate(@"
+            public class Test {
+                private int _privateField;
+
+                public void Main() {
+                    ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(_privateField));
+                }
+            }
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        Assert.False(results.AnalysisResults[0].IsSupported);
+        Assert.Contains(results.Diagnostics, diagnostic => diagnostic is {
+            Id: InterpolationDiagnostics.ARB004_InaccessibleSymbolReference,
+            Severity: DiagnosticSeverity.Info
+        });
+    }
+
+    [Fact]
+    public void Should_produce_ARB004_for_evaluated_private_method_call() {
+        var results = InterpolationInterceptorGeneratorTestBuilder.Create()
+        .OmitEnclosingDefinitions()
+        .Generate(@"
+            public class Test {
+                private int PrivateMethod() => throw new NotImplementedException();
+
+                public void Main() {
+                    ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(PrivateMethod()));
+                }
+            }
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        Assert.False(results.AnalysisResults[0].IsSupported);
+        Assert.Contains(results.Diagnostics, diagnostic => diagnostic is {
+            Id: InterpolationDiagnostics.ARB004_InaccessibleSymbolReference,
+            Severity: DiagnosticSeverity.Info
+        });
+    }
+
+    [Fact]
+    public void Should_produce_ARB004_for_evaluated_private_static_method_call() {
+        var results = InterpolationInterceptorGeneratorTestBuilder.Create()
+        .OmitEnclosingDefinitions()
+        .Generate(@"
+            public class Test {
+                private static int PrivateMethod() => throw new NotImplementedException();
+
+                public void Main() {
+                    ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(PrivateMethod()));
+                }
+            }
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        Assert.False(results.AnalysisResults[0].IsSupported);
+        Assert.Contains(results.Diagnostics, diagnostic => diagnostic is {
+            Id: InterpolationDiagnostics.ARB004_InaccessibleSymbolReference,
+            Severity: DiagnosticSeverity.Info
+        });
+    }
+
+    [Fact]
+    public void Should_produce_ARB004_for_evaluated_private_property_access() {
+        var results = InterpolationInterceptorGeneratorTestBuilder.Create()
+        .OmitEnclosingDefinitions()
+        .Generate(@"
+            public class Test {
+                private int PrivateProperty => throw new NotImplementedException();
+
+                public void Main() {
+                    ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(PrivateProperty));
+                }
+            }
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        Assert.False(results.AnalysisResults[0].IsSupported);
+        Assert.Contains(results.Diagnostics, diagnostic => diagnostic is {
+            Id: InterpolationDiagnostics.ARB004_InaccessibleSymbolReference,
+            Severity: DiagnosticSeverity.Info
+        });
+    }
+
+
+    [Fact]
     public void Should_produce_ARB005_for_expression_referencing_type_param_from_callsite_method() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .OmitEnclosingDefinitions()

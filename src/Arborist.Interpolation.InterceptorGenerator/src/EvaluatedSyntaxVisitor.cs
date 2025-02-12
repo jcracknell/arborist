@@ -38,7 +38,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
 
     public override InterpolatedTree VisitMemberAccessExpression(MemberAccessExpressionSyntax node) {
         // Replace references to the data property of the interpolation context with the
-        // locally defined data referenceover.
+        // locally defined data reference.
         if(_context.IsInterpolationDataAccess(node))
             return InterpolatedTree.Verbatim(_builder.DataIdentifier);
 
@@ -77,7 +77,8 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
                 );
 
             case IMethodSymbol:
-                return Visit(node.Expression);
+                var methodName = GetInvocationMethodName(node.Parent, node.Name);
+                return InterpolatedTree.Interpolate($"{Visit(node.Expression)}.{methodName}");
 
             default:
                 return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
@@ -85,44 +86,43 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
     }
 
     public override InterpolatedTree VisitInvocationExpression(InvocationExpressionSyntax node) {
-        if(node.Expression is not MemberAccessExpressionSyntax memberAccess)
-            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node.Expression);
+        if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not IMethodSymbol methodSymbol)
+            return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
 
-        switch(_context.SemanticModel.GetSymbolInfo(node).Symbol) {
-            case IMethodSymbol { ReducedFrom: { IsStatic: true } } method:
-                var extensionTypeName = _builder.CreateTypeName(method.ContainingType, node);
+        switch(methodSymbol) {
+            // If this is an extension method invoked as a postfix method, then we need to rewrite the call
+            // as a static method invocation so we don't have to import the extension into scope.
+            case { ReducedFrom: { IsStatic: true } }:
+                if(!TypeSymbolHelpers.IsAccessible(methodSymbol))
+                    return _context.Diagnostics.InaccessibleSymbol(methodSymbol, node);
+
+                // A postfix extension method invocation should always be MemberAccessExpressionSyntax
+                // of the form subject.Extension(...)
+                if(node.Expression is not MemberAccessExpressionSyntax memberAccess)
+                    return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
+
+                var extensionTypeName = _builder.CreateTypeName(methodSymbol.ContainingType, node);
+                var methodName = GetInvocationMethodName(node, memberAccess.Name);
 
                 return InterpolatedTree.StaticCall(
-                    InterpolatedTree.Interpolate($"{extensionTypeName}.{GetInvocationMethodName(node, memberAccess.Name)}"),
+                    InterpolatedTree.Interpolate($"{extensionTypeName}.{methodName}"),
                     [
-                        Visit(node.Expression),
-                        ..node.ArgumentList.Arguments.Select(static a => a.Expression).Select(Visit)
+                        Visit(memberAccess.Expression),
+                        ..node.ArgumentList.Arguments.SelectEager(a => Visit(a.Expression))
                     ]
                 );
 
-            case IMethodSymbol { IsStatic: true } method:
-                var staticTypeName = _builder.CreateTypeName(method.ContainingType, node);
-
-                return InterpolatedTree.StaticCall(
-                    InterpolatedTree.Interpolate($"{staticTypeName}.{GetInvocationMethodName(node, memberAccess.Name)}"),
-                    [..node.ArgumentList.Arguments.Select(static a => a.Expression).Select(Visit)]
-                );
-
-            case IMethodSymbol method:
-                return InterpolatedTree.InstanceCall(
-                    Visit(memberAccess.Expression),
-                    GetInvocationMethodName(node, memberAccess.Name),
-                    node.ArgumentList.Arguments.Select(static a => a.Expression).Select(Visit).ToList()
-                );
-
             default:
-                return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
+                return InterpolatedTree.StaticCall(
+                    Visit(node.Expression),
+                    node.ArgumentList.Arguments.SelectEager(a => Visit(a.Expression))
+                );
         }
     }
 
-    private InterpolatedTree GetInvocationMethodName(InvocationExpressionSyntax node, SimpleNameSyntax methodName) {
-        // Emit explicitly passed type arguments
-        if(!SyntaxHelpers.IsExplicitGenericMethodInvocation(node) || methodName is not GenericNameSyntax generic)
+    private InterpolatedTree GetInvocationMethodName(SyntaxNode? invocationNode, SimpleNameSyntax methodName) {
+        // Only emit explicitly passed type arguments
+        if(!SyntaxHelpers.IsExplicitGenericMethodInvocation(invocationNode) || methodName is not GenericNameSyntax generic)
             return InterpolatedTree.Verbatim(methodName.Identifier.Text);
 
         var typeArgumentParts = new List<InterpolatedTree>(2 * generic.TypeArgumentList.Arguments.Count - 1);
@@ -321,13 +321,55 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
         if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not {} symbol)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
 
-        if(_evaluableIdentifiers.TryGetValue(node.Identifier.ValueText, out var mappedTree))
-            return mappedTree;
+        switch(symbol) {
+            case ITypeSymbol typeSymbol:
+                return _builder.CreateTypeName(typeSymbol, node);
 
-        if(_interpolatableParameters.Contains(node.Identifier.ValueText))
-            return _context.Diagnostics.EvaluatedParameter(node);
+            case IFieldSymbol fieldSymbol:
+                // N.B. for consistency accessibility takes precedence over the closure warning because you can't
+                // know about the closure when processing a member access
+                if(!TypeSymbolHelpers.IsAccessible(fieldSymbol))
+                    return _context.Diagnostics.InaccessibleSymbol(symbol, node);
+                if(!fieldSymbol.IsStatic)
+                    return _context.Diagnostics.ClosureOverScopeReference(node);
 
-        return _context.Diagnostics.ClosureOverScopeReference(node);
+                return InterpolatedTree.Concat(
+                    _builder.CreateTypeName(fieldSymbol.ContainingType, node),
+                    InterpolatedTree.Verbatim("."),
+                    InterpolatedTree.Verbatim(fieldSymbol.Name)
+                );
+
+            case IPropertySymbol propertySymbol:
+                if(!TypeSymbolHelpers.IsAccessible(propertySymbol))
+                    return _context.Diagnostics.InaccessibleSymbol(symbol, node);
+                if(!propertySymbol.IsStatic)
+                    return _context.Diagnostics.ClosureOverScopeReference(node);
+
+                return InterpolatedTree.Concat(
+                    _builder.CreateTypeName(propertySymbol.ContainingType, node),
+                    InterpolatedTree.Verbatim("."),
+                    InterpolatedTree.Verbatim(propertySymbol.Name)
+                );
+
+            case IMethodSymbol methodSymbol:
+                if(!TypeSymbolHelpers.IsAccessible(methodSymbol))
+                    return _context.Diagnostics.InaccessibleSymbol(symbol, node);
+                if(!methodSymbol.IsStatic)
+                    return _context.Diagnostics.ClosureOverScopeReference(node);
+
+                var typeName = _builder.CreateTypeName(methodSymbol.ContainingType, node);
+                var methodName = GetInvocationMethodName(node.Parent, node);
+                return InterpolatedTree.Interpolate($"{typeName}.{methodName}");
+
+            default:
+                if(_evaluableIdentifiers.TryGetValue(node.Identifier.ValueText, out var mappedTree))
+                    return mappedTree;
+
+                if(_interpolatableParameters.Contains(node.Identifier.ValueText))
+                    return _context.Diagnostics.EvaluatedParameter(node);
+
+                return _context.Diagnostics.ClosureOverScopeReference(node);
+        }
     }
 
     public override InterpolatedTree VisitParameter(ParameterSyntax node) {

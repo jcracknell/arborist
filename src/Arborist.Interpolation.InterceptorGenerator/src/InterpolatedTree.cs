@@ -31,6 +31,12 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
     public static InterpolatedTree Bind(string identifier, InterpolatedTree value, InterpolatedTree body) =>
         Switch(value, [SwitchCase(Interpolate($"var {identifier}"), body)]);
 
+    public static InterpolatedTree Call(
+        InterpolatedTree method,
+        IReadOnlyList<InterpolatedTree> args
+    ) =>
+        new CallNode(method, args);
+
     public static InterpolatedTree Concat(params InterpolatedTree[] nodes) =>
         new ConcatNode(nodes);
 
@@ -39,13 +45,6 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
 
     public static InterpolatedTree Initializer(IReadOnlyList<InterpolatedTree> elements) =>
         new InitializerNode(elements);
-
-    public static InterpolatedTree InstanceCall(
-        InterpolatedTree expression,
-        InterpolatedTree method,
-        IReadOnlyList<InterpolatedTree> args
-    ) =>
-        new CallNode(Concat(expression, Verbatim("."), method), args);
 
     /// <summary>
     /// Creates an <see cref="InterpolatedTree"/> from the provided interpolated string, interpolating
@@ -74,12 +73,6 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         InterpolatedTree body
     ) =>
         new MethodDefinitionNode(method, parameters, typeConstraints, body);
-
-    public static InterpolatedTree StaticCall(
-        InterpolatedTree method,
-        IReadOnlyList<InterpolatedTree> args
-    ) =>
-        new CallNode(method, args);
 
     public static InterpolatedTree Switch(
         InterpolatedTree subject,

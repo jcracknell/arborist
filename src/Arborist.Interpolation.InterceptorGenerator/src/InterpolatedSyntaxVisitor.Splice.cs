@@ -40,9 +40,8 @@ public partial class InterpolatedSyntaxVisitor {
 
         SetBoundType(typeof(MethodCallExpression));
         return InterpolatedTree.Switch(
-            InterpolatedTree.InstanceCall(
-                _context.TreeBuilder.CreateTypeRef(evaluatedType),
-                InterpolatedTree.Verbatim("Coerce"),
+            InterpolatedTree.Call(
+                InterpolatedTree.Interpolate($"{_context.TreeBuilder.CreateTypeRef(evaluatedType)}.Coerce"),
                 [VisitEvaluatedSyntax(evaluatedNode)]
             ),
             [
@@ -76,7 +75,7 @@ public partial class InterpolatedSyntaxVisitor {
         // declaration order.
         var parameterReplacements = new InterpolatedTree[parameterCount];
         for(var i = 0; i < parameterCount; i++)
-            parameterReplacements[i] = InterpolatedTree.StaticCall(
+            parameterReplacements[i] = InterpolatedTree.Call(
                 InterpolatedTree.Interpolate($"new global::System.Collections.Generic.KeyValuePair<{_builder.ExpressionTypeName}, {_builder.ExpressionTypeName}>"),
                 [
                     InterpolatedTree.Verbatim($"{identifier}.{nameof(LambdaExpression.Parameters)}[{i}]"),
@@ -96,9 +95,9 @@ public partial class InterpolatedSyntaxVisitor {
                 // in which case we just embed the body of the expression verbatim
                 0 => InterpolatedTree.Interpolate($"{identifier}.{nameof(LambdaExpression.Body)}"),
                 // Otherwise we need to replace occurrences of the parameters in the spliced expression body
-                _ => InterpolatedTree.StaticCall(InterpolatedTree.Verbatim("global::Arborist.ExpressionHelper.Replace"), [
+                _ => InterpolatedTree.Call(InterpolatedTree.Verbatim("global::Arborist.ExpressionHelper.Replace"), [
                     InterpolatedTree.Interpolate($"{identifier}.{nameof(LambdaExpression.Body)}"),
-                    InterpolatedTree.StaticCall(
+                    InterpolatedTree.Call(
                         InterpolatedTree.Verbatim("global::Arborist.Internal.Collections.SmallDictionary.Create"),
                         parameterReplacements
                     )
@@ -115,9 +114,8 @@ public partial class InterpolatedSyntaxVisitor {
         // Otherwise we need to provide the target expression type for the lambda
         var expressionType = method.Parameters.Last().Type;
 
-        return InterpolatedTree.InstanceCall(
-            _builder.CreateTypeRef(expressionType),
-            InterpolatedTree.Verbatim("Coerce"),
+        return InterpolatedTree.Call(
+            InterpolatedTree.Interpolate($"{_builder.CreateTypeRef(expressionType)}.Coerce"),
             [VisitEvaluatedSyntax(node.Expression)]
         );
     }

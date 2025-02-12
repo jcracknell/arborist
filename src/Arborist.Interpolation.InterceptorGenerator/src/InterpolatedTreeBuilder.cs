@@ -36,13 +36,13 @@ public class InterpolatedTreeBuilder {
     }
 
     public InterpolatedTree CreateExpression(string factoryName, params InterpolatedTree[] args) =>
-        InterpolatedTree.StaticCall(
+        InterpolatedTree.Call(
             InterpolatedTree.Verbatim($"{ExpressionTypeName}.{factoryName}"),
             args
         );
 
     public InterpolatedTree CreateExpression(string factoryName, IEnumerable<InterpolatedTree> args) =>
-        InterpolatedTree.StaticCall(
+        InterpolatedTree.Call(
             InterpolatedTree.Verbatim($"{ExpressionTypeName}.{factoryName}"),
             [..args]
         );
@@ -163,7 +163,7 @@ public class InterpolatedTreeBuilder {
                 return _diagnostics.ReferencesCallSiteTypeParameter(type, default);
 
             case { IsAnonymousType: true }:
-                return InterpolatedTree.StaticCall(
+                return InterpolatedTree.Call(
                     InterpolatedTree.Verbatim("global::Arborist.Interpolation.Internal.TypeRef.Create"),
                     [InterpolatedTree.Concat(
                         InterpolatedTree.Verbatim("new "),
@@ -215,7 +215,7 @@ public class InterpolatedTreeBuilder {
             ));
         }
 
-        return InterpolatedTree.StaticCall(
+        return InterpolatedTree.Call(
             InterpolatedTree.Verbatim(methodName),
             [..TypeSymbolHelpers.GetInheritedTypeArguments(type).Select(CreateTypeRef)]
         );

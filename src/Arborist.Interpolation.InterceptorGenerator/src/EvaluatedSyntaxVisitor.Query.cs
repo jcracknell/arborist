@@ -247,14 +247,13 @@ public partial class EvaluatedSyntaxVisitor {
         // Static extension method wherein we know that any type arguments are inferrable (because
         // it was implicitly called by query syntax)
         if(method is { ReducedFrom: {} })
-            return InterpolatedTree.StaticCall(
+            return InterpolatedTree.Call(
                 InterpolatedTree.Interpolate($"{_builder.CreateTypeName(method.ContainingType, clause)}.{method.Name}"),
                 arguments
             );
 
-        return InterpolatedTree.InstanceCall(
-            arguments[0],
-            InterpolatedTree.Verbatim(method.Name),
+        return InterpolatedTree.Call(
+            InterpolatedTree.Interpolate($"{arguments[0]}.{method.Name}"),
             [..arguments.Skip(1)]
         );
     }
@@ -274,14 +273,13 @@ public partial class EvaluatedSyntaxVisitor {
         var castTypeName = _builder.CreateTypeName(castMethod.TypeArguments[0], clause);
 
         if(castMethod is { ReducedFrom: {} })
-            return InterpolatedTree.StaticCall(
-                InterpolatedTree.Interpolate($"{_builder.CreateTypeName(castMethod.ContainingType, clause)}.{castMethod.Name}<{castTypeName}>"), 
+            return InterpolatedTree.Call(
+                InterpolatedTree.Interpolate($"{_builder.CreateTypeName(castMethod.ContainingType, clause)}.{castMethod.Name}<{castTypeName}>"),
                 [inputTree]
             );
 
-        return InterpolatedTree.InstanceCall(
-            inputTree,
-            InterpolatedTree.Interpolate($"{castMethod.Name}<{castTypeName}>"), 
+        return InterpolatedTree.Call(
+            InterpolatedTree.Interpolate($"{inputTree}.{castMethod.Name}<{castTypeName}>"),
             []
         );
     }

@@ -104,7 +104,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
                 var extensionTypeName = _builder.CreateTypeName(methodSymbol.ContainingType, node);
                 var methodName = GetInvocationMethodName(node, memberAccess.Name);
 
-                return InterpolatedTree.StaticCall(
+                return InterpolatedTree.Call(
                     InterpolatedTree.Interpolate($"{extensionTypeName}.{methodName}"),
                     [
                         Visit(memberAccess.Expression),
@@ -113,7 +113,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
                 );
 
             default:
-                return InterpolatedTree.StaticCall(
+                return InterpolatedTree.Call(
                     Visit(node.Expression),
                     node.ArgumentList.Arguments.SelectEager(a => Visit(a.Expression))
                 );
@@ -150,7 +150,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
         };
 
     public override InterpolatedTree VisitCheckedExpression(CheckedExpressionSyntax node) {
-        return InterpolatedTree.StaticCall(InterpolatedTree.Verbatim(node.Keyword.ValueText), [
+        return InterpolatedTree.Call(InterpolatedTree.Verbatim(node.Keyword.ValueText), [
             Visit(node.Expression)
         ]);
     }
@@ -180,7 +180,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
         if(_context.SemanticModel.GetTypeInfo(node).Type is not {} typeSymbol)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
 
-        var newExpr = InterpolatedTree.StaticCall(
+        var newExpr = InterpolatedTree.Call(
             node switch {
                 ImplicitObjectCreationExpressionSyntax => InterpolatedTree.Verbatim("new"),
                 _ => InterpolatedTree.Interpolate($"new {_builder.CreateTypeName(typeSymbol, node)}")

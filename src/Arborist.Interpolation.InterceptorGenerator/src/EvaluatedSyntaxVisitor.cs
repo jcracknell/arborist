@@ -7,17 +7,27 @@ namespace Arborist.Interpolation.InterceptorGenerator;
 public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
     private readonly InterpolationAnalysisContext _context;
     private readonly InterpolatedTreeBuilder _builder;
-    private readonly ImmutableHashSet<string> _interpolatableParameters;
-    private ImmutableDictionary<string, InterpolatedTree> _evaluableIdentifiers;
     private QueryContext _queryContext;
+
+    /// <summary>
+    /// Identifiers defined in the interpolated tree which cannot be referenced in an evaluated
+    /// expression (as they are not defined at evaluation time).
+    /// </summary>
+    private readonly ImmutableHashSet<string> _interpolatedIdentifiers;
+
+    /// <summary>
+    /// Mapping of identifiers defined and referenceable in the evaluated tree to their
+    /// referencing expressions (a query identifier maps to a property reference)
+    /// </summary>
+    private ImmutableDictionary<string, InterpolatedTree> _evaluableIdentifiers;
 
     public EvaluatedSyntaxVisitor(
         InterpolationAnalysisContext context,
-        ImmutableHashSet<string> interpolatableParameters
+        ImmutableHashSet<string> interpolatedIdentifiers
     ) {
         _context = context;
         _builder = context.TreeBuilder;
-        _interpolatableParameters = interpolatableParameters;
+        _interpolatedIdentifiers = interpolatedIdentifiers;
         _evaluableIdentifiers = ImmutableDictionary.Create<string, InterpolatedTree>(IdentifierEqualityComparer.Instance);
         _queryContext = QueryContext.Create(this);
     }
@@ -317,6 +327,9 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
         }
     }
 
+    public override InterpolatedTree VisitThisExpression(ThisExpressionSyntax node) =>
+        _context.Diagnostics.EvaluatedScopeReference(node);
+
     public override InterpolatedTree VisitIdentifierName(IdentifierNameSyntax node) {
         if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not {} symbol)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
@@ -331,7 +344,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
                 if(!TypeSymbolHelpers.IsAccessible(fieldSymbol))
                     return _context.Diagnostics.InaccessibleSymbol(symbol, node);
                 if(!fieldSymbol.IsStatic)
-                    return _context.Diagnostics.ClosureOverScopeReference(node);
+                    return _context.Diagnostics.EvaluatedScopeReference(node);
 
                 return InterpolatedTree.Concat(
                     _builder.CreateTypeName(fieldSymbol.ContainingType, node),
@@ -343,7 +356,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
                 if(!TypeSymbolHelpers.IsAccessible(propertySymbol))
                     return _context.Diagnostics.InaccessibleSymbol(symbol, node);
                 if(!propertySymbol.IsStatic)
-                    return _context.Diagnostics.ClosureOverScopeReference(node);
+                    return _context.Diagnostics.EvaluatedScopeReference(node);
 
                 return InterpolatedTree.Concat(
                     _builder.CreateTypeName(propertySymbol.ContainingType, node),
@@ -355,20 +368,21 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
                 if(!TypeSymbolHelpers.IsAccessible(methodSymbol))
                     return _context.Diagnostics.InaccessibleSymbol(symbol, node);
                 if(!methodSymbol.IsStatic)
-                    return _context.Diagnostics.ClosureOverScopeReference(node);
+                    return _context.Diagnostics.EvaluatedScopeReference(node);
 
                 var typeName = _builder.CreateTypeName(methodSymbol.ContainingType, node);
                 var methodName = GetInvocationMethodName(node.Parent, node);
                 return InterpolatedTree.Interpolate($"{typeName}.{methodName}");
 
             default:
+                // Check evaluable identifiers first in case the identifier shadows an interpolated one
                 if(_evaluableIdentifiers.TryGetValue(node.Identifier.ValueText, out var mappedTree))
                     return mappedTree;
 
-                if(_interpolatableParameters.Contains(node.Identifier.ValueText))
-                    return _context.Diagnostics.EvaluatedParameter(node);
+                if(_interpolatedIdentifiers.Contains(node.Identifier.ValueText))
+                    return _context.Diagnostics.EvaluatedInterpolatedIdentifier(node);
 
-                return _context.Diagnostics.ClosureOverScopeReference(node);
+                return _context.Diagnostics.EvaluatedScopeReference(node);
         }
     }
 

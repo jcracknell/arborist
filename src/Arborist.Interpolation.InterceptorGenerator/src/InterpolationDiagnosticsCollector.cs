@@ -30,11 +30,14 @@ public sealed class InterpolationDiagnosticsCollector(Location defaultLocation, 
     public InterpolatedTree UnsupportedType(ITypeSymbol typeSymbol, SyntaxNode? node) =>
         Add(InterpolationDiagnostics.UnsupportedType(severityOverride, typeSymbol), node?.GetLocation() ?? defaultLocation);
 
-    public InterpolatedTree ClosureOverScopeReference(IdentifierNameSyntax node) =>
-        Add(InterpolationDiagnostics.ClosureOverScopeReference(severityOverride, node), node.GetLocation());
+    public InterpolatedTree EvaluatedScopeReference(SyntaxNode node) =>
+        Add(InterpolationDiagnostics.EvaluatedScopeReference(severityOverride, node), node.GetLocation());
 
-    public InterpolatedTree EvaluatedParameter(IdentifierNameSyntax node) =>
-        Add(InterpolationDiagnostics.EvaluatedParameter(severityOverride, node), node.GetLocation());
+    public InterpolatedTree EvaluatedInterpolatedIdentifier(IdentifierNameSyntax node) =>
+        Add(InterpolationDiagnostics.EvaluatedInterpolatedIdentifier(severityOverride, node), node.GetLocation());
+
+    public InterpolatedTree InterpolationContextReference(IdentifierNameSyntax node) =>
+        Add(InterpolationDiagnostics.InterpolationContextReference(severityOverride, node), node.GetLocation());
 
     public InterpolatedTree NoSplices(SyntaxNode node) =>
         Add(InterpolationDiagnostics.NoSplices(severityOverride, node), node.GetLocation());

@@ -12,11 +12,12 @@ public static class InterpolationDiagnostics {
     public const string ARB995_UnsupportedType = "ARB995";
 
     public const string ARB000_SetInterpolatorsNamespaces = "ARB000";
-    public const string ARB001_ClosureOverScopeReference = "ARB001";
-    public const string ARB002_EvaluatedInterpolatedParameter = "ARB002";
-    public const string ARB003_NoSplices = "ARB003";
-    public const string ARB004_InaccessibleSymbolReference = "ARB004";
-    public const string ARB005_ReferencesCallSiteTypeParameter = "ARB005";
+    public const string ARB001_InterpolationContextReference = "ARB006";
+    public const string ARB002_EvaluatedScopeReference = "ARB001";
+    public const string ARB003_EvaluatedInterpolatedParameter = "ARB002";
+    public const string ARB004_NoSplices = "ARB003";
+    public const string ARB005_InaccessibleSymbolReference = "ARB004";
+    public const string ARB006_ReferencesCallSiteTypeParameter = "ARB005";
 
     private static DiagnosticDescriptor Create(
         string code,
@@ -73,25 +74,33 @@ public static class InterpolationDiagnostics {
             message: $"Interpolated expression contains unsupported type symbol {typeSymbol} and cannot be interpolated at compile time."
         );
 
-    public static DiagnosticDescriptor ClosureOverScopeReference(DiagnosticSeverity? severity, IdentifierNameSyntax node) =>
+    public static DiagnosticDescriptor EvaluatedScopeReference(DiagnosticSeverity? severity, SyntaxNode node) =>
         Create(
-            code: ARB001_ClosureOverScopeReference,
+            code: ARB002_EvaluatedScopeReference,
             severity: severity ?? DiagnosticSeverity.Warning,
-            title: "Closure",
-            message: $"Interpolated expression closes over identifier `{node}` defined in an enclosing scope."
+            title: "Evaluated splice argument references scope identifier",
+            message: $"Evaluated splice argument references identifier `{node}` defined in an enclosing scope."
         );
 
-    public static DiagnosticDescriptor EvaluatedParameter(DiagnosticSeverity? severity, IdentifierNameSyntax node) =>
+    public static DiagnosticDescriptor EvaluatedInterpolatedIdentifier(DiagnosticSeverity? severity, IdentifierNameSyntax node) =>
         Create(
-            code: ARB002_EvaluatedInterpolatedParameter,
+            code: ARB003_EvaluatedInterpolatedParameter,
             severity: severity ?? DiagnosticSeverity.Error,
-            title: "Evaluated Parameter",
+            title: "Evaluated splice argument references interpolated identifier",
             message: $"Evaluated splice argument references identifier `{node}` defined in the enclosing interpolated expression."
+        );
+
+    public static DiagnosticDescriptor InterpolationContextReference(DiagnosticSeverity? severity, IdentifierNameSyntax node) =>
+        Create(
+            code: ARB001_InterpolationContextReference,
+            severity: severity ?? DiagnosticSeverity.Error,
+            title: "Interpolation context reference",
+            message: $"Interpolated expression contains a reference to the context parameter `{node}` which is not part of a splicing call."
         );
 
     public static DiagnosticDescriptor NoSplices(DiagnosticSeverity? severity, SyntaxNode node) =>
         Create(
-            code: ARB003_NoSplices,
+            code: ARB004_NoSplices,
             severity: severity ?? DiagnosticSeverity.Warning,
             title: "Interpolated expression contains no splices",
             message: $"Interpolated expression contains no splices, and has no effect."
@@ -99,17 +108,17 @@ public static class InterpolationDiagnostics {
 
     public static DiagnosticDescriptor InaccessibleSymbol(DiagnosticSeverity? severity, ISymbol symbol) =>
         Create(
-            code: ARB004_InaccessibleSymbolReference,
+            code: ARB005_InaccessibleSymbolReference,
             severity: severity ?? DiagnosticSeverity.Info,
-            title: "Inaccesible Symbol Reference",
-            message: $"Interpolated expression references inaccessible symbol {symbol} and cannot be interpolated at compile time."
+            title: "Evaluated splice argument references inaccessible symbol",
+            message: $"Evaluated splice argument references inaccessible symbol {symbol} and cannot be interpolated at compile time."
         );
 
     public static DiagnosticDescriptor ReferencesCallSiteTypeParameter(DiagnosticSeverity? severity, ITypeSymbol symbol, SyntaxNode? node) =>
         Create(
-            code: ARB005_ReferencesCallSiteTypeParameter,
+            code: ARB006_ReferencesCallSiteTypeParameter,
             severity: severity ?? DiagnosticSeverity.Info,
-            title: "Interpolated expression references call-site type parameter",
-            message: $"The interpolated expression contains a reference to call-site type parameter {symbol} and cannot be interpolated at compile time."
+            title: "Evaluated splice argument references call-site type parameter",
+            message: $"Evaluated splice argument contains a reference to call-site type parameter {symbol} and cannot be interpolated at compile time."
         );
 }

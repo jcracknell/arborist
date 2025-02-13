@@ -14,6 +14,9 @@ public interface IInterpolationContext<out TData> : IInterpolationContext {
     /// The data provided to the interpolation process. May be referenced within evaluated
     /// splice parameters (annotated with <see cref="EvaluatedSpliceParameterAttribute"/>).
     /// </summary>
+    /// <exception cref="NotImplementedException">
+    /// This property should only be used in an interpolated expression.
+    /// </exception>
     public TData Data =>
-        throw InterpolationContextEvaluationException.Evaluated(typeof(IInterpolationContext<TData>).GetProperty(nameof(Data))!);
+        throw new NotImplementedException(nameof(Data));
 }

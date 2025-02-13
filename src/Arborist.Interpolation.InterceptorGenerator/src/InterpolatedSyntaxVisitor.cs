@@ -7,26 +7,64 @@ namespace Arborist.Interpolation.InterceptorGenerator;
 public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTree> {
     private readonly InterpolationAnalysisContext _context;
     private readonly InterpolatedTreeBuilder _builder;
-    private ImmutableHashSet<string> _interpolatableIdentifiers;
     private QueryContext _queryContext;
+
+    /// <summary>
+    /// The IInterpolationContext identifier, which cannot be referenced in the interpolated
+    /// expression tree. May be empty in the event that the identifier is rebound/shadowed.
+    /// </summary>
+    private ImmutableHashSet<string> _contextIdentifier;
+
+    /// <summary>
+    /// Identifiers introduced by the interpolated expression (typically as lambda parameters)
+    /// which cannot be referenced in an evaluated expression.
+    /// </summary>
+    private ImmutableHashSet<string> _interpolatedIdentifiers;
 
     public InterpolatedSyntaxVisitor(InterpolationAnalysisContext context) {
         _context = context;
         _builder = context.TreeBuilder;
         _queryContext = QueryContext.Create(this);
-        _interpolatableIdentifiers = ImmutableHashSet.Create<string>(IdentifierEqualityComparer.Instance);
+        _contextIdentifier = ImmutableHashSet.Create<string>(IdentifierEqualityComparer.Instance);
+        _interpolatedIdentifiers = ImmutableHashSet.Create<string>(IdentifierEqualityComparer.Instance);
     }
 
-    private void AddInterpolatableIdentifier(string identifier) {
-        _interpolatableIdentifiers = _interpolatableIdentifiers.Add(identifier);
+    private void AddInterpolatedIdentifier(string identifier) {
+        // Handle rebinding/shadowing of the context parameter
+        _contextIdentifier = _contextIdentifier.Remove(identifier);
+        _interpolatedIdentifiers = _interpolatedIdentifiers.Add(identifier);
+    }
+
+    private IdentifiersSnapshot CreateIdentifiersSnapshot() =>
+        new IdentifiersSnapshot(
+            visitor: this,
+            contextSnapshot: _contextIdentifier,
+            interpolatedSnapshot: _interpolatedIdentifiers
+        );
+
+    private readonly struct IdentifiersSnapshot(
+        InterpolatedSyntaxVisitor visitor,
+        ImmutableHashSet<string> contextSnapshot,
+        ImmutableHashSet<string> interpolatedSnapshot
+    ) : IDisposable {
+        void IDisposable.Dispose() {
+            Restore();
+        }
+
+        public void Restore() {
+            visitor._contextIdentifier = contextSnapshot;
+            visitor._interpolatedIdentifiers = interpolatedSnapshot;
+        }
     }
 
     public InterpolatedTree Apply(LambdaExpressionSyntax lambda) {
-        // Register the lambda parameters as interpolatable identifiers, less the initial interpolation
-        // context parameters
         var parameters = GetLambdaParameters(lambda);
-        for(var i = 1; i < parameters.Count; i++)
-            AddInterpolatableIdentifier(parameters[i].Identifier.ValueText);
+
+        // Register the interpolation context parameter as a forbidden identifier
+        _contextIdentifier = _contextIdentifier.Add(parameters[0].Identifier.ValueText);
+        // Register all of the parameters as interpolated identifiers which cannot be referenced in an
+        // evaluated expression. We don't use the helper method here to preserve the context identifier.
+        _interpolatedIdentifiers = _interpolatedIdentifiers.Union(parameters.Select(p => p.Identifier.ValueText));
 
         CurrentExpr = new ExpressionBinding(
             parent: default,
@@ -111,11 +149,19 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
     }
 
     private InterpolatedTree VisitEvaluatedSyntax(SyntaxNode node) =>
-        new EvaluatedSyntaxVisitor(_context, _interpolatableIdentifiers).Visit(node);
+        new EvaluatedSyntaxVisitor(_context, _interpolatedIdentifiers).Visit(node);
+
+    public override InterpolatedTree VisitThisExpression(ThisExpressionSyntax node) {
+        SetBoundType(typeof(Expression));
+        return CurrentExpr.Identifier;
+    }
 
     public override InterpolatedTree VisitIdentifierName(IdentifierNameSyntax node) {
-        if(!_interpolatableIdentifiers.Contains(node.Identifier.Text))
-            return _context.Diagnostics.ClosureOverScopeReference(node);
+        // The only identifier which cannot be referenced within the interpolated expression tree
+        // is the one referencing the interpolation context, which does not exist in the result
+        // expression.
+        if(_contextIdentifier.Contains(node.Identifier.ValueText))
+            return _context.Diagnostics.InterpolationContextReference(node);
 
         // Return the current expression, which references the expression to which the identifier
         // is bound (typically a ParameterExpression, but may also be a MemberExpression in the
@@ -208,21 +254,10 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         Visit(node.Expression);
 
     public override InterpolatedTree VisitMemberAccessExpression(MemberAccessExpressionSyntax node) {
-        var symbol = _context.SemanticModel.GetSymbolInfo(node).Symbol;
-        if(_context.IsInterpolationDataAccess(symbol))
-            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
-
-        return VisitMemberAccess(node, symbol);
-    }
-
-    private InterpolatedTree VisitMemberAccess(MemberAccessExpressionSyntax node, ISymbol? symbol) {
-        switch(symbol) {
+        switch(_context.SemanticModel.GetSymbolInfo(node).Symbol) {
             case IFieldSymbol { IsStatic: true } or IPropertySymbol { IsStatic: true }:
                 SetBoundType(typeof(MemberExpression));
-                return _builder.CreateExpression(nameof(Expression.MakeMemberAccess),
-                    _builder.CreateDefaultValue(_context.TypeSymbols.Expression.WithNullableAnnotation(NullableAnnotation.Annotated)),
-                    BindValue($"{nameof(MemberExpression.Member)}")
-                );
+                return CurrentExpr.Identifier;
 
             case IFieldSymbol or IPropertySymbol:
                 SetBoundType(typeof(MemberExpression));
@@ -407,19 +442,16 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
     }
 
     private InterpolatedTree VisitLambdaExpressionUnquoted(LambdaExpressionSyntax node) {
-        var snapshot = _interpolatableIdentifiers;
-        try {
-            foreach(var parameter in GetLambdaParameters(node))
-                AddInterpolatableIdentifier(parameter.Identifier.ValueText);
+        using var snapshot = CreateIdentifiersSnapshot();
 
-            SetBoundType(typeof(LambdaExpression));
-            return _builder.CreateExpression(nameof(Expression.Lambda), [
-                Bind($"{nameof(LambdaExpression.Body)}").WithValue(Visit(node.Body)),
-                BindValue($"{nameof(LambdaExpression.Parameters)}")
-            ]);
-        } finally {
-            _interpolatableIdentifiers = snapshot;
-        }
+        foreach(var parameter in GetLambdaParameters(node))
+            AddInterpolatedIdentifier(parameter.Identifier.ValueText);
+
+        SetBoundType(typeof(LambdaExpression));
+        return _builder.CreateExpression(nameof(Expression.Lambda), [
+            Bind($"{nameof(LambdaExpression.Body)}").WithValue(Visit(node.Body)),
+            BindValue($"{nameof(LambdaExpression.Parameters)}")
+        ]);
     }
 
     public override InterpolatedTree VisitConditionalExpression(ConditionalExpressionSyntax node) {

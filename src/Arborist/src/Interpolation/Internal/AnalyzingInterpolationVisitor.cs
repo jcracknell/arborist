@@ -28,28 +28,27 @@ public class AnalyzingInterpolationVisitor : InterpolationVisitor {
 
     protected override Expression VisitLambda<T>(Expression<T> node) {
         var snapshot = _forbiddenParameters;
-        try {
-            if(_evaluatingExpression is null) {
-                // If we are outside of an evaluated expression tree, add newly declared parameters
-                // to the set of forbidden parameters
-                _forbiddenParameters = _forbiddenParameters.Union(node.Parameters);
-            } else {
-                // If we are in an evaluated expression and the lambda declares new parameters, they are
-                // now allowed to be used (note parameters can technically be shared between expression trees)
-                _forbiddenParameters = _forbiddenParameters.Except(node.Parameters);
-            }
 
-            base.Visit(node.Body);
-            return node;
-        } finally {
-            _forbiddenParameters = snapshot;
-        }
+        _forbiddenParameters = _evaluatingExpression switch {
+            // If we are outside of an evaluated expression tree, add newly declared parameters
+            // to the set of forbidden parameters
+            null => _forbiddenParameters.Union(node.Parameters),
+            // If we are in an evaluated expression and the lambda declares new parameters, they are
+            // now allowed to be used (note parameters can technically be shared between expression trees)
+            not null => _forbiddenParameters.Except(node.Parameters)
+        };
+
+        base.Visit(node.Body);
+
+        _forbiddenParameters = snapshot;
+        return node;
     }
 
     protected override Expression VisitMember(MemberExpression node) {
         if(
-            node is { Expression: ParameterExpression parameter, Member: PropertyInfo property }
-            && parameter.Type.IsAssignableTo(typeof(IInterpolationContext))
+            _evaluatingExpression is not null
+            && node is { Expression: not null, Member: PropertyInfo property }
+            && node.Expression.Type.IsAssignableTo(typeof(IInterpolationContext))
             && property.Name.Equals(nameof(IInterpolationContext<object>.Data))
         ) {
             (_dataReferences ??= new()).Add(node);
@@ -60,30 +59,31 @@ public class AnalyzingInterpolationVisitor : InterpolationVisitor {
     }
 
     protected override Expression VisitParameter(ParameterExpression node) {
-        // If we are inside an evaluated argument expression, and we've encountered one of the parent
-        // expression tree's parameters, that's going to be an error.
+        // If the context parameter appears outside of a splicing call in the interpolated region of
+        // the tree, that's an error, as the context parameter does not exist in the result expression.
+        if(_evaluatingExpression is null && _interpolatedExpression.Parameters[0].Equals(node))
+            throw new InterpolationContextReferenceException(node);
+
+        // You can't reference an interpolated parameter from within an evaluated tree, as they are
+        // not defined during evaluation. Note that this also handles interpolation context references.
         if(_evaluatingExpression is not null && _forbiddenParameters.Contains(node))
-            throw new InterpolatedParameterCaptureException(node, _evaluatingExpression);
+            throw new InterpolatedParameterEvaluationException(node, _evaluatingExpression);
 
         return node;
     }
 
     protected override Expression VisitSplicingMethodCall(MethodCallExpression node) {
+        // Trigger the InterpolatedParameterEvaluationException for a splice in an evaluated expression
         if(_evaluatingExpression is not null)
-            throw new InterpolationContextEvaluationException(node.Method, _evaluatingExpression);
-
-        Visit(node.Object);
+            Visit(node.Object);
 
         foreach(var (parameter, argumentExpression) in node.Method.GetParameters().Zip(node.Arguments)) {
             if(parameter.IsDefined(typeof(EvaluatedSpliceParameterAttribute), false)) {
-                (_evaluatedExpressions ??= new()).Add(argumentExpression);
+                (_evaluatedExpressions ??= new(1)).Add(argumentExpression);
 
-                try {
-                    _evaluatingExpression = argumentExpression;
-                    Visit(argumentExpression);
-                } finally {
-                    _evaluatingExpression = null;
-                }
+                _evaluatingExpression = argumentExpression;
+                Visit(argumentExpression);
+                _evaluatingExpression = null;
             } else {
                 if(!parameter.IsDefined(typeof(InterpolatedSpliceParameterAttribute), false))
                     throw new Exception($"Parameter {parameter} to method {node.Method} must be annotated with one of {typeof(EvaluatedSpliceParameterAttribute)} or {typeof(InterpolatedSpliceParameterAttribute)}.");

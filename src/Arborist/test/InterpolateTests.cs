@@ -29,23 +29,4 @@ public partial class InterpolateTests {
         Assert.Equivalent(expected, interpolated);
     }
 
-    [Fact]
-    public void InterpolateRuntimeFallback_should_throw_InterpolatedParameterCaptureException() {
-        var spliceBodyMethod = typeof(IInterpolationContext).GetMethods().Single(m => m.GetParameters().Length == 2);
-        var parameters = spliceBodyMethod.GetParameters();
-
-        Assert.True(parameters[0].IsDefined(typeof(InterpolatedSpliceParameterAttribute), false));
-        Assert.True(parameters[1].IsDefined(typeof(EvaluatedSpliceParameterAttribute), false));
-
-        Assert.Throws<InterpolatedParameterCaptureException>(() => {
-            ExpressionOn<Owner>.InterpolateRuntimeFallback(default(object), (x, o) => x.SpliceBody(o, y => o));
-        });
-    }
-
-    [Fact]
-    public void InterpolateRuntimeFallback_should_throw_EvaluatedSpliceException() {
-        Assert.Throws<InterpolationContextEvaluationException>(() => {
-            ExpressionOnNone.InterpolateRuntimeFallback(default(object), x => x.SpliceValue(x.SpliceValue(1) + 2));
-        });
-    }
 }

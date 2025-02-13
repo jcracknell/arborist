@@ -28,7 +28,7 @@ public partial class InterpolatedSyntaxVisitor {
         // If there is no method associated with the operation, then this is the initial from clause
         if(qci.OperationInfo.Symbol is not IMethodSymbol method) {
             // Register the identifier defined by this clause for consumption by subsequent clauses
-            AddInterpolatableIdentifier(node.Identifier.ValueText);
+            AddInterpolatedIdentifier(node.Identifier.ValueText);
             if(qci.CastInfo.Symbol is not IMethodSymbol castMethod)
                 return Visit(node.Expression);
 
@@ -42,7 +42,7 @@ public partial class InterpolatedSyntaxVisitor {
         var selectorTree = CreateFromSelector(node, method, qci.CastInfo.Symbol as IMethodSymbol);
 
         // Register the identifier defined by this clause for consumption by subsequent clauses
-        AddInterpolatableIdentifier(node.Identifier.ValueText);
+        AddInterpolatedIdentifier(node.Identifier.ValueText);
 
         var projectionTree = CreateFromProjection(node, method);
 
@@ -123,20 +123,17 @@ public partial class InterpolatedSyntaxVisitor {
         // The input identifier into the inner key selector is discarded in the event that the clause
         // is a GroupJoin, so we create the binding manually here and bind the joined identifier when
         // processing the result projection
-        var snapshot = _interpolatableIdentifiers;
-        try {
-            AddInterpolatableIdentifier(node.Identifier.ValueText);
-            return CreateQueryLambda(method, 3, node.RightExpression);
-        } finally {
-            _interpolatableIdentifiers = snapshot;
-        }
+        using var snapshot = CreateIdentifiersSnapshot();
+
+        AddInterpolatedIdentifier(node.Identifier.ValueText);
+        return CreateQueryLambda(method, 3, node.RightExpression);
     }
 
     private InterpolatedTree CreateJoinResultProjection(JoinClauseSyntax node, IMethodSymbol method) {
         // Join and GroupJoin are actually more or less identical - the only difference between the two
         // is the joined identifier which is specified by the into clause
         var joinedIdentifier = node.Into?.Identifier ?? node.Identifier;
-        AddInterpolatableIdentifier(joinedIdentifier.ValueText);
+        AddInterpolatedIdentifier(joinedIdentifier.ValueText);
 
         // As an optimization, if the final clause preceding the select has a result projection,
         // then the final output projection occurs here instead of in a trailing select
@@ -175,7 +172,7 @@ public partial class InterpolatedSyntaxVisitor {
         ]));
 
         // Register the identifier defined by this clause for consumption by subsequent clauses
-        AddInterpolatableIdentifier(node.Identifier.ValueText);
+        AddInterpolatedIdentifier(node.Identifier.ValueText);
 
         return CreateQueryCall(node, method, [inputTree, projectionTree]);
     }
@@ -257,14 +254,14 @@ public partial class InterpolatedSyntaxVisitor {
             _parentContext = parentContext;
             QueryBody = queryBody!;
             _clauseIndex = queryBody?.Clauses.Count ?? 0;
-            _identifiersSnapshot = visitor._interpolatableIdentifiers;
+            _identifiersSnapshot = visitor.CreateIdentifiersSnapshot();
         }
 
         private readonly QueryContext? _parentContext;
         private readonly InterpolatedSyntaxVisitor _visitor;
         public QueryBodySyntax QueryBody { get; private set; }
         private int _clauseIndex;
-        private readonly ImmutableHashSet<string> _identifiersSnapshot;
+        private readonly IdentifiersSnapshot _identifiersSnapshot;
 
         public QueryContext BeginQuery(QueryBodySyntax queryBody) =>
             new(_visitor, this, queryBody);
@@ -273,7 +270,7 @@ public partial class InterpolatedSyntaxVisitor {
             if(_parentContext is null)
                 throw new InvalidOperationException();
 
-            _visitor._interpolatableIdentifiers = _identifiersSnapshot;
+            _identifiersSnapshot.Restore();
             return _parentContext;
         }
 
@@ -282,10 +279,10 @@ public partial class InterpolatedSyntaxVisitor {
             _clauseIndex -= 1;
 
             if(clauseIndex == QueryBody.Clauses.Count) {
-                // We are starting processing of the query body, so add the continuation identifier if 
+                // We are starting processing of the query body, so add the continuation identifier if
                 // this is a query continuation
                 if(QueryBody.Parent is QueryContinuationSyntax qc)
-                    _visitor.AddInterpolatableIdentifier(qc.Identifier.ValueText);
+                    _visitor.AddInterpolatedIdentifier(qc.Identifier.ValueText);
 
                 return _visitor.Visit(QueryBody.SelectOrGroup);
             }
@@ -301,13 +298,10 @@ public partial class InterpolatedSyntaxVisitor {
                     // Take a snapshot of the identifiers defined by the current query body so that we can
                     // restore it when we have finished processing the preceding query body (identifiers are
                     // scoped to the query in which they are defined)
-                    var snapshot = _visitor._interpolatableIdentifiers;
-                    _visitor._interpolatableIdentifiers = _identifiersSnapshot;
-
-                    var result = VisitNext();
-
-                    _visitor._interpolatableIdentifiers = snapshot;
-                    return result;
+                    using(_visitor.CreateIdentifiersSnapshot()) {
+                        _identifiersSnapshot.Restore();
+                        return VisitNext();
+                    }
             }
 
             if(clauseIndex < 0)

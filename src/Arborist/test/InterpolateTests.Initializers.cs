@@ -58,7 +58,7 @@ public partial class InterpolateTests {
     }
 
     [Fact]
-    public void Should_work_for_object_initializer() {
+    public void Should_handle_object_initializer() {
         var interpolated = InterpolationTestOnNone.Interpolate(default(object), x =>
             new Cat { Id = x.SpliceValue(42), Name = x.SpliceValue("Garfield") }
         );
@@ -69,7 +69,7 @@ public partial class InterpolateTests {
     }
 
     [Fact]
-    public void Should_work_for_collection_initializer() {
+    public void Should_handle_collection_initializer() {
         var interpolated = InterpolationTestOnNone.Interpolate(default(object), x =>
             new List<int> { x.SpliceValue(42) }
         );
@@ -80,12 +80,40 @@ public partial class InterpolateTests {
     }
 
     [Fact]
-    public void Should_work_for_object_initializer_in_collection_initializer() {
+    public void Should_handle_object_initializer_in_collection_initializer() {
         var interpolated = InterpolationTestOnNone.Interpolate(default(object), x =>
             new List<Cat> { new Cat { Name = x.SpliceValue("Garfield") } }
         );
 
         var expected = ExpressionOnNone.Of(() => new List<Cat> { new Cat { Name = "Garfield" } });
+
+        Assert.Equivalent(expected, interpolated);
+    }
+
+    [Fact]
+    public void Should_handle_nested_object_initializer() {
+        var interpolated = InterpolationTestOnNone.Interpolate(default(object), x =>
+            new Cat { Owner = { Name = x.SpliceValue("Jon") } }
+        );
+
+        var expected = ExpressionOnNone.Of(() => new Cat { Owner = { Name = "Jon" } });
+
+        Assert.Equivalent(expected, interpolated);
+    }
+
+    [Fact]
+    public void Should_handle_nested_collection_initializer() {
+        var interpolated = InterpolationTestOnNone.Interpolate(default(object), x =>
+            new NestedCollectionInitializerFixture<string> {
+                List = { x.SpliceValue("foo") },
+                Dictionary = { { x.SpliceValue("bar"), x.SpliceValue("baz") } }
+            }
+        );
+
+        var expected = ExpressionOnNone.Of(() => new NestedCollectionInitializerFixture<string> {
+            List = { "foo" },
+            Dictionary = { { "bar", "baz" } }
+        });
 
         Assert.Equivalent(expected, interpolated);
     }

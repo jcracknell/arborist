@@ -168,4 +168,56 @@ public partial class EvaluatedSyntaxVisitorTests {
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
     }
+
+    [Fact]
+    public void Should_handle_nested_object_initializer() {
+        var results = InterpolationInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOnNone.Interpolate(default(object), x =>
+                x.SpliceValue(new Cat { Owner = { Name = ""Jon"" } })
+            );
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        new global::Arborist.TestFixtures.Cat() { Owner = { Name = ""Jon"" } },
+                        __e0.Type
+                    )
+                }
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
+    public void Should_handle_nested_collection_initializer() {
+        var results = InterpolationInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOnNone.Interpolate(default(object), x =>
+                x.SpliceValue(new NestedCollectionInitializerFixture<string> {
+                    List = { ""foo"" },
+                    Dictionary = { { ""bar"", ""baz"" } }
+                })
+            );
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        new global::Arborist.TestFixtures.NestedCollectionInitializerFixture<global::System.String>(){
+                            List = { ""foo"" },
+                            Dictionary = { { ""bar"", ""baz"" } }
+                        },
+                        __e0.Type
+                    )
+                }
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
 }

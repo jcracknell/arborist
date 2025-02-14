@@ -320,4 +320,119 @@ public partial class InterpolatedSyntaxVisitorTests {
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
     }
+
+    [Fact]
+    public void Should_handle_nested_object_initializer() {
+        var results = InterpolationInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOnNone.Interpolate(default(object), x =>
+                new Cat { Owner = { Name = x.SpliceValue(""Jon"") } }
+            );
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                (global::System.Linq.Expressions.MemberInitExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.MemberInit(
+                        __e0.NewExpression,
+                        new global::System.Linq.Expressions.MemberBinding[] {
+                            (global::System.Linq.Expressions.MemberMemberBinding)(__e0.Bindings[0]) switch {
+                                var __e1 => global::System.Linq.Expressions.Expression.MemberBind(
+                                    __e1.Member,
+                                    new global::System.Linq.Expressions.MemberBinding[] {
+                                        (global::System.Linq.Expressions.MemberAssignment)(__e1.Bindings[0]) switch {
+                                            var __e2 => global::System.Linq.Expressions.Expression.Bind(
+                                                __e2.Member,
+                                                (global::System.Linq.Expressions.MethodCallExpression)(__e2.Expression) switch {
+                                                    var __e3 => global::System.Linq.Expressions.Expression.Constant(
+                                                        ""Jon"",
+                                                        __e3.Type
+                                                    )
+                                                }
+                                            )
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    )
+                }
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
+    public void Should_handle_nested_collection_initializer() {
+        var results = InterpolationInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOnNone.Interpolate(default(object), x =>
+                new NestedCollectionInitializerFixture<string> {
+                    List = { x.SpliceValue(""foo"") },
+                    Dictionary = { { x.SpliceValue(""bar""), x.SpliceValue(""baz"") } }
+                }
+            );
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                (global::System.Linq.Expressions.MemberInitExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.MemberInit(
+                        __e0.NewExpression,
+                        new global::System.Linq.Expressions.MemberBinding[] {
+                            (global::System.Linq.Expressions.MemberListBinding)(__e0.Bindings[0]) switch {
+                                var __e1 => global::System.Linq.Expressions.Expression.ListBind(
+                                    __e1.Member,
+                                    new global::System.Linq.Expressions.ElementInit[] {
+                                        (global::System.Linq.Expressions.ElementInit)(__e1.Initializers[0]) switch {
+                                            var __e2 => global::System.Linq.Expressions.Expression.ElementInit(
+                                                __e2.AddMethod,
+                                                new global::System.Linq.Expressions.Expression[] {
+                                                    (global::System.Linq.Expressions.MethodCallExpression)(__e2.Arguments[0]) switch {
+                                                        var __e3 => global::System.Linq.Expressions.Expression.Constant(
+                                                            ""foo"",
+                                                            __e3.Type
+                                                        )
+                                                    }
+                                                }
+                                            )
+                                        }
+                                    }
+                                )
+                            },
+                            (global::System.Linq.Expressions.MemberListBinding)(__e0.Bindings[1]) switch {
+                                var __e1 => global::System.Linq.Expressions.Expression.ListBind(
+                                    __e1.Member,
+                                    new global::System.Linq.Expressions.ElementInit[] {
+                                        (global::System.Linq.Expressions.ElementInit)(__e1.Initializers[0]) switch {
+                                            var __e2 => global::System.Linq.Expressions.Expression.ElementInit(
+                                                __e2.AddMethod,
+                                                new global::System.Linq.Expressions.Expression[] {
+                                                    (global::System.Linq.Expressions.MethodCallExpression)(__e2.Arguments[0]) switch {
+                                                        var __e3 => global::System.Linq.Expressions.Expression.Constant(
+                                                            ""bar"",
+                                                            __e3.Type
+                                                        )
+                                                    },
+                                                    (global::System.Linq.Expressions.MethodCallExpression)(__e2.Arguments[1]) switch {
+                                                        var __e3 => global::System.Linq.Expressions.Expression.Constant(
+                                                            ""baz"",
+                                                            __e3.Type
+                                                        )
+                                                    }
+                                                }
+                                            )
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    )
+                }
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
 }

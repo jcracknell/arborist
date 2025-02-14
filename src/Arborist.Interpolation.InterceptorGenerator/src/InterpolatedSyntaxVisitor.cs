@@ -362,6 +362,8 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         // much about the context in which the bracketed list and its elements occur.
         switch(node.Kind()) {
             case SyntaxKind.ObjectInitializerExpression:
+                // N.B. MemberInitExpression and MemberMemberBinding both have the Bindings property, so it
+                // does not matter which case this is.
                 return InterpolatedTree.Concat(
                     InterpolatedTree.Verbatim("new global::System.Linq.Expressions.MemberBinding[] "),
                     InterpolatedTree.Initializer(node.Expressions.SelectEager(
@@ -371,6 +373,8 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
                 );
 
             case SyntaxKind.CollectionInitializerExpression:
+                // N.B. ListInitExpression and MemberListBinding both have the Initializers property, so it
+                // does not matter which case this is.
                 return InterpolatedTree.Concat(
                     InterpolatedTree.Verbatim("new global::System.Linq.Expressions.ElementInit[] "),
                     InterpolatedTree.Initializer(node.Expressions.SelectEager(
@@ -385,17 +389,36 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
     }
 
     private InterpolatedTree VisitObjectInitializerElement(ExpressionSyntax node) {
-        switch(node) {
-            case AssignmentExpressionSyntax { Left: IdentifierNameSyntax } assignment:
-                SetBoundType(typeof(MemberAssignment));
-                return _builder.CreateExpression(nameof(Expression.Bind), [
-                    BindValue($"{nameof(MemberAssignment.Member)}"),
-                    Bind($"{nameof(MemberAssignment.Expression)}").WithValue(Visit(assignment.Right))
+        if(node is not AssignmentExpressionSyntax { Left: IdentifierNameSyntax } assignment)
+            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
+
+        // The C# language spec doesn't really specify a name for this, but DOES note that an
+        // `initializer_value` can be either an `expression` or an `object_or_collection_initializer`,
+        // and if it's an object initializer then it's called a "nested object initializer"...
+        if(assignment.Right is InitializerExpressionSyntax initializer) switch(initializer.Kind()) {
+            case SyntaxKind.ObjectInitializerExpression:
+                SetBoundType(typeof(MemberMemberBinding));
+                return _builder.CreateExpression(nameof(Expression.MemberBind), [
+                    BindValue($"{nameof(MemberMemberBinding.Member)}"),
+                    VisitInitializerExpression(initializer)
+                ]);
+
+            case SyntaxKind.CollectionInitializerExpression:
+                SetBoundType(typeof(MemberListBinding));
+                return _builder.CreateExpression(nameof(Expression.ListBind), [
+                    BindValue($"{nameof(MemberListBinding.Member)}"),
+                    VisitInitializerExpression(initializer)
                 ]);
 
             default:
                 return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
         }
+
+        SetBoundType(typeof(MemberAssignment));
+        return _builder.CreateExpression(nameof(Expression.Bind), [
+            BindValue($"{nameof(MemberAssignment.Member)}"),
+            Bind($"{nameof(MemberAssignment.Expression)}").WithValue(Visit(assignment.Right))
+        ]);
     }
 
     private InterpolatedTree VisitCollectionInitializerElement(ExpressionSyntax node) =>

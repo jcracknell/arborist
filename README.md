@@ -9,11 +9,10 @@ analagous to string interpolation, as well as a suite of generalized expression 
 
 Arborist differs from [LINQKit][2] in that it:
 
-  - provides a generalized approach to expression interpolation as compared to
-    Expand/AsExpandable,
+  - provides a more powerful, generalized approach to expression interpolation which is also
+    more performant than Expand/AsExpandable; and
   - adopts a composable, functional approach to expression manipulation supporting expressions
-    in general as compared to mutable PredicateBuilder instances, and
-  - is significantly more performant.
+    in general as compared to mutable PredicateBuilder instances.
 
 ## Expression interpolation
 
@@ -135,6 +134,54 @@ ExpressionOnNone.Interpolate(
 );
 // () => 42
 ```
+
+### Compile-time interpolator interception
+
+![Compile-time interpolator interception](https://github.com/user-attachments/assets/a88e389b-479a-4454-9606-163ac2fbceb2)
+
+Arborist supports compile-time generation of interpolator implementations via C#12/.NET8
+[method interception][3].
+This dramatically improves the performance characteristics of expression interpolation (which
+can otherwise be relatively costly), as an intercepted interpolation call takes somewhere on
+the order of 5% of the execution time of the equivalent un-intercepted call.
+
+To enable code generation for interpolation interceptors, you need to add
+`Arborist.Interpolation.Interceptors` to the `InterceptorsPreviewNamespaces` build property
+(or `InterceptorsNamespaces` if you are using the .NET 9 SDK):
+
+```xml
+<PropertyGroup>
+  <InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);Arborist.Interpolation.Interceptors</InterceptorsPreviewNamespaces>
+</PropertyGroup>
+```
+
+Interceptor generation relys on analyzing the syntax of the interpolated expression tree to produce
+an optimized implementation of the required interpolation operations which avoids having to compile
+an expression to extract the values of evaluated splice arguments (those decorated with
+EvaluatedSpliceParameterAttribute).
+
+There are a number of scenarios which can prevent interception of an interpolation call, in which
+case the call is handled by the slower runtime interpolation process:
+
+  - The interpolated expression is not a literal (inline) lambda expression, in which case
+    it cannot be analyzed.
+
+  - The interpolated expression contains evaluated splice arguments referencing types or
+    members which are not accessible from the global scope of the assembly. Broadly this means
+    private and protected types and members, as well as type parameters defined in the scope
+    in which the interpolation call occurs.
+
+  - The interpolated expression contains an evaluated splice argument containing references to
+    values defined in the scope of the interpolation call.
+
+Some of these cases can be worked around by pre-computing and passing spliced values using the
+data parameter. This handles the case where a spliced value is computed by an inaccessible method,
+however in the event that the type of the spliced value itself is inaccessible to the interceptor
+implementation, you may have no choice but to accept the slower runtime interpolation implementation.
+
+> **NOTE:** In the event that you encounter problems related to the interceptor generator,
+> InterpolateRuntimeFallback overloads are provided for all interceptable expression interpolation
+> methods which are always handled by the slower but more reliable runtime interpolation process.
 
 ## Predicate helpers
 
@@ -282,3 +329,4 @@ has the following JSON representation:
 [0]: https://learn.microsoft.com/en-us/dotnet/api/system.linq.expressions.expression.constant
 [1]: https://learn.microsoft.com/en-us/dotnet/api/system.linq.expressions.expression.quote
 [2]: https://github.com/scottksmith95/LINQKit
+[3]: https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-12#interceptors

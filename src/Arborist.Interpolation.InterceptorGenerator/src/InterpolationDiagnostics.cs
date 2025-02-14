@@ -12,12 +12,12 @@ public static class InterpolationDiagnostics {
     public const string ARB995_UnsupportedType = "ARB995";
 
     public const string ARB000_SetInterpolatorsNamespaces = "ARB000";
-    public const string ARB001_InterpolationContextReference = "ARB006";
-    public const string ARB002_EvaluatedScopeReference = "ARB001";
-    public const string ARB003_EvaluatedInterpolatedParameter = "ARB002";
-    public const string ARB004_NoSplices = "ARB003";
-    public const string ARB005_InaccessibleSymbolReference = "ARB004";
-    public const string ARB006_ReferencesCallSiteTypeParameter = "ARB005";
+    public const string ARB001_InterpolationContextReference = "ARB001";
+    public const string ARB002_EvaluatedScopeReference = "ARB002";
+    public const string ARB003_EvaluatedInterpolatedParameter = "ARB003";
+    public const string ARB004_NoSplices = "ARB004";
+    public const string ARB005_InaccessibleSymbolReference = "ARB005";
+    public const string ARB006_ReferencesCallSiteTypeParameter = "ARB006";
 
     private static DiagnosticDescriptor Create(
         string code,

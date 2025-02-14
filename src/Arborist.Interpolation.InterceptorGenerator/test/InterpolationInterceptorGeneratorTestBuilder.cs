@@ -27,15 +27,16 @@ public sealed class InterpolationInterceptorGeneratorTestBuilder {
         AddAssembly("System.dll");
         AddAssembly("System.Core.dll");
         AddAssembly("System.Runtime.dll");
-        AddAssembly(typeof(System.Action));
-        AddAssembly(typeof(System.Linq.Enumerable));
-        AddAssembly(typeof(System.Linq.Expressions.Expression));
-        AddAssembly(typeof(Arborist.ExpressionOnNone));
+        // There's a weird thing going on here where type List<> purports to be in System.Private.CoreLib,
+        // but requires assembly System.Collections to be loaded, and I don't want to deal with figuring
+        // it out at the moment.
+        AddAssembly("System.Collections.dll");
 
-        Using("System");
+        Using(typeof(System.Action));
         Using(typeof(System.Collections.Generic.List<>));
         Using(typeof(System.Collections.Immutable.ImmutableList<>));
         Using(typeof(System.Linq.Enumerable));
+        Using(typeof(System.Linq.Expressions.Expression));
         Using(typeof(Arborist.ExpressionHelper));
         Using(typeof(Arborist.TestFixtures.Cat));
     }

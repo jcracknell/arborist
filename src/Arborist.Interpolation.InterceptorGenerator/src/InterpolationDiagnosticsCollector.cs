@@ -47,4 +47,7 @@ public sealed class InterpolationDiagnosticsCollector(Location defaultLocation, 
 
     public InterpolatedTree ReferencesCallSiteTypeParameter(ITypeSymbol symbol, SyntaxNode? node) =>
         Add(InterpolationDiagnostics.ReferencesCallSiteTypeParameter(severityOverride, symbol, node), node?.GetLocation() ?? defaultLocation);
+
+    public InterpolatedTree NonLiteralInterpolatedExpression(ArgumentSyntax argument) =>
+        Add(InterpolationDiagnostics.NonLiteralInterpolatedExpression(severityOverride), argument.GetLocation());
 }

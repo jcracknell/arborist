@@ -18,6 +18,7 @@ public static class InterpolationDiagnostics {
     public const string ARB004_NoSplices = "ARB004";
     public const string ARB005_InaccessibleSymbolReference = "ARB005";
     public const string ARB006_ReferencesCallSiteTypeParameter = "ARB006";
+    public const string ARB007_NonLiteralInterpolatedExpression = "ARB007";
 
     private static DiagnosticDescriptor Create(
         string code,
@@ -120,5 +121,13 @@ public static class InterpolationDiagnostics {
             severity: severity ?? DiagnosticSeverity.Info,
             title: "Evaluated splice argument references call-site type parameter",
             message: $"Evaluated splice argument contains a reference to call-site type parameter {symbol} and cannot be interpolated at compile time."
+        );
+
+    public static DiagnosticDescriptor NonLiteralInterpolatedExpression(DiagnosticSeverity? severity) =>
+        Create(
+            code: ARB007_NonLiteralInterpolatedExpression,
+            severity: severity ?? DiagnosticSeverity.Info,
+            title: "Interpolated expression was not specified as a literal",
+            message: "Interpolated expression was not specified as a literal (inline) expression and cannot be interpolated at compile time."
         );
 }

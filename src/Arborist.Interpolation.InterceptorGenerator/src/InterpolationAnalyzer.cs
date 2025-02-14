@@ -61,7 +61,11 @@ public static class InterpolationAnalyzer {
         var treeBuilder = new InterpolatedTreeBuilder(diagnostics);
 
         // Get the syntax node for the lambda expression to be interpolated
-        var interpolatedExpression = (LambdaExpressionSyntax)invocation.ArgumentList.Arguments[expressionParameter.Ordinal].Expression;
+        var expressionArgument = invocation.ArgumentList.Arguments[expressionParameter.Ordinal];
+        if(expressionArgument.Expression is not LambdaExpressionSyntax interpolatedExpression) {
+            diagnostics.NonLiteralInterpolatedExpression(expressionArgument);
+            return default;
+        }
 
         var context = new InterpolationAnalysisContext(
             invocation: invocation,

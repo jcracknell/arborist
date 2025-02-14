@@ -214,7 +214,6 @@ public class DiagnosticTests {
         });
     }
 
-
     [Fact]
     public void Should_produce_ARB006_for_expression_referencing_type_param_from_callsite_method() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
@@ -249,6 +248,20 @@ public class DiagnosticTests {
         Assert.Equal(1, results.AnalysisResults.Count);
         Assert.Contains(results.Diagnostics, diagnostic => diagnostic is {
             Id: InterpolationDiagnostics.ARB006_ReferencesCallSiteTypeParameter,
+            Severity: DiagnosticSeverity.Info
+        });
+    }
+
+    [Fact]
+    public void Should_produce_ARB007_for_non_literal_expression() {
+        var results = InterpolationInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            var expression = ExpressionOn<IInterpolationContext<object?>>.Of(x => 42);
+            ExpressionOnNone.Interpolate(default(object), expression);
+        ");
+
+        Assert.Contains(results.Diagnostics, diagnostic => diagnostic is {
+            Id: InterpolationDiagnostics.ARB007_NonLiteralInterpolatedExpression,
             Severity: DiagnosticSeverity.Info
         });
     }

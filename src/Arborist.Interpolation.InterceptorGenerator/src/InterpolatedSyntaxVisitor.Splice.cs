@@ -38,7 +38,7 @@ public partial class InterpolatedSyntaxVisitor {
 
         var identifier = _context.TreeBuilder.CreateIdentifier();
 
-        SetBoundType(typeof(MethodCallExpression));
+        CurrentExpr.SetType(typeof(MethodCallExpression));
         return InterpolatedTree.Switch(
             InterpolatedTree.Call(
                 InterpolatedTree.Interpolate($"{_context.TreeBuilder.CreateTypeRef(evaluatedType)}.Coerce"),
@@ -48,7 +48,7 @@ public partial class InterpolatedSyntaxVisitor {
                 InterpolatedTree.SwitchCase(
                     InterpolatedTree.Interpolate($"var {identifier}"),
                     InterpolatedTree.Ternary(
-                        BindValue($"{nameof(MethodCallExpression.Type)} == {identifier}.Type"),
+                        CurrentExpr.BindValue($"{nameof(MethodCallExpression.Type)} == {identifier}.Type"),
                         InterpolatedTree.Verbatim(identifier),
                         _builder.CreateExpression(
                             SyntaxHelpers.InCheckedContext(node, _context.SemanticModel) switch {
@@ -57,7 +57,7 @@ public partial class InterpolatedSyntaxVisitor {
                             },
                             [
                                 InterpolatedTree.Verbatim(identifier),
-                                BindValue($"{nameof(MethodCallExpression.Type)}")
+                                CurrentExpr.BindValue($"{nameof(MethodCallExpression.Type)}")
                             ]
                         )
                     )
@@ -79,14 +79,14 @@ public partial class InterpolatedSyntaxVisitor {
                 InterpolatedTree.Interpolate($"new global::System.Collections.Generic.KeyValuePair<{_builder.ExpressionTypeName}, {_builder.ExpressionTypeName}>"),
                 [
                     InterpolatedTree.Verbatim($"{identifier}.{nameof(LambdaExpression.Parameters)}[{i}]"),
-                    BindCallArg(method, i + 1).WithValue(Visit(node.ArgumentList.Arguments[i]))
+                    CurrentExpr.BindCallArg(method, i + 1).WithValue(Visit(node.ArgumentList.Arguments[i]))
                 ]
             );
 
         var expressionTree = VisitSpliceBodyExpression(expressionNode, method);
 
         // We'll use a switch expression with a single case to bind the evaluated expression tree
-        SetBoundType(typeof(MethodCallExpression));
+        CurrentExpr.SetType(typeof(MethodCallExpression));
         return InterpolatedTree.Bind(
             identifier,
             expressionTree,
@@ -123,17 +123,17 @@ public partial class InterpolatedSyntaxVisitor {
     private InterpolatedTree VisitSpliceValue(InvocationExpressionSyntax node, IMethodSymbol method) {
         var valueNode = node.ArgumentList.Arguments[0].Expression;
 
-        SetBoundType(typeof(MethodCallExpression));
+        CurrentExpr.SetType(typeof(MethodCallExpression));
         return _builder.CreateExpression(nameof(Expression.Constant),
             VisitEvaluatedSyntax(valueNode),
-            BindValue($"{nameof(MethodCallExpression.Type)}")
+            CurrentExpr.BindValue($"{nameof(MethodCallExpression.Type)}")
         );
     }
 
     private InterpolatedTree VisitSpliceQuoted(InvocationExpressionSyntax node, IMethodSymbol method) {
         var expressionNode = node.ArgumentList.Arguments[0].Expression;
 
-        SetBoundType(typeof(MethodCallExpression));
+        CurrentExpr.SetType(typeof(MethodCallExpression));
         return _builder.CreateExpression(nameof(Expression.Quote), VisitEvaluatedSyntax(expressionNode));
     }
 }

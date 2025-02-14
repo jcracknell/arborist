@@ -66,10 +66,10 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         // evaluated expression. We don't use the helper method here to preserve the context identifier.
         _interpolatedIdentifiers = _interpolatedIdentifiers.Union(parameters.Select(p => p.Identifier.ValueText));
 
-        CurrentExpr = new ExpressionBinding(
+        CurrentExpr = new InterpolatedExpressionBinding(
             parent: default,
             visitor: this,
-            identifier: "__e0",
+            identifier: ExpressionBinding.CreateIdentifier(0),
             binding: InterpolatedTree.Interpolate($"{_context.ExpressionParameter.Name}.{nameof(LambdaExpression.Body)}"),
             expressionType: default
         );
@@ -134,16 +134,16 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         // an overload of Expression.Convert which exists specifically to handle this situation.
         // Conveniently for the moment this saves us from having to deal with resolving a nameless,
         // possibly generic method.
-        SetBoundType(typeof(UnaryExpression));
+        CurrentExpr.SetType(typeof(UnaryExpression));
         return _builder.CreateExpression(
             SyntaxHelpers.InCheckedContext(node, _context.SemanticModel) switch {
                 true => nameof(Expression.ConvertChecked),
                 false => nameof(Expression.Convert)
             },
             [
-                Bind($"{nameof(UnaryExpression.Operand)}").WithValue(base.Visit(node)!),
-                BindValue($"{nameof(UnaryExpression.Type)}"),
-                BindValue($"{nameof(UnaryExpression.Method)}"),
+                CurrentExpr.Bind($"{nameof(UnaryExpression.Operand)}").WithValue(base.Visit(node)!),
+                CurrentExpr.BindValue($"{nameof(UnaryExpression.Type)}"),
+                CurrentExpr.BindValue($"{nameof(UnaryExpression.Method)}"),
             ]
         );
     }
@@ -152,7 +152,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         new EvaluatedSyntaxVisitor(_context, _interpolatedIdentifiers).Visit(node);
 
     public override InterpolatedTree VisitThisExpression(ThisExpressionSyntax node) {
-        SetBoundType(typeof(Expression));
+        CurrentExpr.SetType(typeof(Expression));
         return CurrentExpr.Identifier;
     }
 
@@ -166,31 +166,31 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         // Return the current expression, which references the expression to which the identifier
         // is bound (typically a ParameterExpression, but may also be a MemberExpression in the
         // case of an identifier bound in a query expression)
-        SetBoundType(typeof(Expression));
+        CurrentExpr.SetType(typeof(Expression));
         return CurrentExpr.Identifier;
     }
 
     public override InterpolatedTree VisitImplicitArrayCreationExpression(ImplicitArrayCreationExpressionSyntax node) {
-        SetBoundType(typeof(NewArrayExpression));
+        CurrentExpr.SetType(typeof(NewArrayExpression));
         return _builder.CreateExpression(nameof(Expression.NewArrayInit), [
-            BindValue($"{nameof(NewArrayExpression.Type)}.{nameof(Type.GetElementType)}()!"),
+            CurrentExpr.BindValue($"{nameof(NewArrayExpression.Type)}.{nameof(Type.GetElementType)}()!"),
             _builder.CreateExpressionArray(node.Initializer.Expressions.SelectEager(
-                (expr, i) => Bind($"{nameof(NewArrayExpression.Expressions)}[{i}]").WithValue(Visit(expr))
+                (expr, i) => CurrentExpr.Bind($"{nameof(NewArrayExpression.Expressions)}[{i}]").WithValue(Visit(expr))
             ))
         ]);
     }
 
     public override InterpolatedTree VisitArrayCreationExpression(ArrayCreationExpressionSyntax node) {
-        SetBoundType(typeof(NewArrayExpression));
+        CurrentExpr.SetType(typeof(NewArrayExpression));
 
         // If the node has an initializer, then the array dimensions are required to be constants
         // and the expression is a NewArrayInit because the length is effectively implied by the
         // initializer
         if(node.Initializer is not null)
             return _builder.CreateExpression(nameof(Expression.NewArrayInit), [
-                BindValue($"{nameof(NewArrayExpression.Type)}.{nameof(Type.GetElementType)}()!"),
+                CurrentExpr.BindValue($"{nameof(NewArrayExpression.Type)}.{nameof(Type.GetElementType)}()!"),
                 _builder.CreateExpressionArray(node.Initializer.Expressions.SelectEager(
-                    (expr, i) => Bind($"{nameof(NewArrayExpression.Expressions)}[{i}]").WithValue(Visit(expr))
+                    (expr, i) => CurrentExpr.Bind($"{nameof(NewArrayExpression.Expressions)}[{i}]").WithValue(Visit(expr))
                 ))
             ]);
 
@@ -198,9 +198,9 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         // NewArrayBounds. Note that only the first rank specifier of the array can contain dimensions
         // (if there are multiple specifiers it is a nested array type).
         return _builder.CreateExpression(nameof(Expression.NewArrayBounds), [
-            BindValue($"{nameof(NewArrayExpression.Type)}.{nameof(Type.GetElementType)}()!"),
+            CurrentExpr.BindValue($"{nameof(NewArrayExpression.Type)}.{nameof(Type.GetElementType)}()!"),
             _builder.CreateExpressionArray(node.Type.RankSpecifiers[0].Sizes.SelectEager(
-                (size, i) => Bind($"{nameof(NewArrayExpression.Expressions)}[{i}]").WithValue(Visit(size))
+                (size, i) => CurrentExpr.Bind($"{nameof(NewArrayExpression.Expressions)}[{i}]").WithValue(Visit(size))
             ))
         ]);
     }
@@ -215,33 +215,33 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
     private InterpolatedTree VisitInvocation(InvocationExpressionSyntax node) {
         switch(_context.SemanticModel.GetSymbolInfo(node).Symbol) {
             case IMethodSymbol { ReducedFrom: {} } method:
-                SetBoundType(typeof(MethodCallExpression));
+                CurrentExpr.SetType(typeof(MethodCallExpression));
                 return _builder.CreateExpression(nameof(Expression.Call),
-                    BindValue($"{nameof(MethodCallExpression.Method)}"),
+                    CurrentExpr.BindValue($"{nameof(MethodCallExpression.Method)}"),
                     _builder.CreateExpressionArray([
-                        Bind($"{nameof(MethodCallExpression.Arguments)}[0]").WithValue(Visit(node.Expression)),
+                        CurrentExpr.Bind($"{nameof(MethodCallExpression.Arguments)}[0]").WithValue(Visit(node.Expression)),
                         ..node.ArgumentList.Arguments.SelectEager(
-                            (arg, i) => Bind($"{nameof(MethodCallExpression.Arguments)}[{i + 1}]").WithValue(Visit(arg))
+                            (arg, i) => CurrentExpr.Bind($"{nameof(MethodCallExpression.Arguments)}[{i + 1}]").WithValue(Visit(arg))
                         )
                     ])
                 );
 
             case IMethodSymbol { IsStatic: true }:
-                SetBoundType(typeof(MethodCallExpression));
+                CurrentExpr.SetType(typeof(MethodCallExpression));
                 return _builder.CreateExpression(nameof(Expression.Call),
-                    BindValue($"{nameof(MethodCallExpression.Method)}"),
+                    CurrentExpr.BindValue($"{nameof(MethodCallExpression.Method)}"),
                     _builder.CreateExpressionArray(node.ArgumentList.Arguments.SelectEager(
-                        (arg, i) => Bind($"{nameof(MethodCallExpression.Arguments)}[{i}]").WithValue(Visit(arg))
+                        (arg, i) => CurrentExpr.Bind($"{nameof(MethodCallExpression.Arguments)}[{i}]").WithValue(Visit(arg))
                     ))
                 );
 
             case IMethodSymbol:
-                SetBoundType(typeof(MethodCallExpression));
+                CurrentExpr.SetType(typeof(MethodCallExpression));
                 return _builder.CreateExpression(nameof(Expression.Call),
-                    Bind($"{nameof(MethodCallExpression.Object)}").WithValue(Visit(node.Expression)),
-                    BindValue($"{nameof(MethodCallExpression.Method)}"),
+                    CurrentExpr.Bind($"{nameof(MethodCallExpression.Object)}").WithValue(Visit(node.Expression)),
+                    CurrentExpr.BindValue($"{nameof(MethodCallExpression.Method)}"),
                     _builder.CreateExpressionArray(node.ArgumentList.Arguments.SelectEager(
-                        (arg, i) => Bind($"{nameof(MethodCallExpression.Arguments)}[{i}]").WithValue(Visit(arg))
+                        (arg, i) => CurrentExpr.Bind($"{nameof(MethodCallExpression.Arguments)}[{i}]").WithValue(Visit(arg))
                     ))
                 );
 
@@ -256,14 +256,14 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
     public override InterpolatedTree VisitMemberAccessExpression(MemberAccessExpressionSyntax node) {
         switch(_context.SemanticModel.GetSymbolInfo(node).Symbol) {
             case IFieldSymbol { IsStatic: true } or IPropertySymbol { IsStatic: true }:
-                SetBoundType(typeof(MemberExpression));
+                CurrentExpr.SetType(typeof(MemberExpression));
                 return CurrentExpr.Identifier;
 
             case IFieldSymbol or IPropertySymbol:
-                SetBoundType(typeof(MemberExpression));
+                CurrentExpr.SetType(typeof(MemberExpression));
                 return _builder.CreateExpression(nameof(Expression.MakeMemberAccess),
-                    Bind($"{nameof(MemberExpression.Expression)}!").WithValue(Visit(node.Expression)),
-                    BindValue($"{nameof(MemberExpression.Member)}")
+                    CurrentExpr.Bind($"{nameof(MemberExpression.Expression)}!").WithValue(Visit(node.Expression)),
+                    CurrentExpr.BindValue($"{nameof(MemberExpression.Member)}")
                 );
 
             case IMethodSymbol:
@@ -281,35 +281,35 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
     }
 
     public override InterpolatedTree VisitCastExpression(CastExpressionSyntax node) {
-        SetBoundType(typeof(UnaryExpression));
+        CurrentExpr.SetType(typeof(UnaryExpression));
         return _builder.CreateExpression(
             SyntaxHelpers.InCheckedContext(node, _context.SemanticModel) switch {
                 true => nameof(Expression.ConvertChecked),
                 false => nameof(Expression.Convert)
             },
             [
-                Bind($"{nameof(UnaryExpression.Operand)}").WithValue(Visit(node.Expression)),
-                BindValue($"{nameof(UnaryExpression.Type)}"),
-                BindValue($"{nameof(UnaryExpression.Method)}"),
+                CurrentExpr.Bind($"{nameof(UnaryExpression.Operand)}").WithValue(Visit(node.Expression)),
+                CurrentExpr.BindValue($"{nameof(UnaryExpression.Type)}"),
+                CurrentExpr.BindValue($"{nameof(UnaryExpression.Method)}"),
             ]
         );
     }
 
     public override InterpolatedTree VisitDefaultExpression(DefaultExpressionSyntax node) {
-        SetBoundType(typeof(DefaultExpression));
+        CurrentExpr.SetType(typeof(DefaultExpression));
         return _builder.CreateExpression(nameof(Expression.Default), [
-            BindValue($"{nameof(DefaultExpression.Type)}")
+            CurrentExpr.BindValue($"{nameof(DefaultExpression.Type)}")
         ]);
     }
 
     public override InterpolatedTree VisitAnonymousObjectCreationExpression(AnonymousObjectCreationExpressionSyntax node) {
-        SetBoundType(typeof(NewExpression));
+        CurrentExpr.SetType(typeof(NewExpression));
         return _builder.CreateExpression(nameof(Expression.New), [
-            BindValue($"{nameof(NewExpression.Constructor)}!"),
+            CurrentExpr.BindValue($"{nameof(NewExpression.Constructor)}!"),
             _builder.CreateExpressionArray(node.Initializers.SelectEager(
-                (init, i) => Bind($"{nameof(NewExpression.Arguments)}[{i}]").WithValue(Visit(init.Expression))
+                (init, i) => CurrentExpr.Bind($"{nameof(NewExpression.Arguments)}[{i}]").WithValue(Visit(init.Expression))
             )),
-            BindValue($"{nameof(NewExpression.Members)}")
+            CurrentExpr.BindValue($"{nameof(NewExpression.Members)}")
         ]);
     }
 
@@ -325,16 +325,16 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
                 return CreateNewTree(node);
 
             case SyntaxKind.ObjectInitializerExpression:
-                SetBoundType(typeof(MemberInitExpression));
+                CurrentExpr.SetType(typeof(MemberInitExpression));
                 return _builder.CreateExpression(nameof(Expression.MemberInit), [
-                    Bind($"{nameof(MemberInitExpression.NewExpression)}").WithValue(CreateNewTree(node)),
+                    CurrentExpr.Bind($"{nameof(MemberInitExpression.NewExpression)}").WithValue(CreateNewTree(node)),
                     Visit(node.Initializer)
                 ]);
 
             case SyntaxKind.CollectionInitializerExpression:
-                SetBoundType(typeof(ListInitExpression));
+                CurrentExpr.SetType(typeof(ListInitExpression));
                 return _builder.CreateExpression(nameof(Expression.ListInit), [
-                    Bind($"{nameof(ListInitExpression.NewExpression)}").WithValue(CreateNewTree(node)),
+                    CurrentExpr.Bind($"{nameof(ListInitExpression.NewExpression)}").WithValue(CreateNewTree(node)),
                     Visit(node.Initializer)
                 ]);
 
@@ -343,13 +343,13 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         }
 
         InterpolatedTree CreateNewTree(BaseObjectCreationExpressionSyntax node) {
-            SetBoundType(typeof(NewExpression));
+            CurrentExpr.SetType(typeof(NewExpression));
             return _builder.CreateExpression(nameof(Expression.New), [
-                BindValue($"{nameof(NewExpression.Constructor)}!"),
+                CurrentExpr.BindValue($"{nameof(NewExpression.Constructor)}!"),
                 node.ArgumentList switch {
                     null => _builder.CreateExpressionArray([]),
                     not null => _builder.CreateExpressionArray(node.ArgumentList.Arguments.SelectEager(
-                        (arg, i) => Bind($"{nameof(NewExpression.Arguments)}[{i}]").WithValue(Visit(arg.Expression))
+                        (arg, i) => CurrentExpr.Bind($"{nameof(NewExpression.Arguments)}[{i}]").WithValue(Visit(arg.Expression))
                     ))
                 }
             ]);
@@ -367,7 +367,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
                 return InterpolatedTree.Concat(
                     InterpolatedTree.Verbatim("new global::System.Linq.Expressions.MemberBinding[] "),
                     InterpolatedTree.Initializer(node.Expressions.SelectEager(
-                        (init, i) => Bind($"{nameof(MemberInitExpression.Bindings)}[{i}]")
+                        (init, i) => CurrentExpr.Bind($"{nameof(MemberInitExpression.Bindings)}[{i}]")
                         .WithValue(VisitObjectInitializerElement(init))
                     ))
                 );
@@ -378,7 +378,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
                 return InterpolatedTree.Concat(
                     InterpolatedTree.Verbatim("new global::System.Linq.Expressions.ElementInit[] "),
                     InterpolatedTree.Initializer(node.Expressions.SelectEager(
-                        (init, i) => Bind($"{nameof(ListInitExpression.Initializers)}[{i}]")
+                        (init, i) => CurrentExpr.Bind($"{nameof(ListInitExpression.Initializers)}[{i}]")
                         .WithValue(VisitCollectionInitializerElement(init))
                     ))
                 );
@@ -397,16 +397,16 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         // and if it's an object initializer then it's called a "nested object initializer"...
         if(assignment.Right is InitializerExpressionSyntax initializer) switch(initializer.Kind()) {
             case SyntaxKind.ObjectInitializerExpression:
-                SetBoundType(typeof(MemberMemberBinding));
+                CurrentExpr.SetType(typeof(MemberMemberBinding));
                 return _builder.CreateExpression(nameof(Expression.MemberBind), [
-                    BindValue($"{nameof(MemberMemberBinding.Member)}"),
+                    CurrentExpr.BindValue($"{nameof(MemberMemberBinding.Member)}"),
                     VisitInitializerExpression(initializer)
                 ]);
 
             case SyntaxKind.CollectionInitializerExpression:
-                SetBoundType(typeof(MemberListBinding));
+                CurrentExpr.SetType(typeof(MemberListBinding));
                 return _builder.CreateExpression(nameof(Expression.ListBind), [
-                    BindValue($"{nameof(MemberListBinding.Member)}"),
+                    CurrentExpr.BindValue($"{nameof(MemberListBinding.Member)}"),
                     VisitInitializerExpression(initializer)
                 ]);
 
@@ -414,10 +414,10 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
                 return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
         }
 
-        SetBoundType(typeof(MemberAssignment));
+        CurrentExpr.SetType(typeof(MemberAssignment));
         return _builder.CreateExpression(nameof(Expression.Bind), [
-            BindValue($"{nameof(MemberAssignment.Member)}"),
-            Bind($"{nameof(MemberAssignment.Expression)}").WithValue(Visit(assignment.Right))
+            CurrentExpr.BindValue($"{nameof(MemberAssignment.Member)}"),
+            CurrentExpr.Bind($"{nameof(MemberAssignment.Expression)}").WithValue(Visit(assignment.Right))
         ]);
     }
 
@@ -432,11 +432,11 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         ExpressionSyntax node,
         IReadOnlyList<ExpressionSyntax> argumentExpressions
     ) {
-        SetBoundType(typeof(ElementInit));
+        CurrentExpr.SetType(typeof(ElementInit));
         return _builder.CreateExpression(nameof(Expression.ElementInit), [
-            BindValue($"{nameof(ElementInit.AddMethod)}"),
+            CurrentExpr.BindValue($"{nameof(ElementInit.AddMethod)}"),
             _builder.CreateExpressionArray(argumentExpressions.SelectEager(
-                (arg, i) => Bind($"{nameof(ElementInit.Arguments)}[{i}]").WithValue(Visit(arg))
+                (arg, i) => CurrentExpr.Bind($"{nameof(ElementInit.Arguments)}[{i}]").WithValue(Visit(arg))
             ))
         ]);
     }
@@ -457,9 +457,9 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         if(!TypeSymbolHelpers.IsSubtype(typeSymbol, _context.TypeSymbols.Expression))
             return VisitLambdaExpressionUnquoted(node);
 
-        SetBoundType(typeof(UnaryExpression));
+        CurrentExpr.SetType(typeof(UnaryExpression));
         return _builder.CreateExpression(nameof(Expression.Quote), [
-            Bind($"{nameof(UnaryExpression.Operand)}")
+            CurrentExpr.Bind($"{nameof(UnaryExpression.Operand)}")
             .WithValue(VisitLambdaExpressionUnquoted(node))
         ]);
     }
@@ -470,20 +470,20 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         foreach(var parameter in GetLambdaParameters(node))
             AddInterpolatedIdentifier(parameter.Identifier.ValueText);
 
-        SetBoundType(typeof(LambdaExpression));
+        CurrentExpr.SetType(typeof(LambdaExpression));
         return _builder.CreateExpression(nameof(Expression.Lambda), [
-            Bind($"{nameof(LambdaExpression.Body)}").WithValue(Visit(node.Body)),
-            BindValue($"{nameof(LambdaExpression.Parameters)}")
+            CurrentExpr.Bind($"{nameof(LambdaExpression.Body)}").WithValue(Visit(node.Body)),
+            CurrentExpr.BindValue($"{nameof(LambdaExpression.Parameters)}")
         ]);
     }
 
     public override InterpolatedTree VisitConditionalExpression(ConditionalExpressionSyntax node) {
-        SetBoundType(typeof(ConditionalExpression));
+        CurrentExpr.SetType(typeof(ConditionalExpression));
         return _builder.CreateExpression(nameof(Expression.Condition),
-            Bind($"{nameof(ConditionalExpression.Test)}").WithValue(Visit(node.Condition)),
-            Bind($"{nameof(ConditionalExpression.IfTrue)}").WithValue(Visit(node.WhenTrue)),
-            Bind($"{nameof(ConditionalExpression.IfFalse)}").WithValue(Visit(node.WhenFalse)),
-            BindValue($"{nameof(ConditionalExpression.Type)}")
+            CurrentExpr.Bind($"{nameof(ConditionalExpression.Test)}").WithValue(Visit(node.Condition)),
+            CurrentExpr.Bind($"{nameof(ConditionalExpression.IfTrue)}").WithValue(Visit(node.WhenTrue)),
+            CurrentExpr.Bind($"{nameof(ConditionalExpression.IfFalse)}").WithValue(Visit(node.WhenFalse)),
+            CurrentExpr.BindValue($"{nameof(ConditionalExpression.Type)}")
         );
     }
 
@@ -491,13 +491,13 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         if(TryVisitBinarySpecialExpression(node, out var special))
             return special;
 
-        SetBoundType(typeof(BinaryExpression));
+        CurrentExpr.SetType(typeof(BinaryExpression));
         return _builder.CreateExpression(nameof(Expression.MakeBinary),
-            BindValue($"{nameof(BinaryExpression.NodeType)}"),
-            Bind($"{nameof(BinaryExpression.Left)}").WithValue(Visit(node.Left)),
-            Bind($"{nameof(BinaryExpression.Right)}").WithValue(Visit(node.Right)),
-            BindValue($"{nameof(BinaryExpression.IsLiftedToNull)}"),
-            BindValue($"{nameof(BinaryExpression.Method)}")
+            CurrentExpr.BindValue($"{nameof(BinaryExpression.NodeType)}"),
+            CurrentExpr.Bind($"{nameof(BinaryExpression.Left)}").WithValue(Visit(node.Left)),
+            CurrentExpr.Bind($"{nameof(BinaryExpression.Right)}").WithValue(Visit(node.Right)),
+            CurrentExpr.BindValue($"{nameof(BinaryExpression.IsLiftedToNull)}"),
+            CurrentExpr.BindValue($"{nameof(BinaryExpression.Method)}")
         );
     }
 
@@ -519,18 +519,18 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
     }
 
     private InterpolatedTree VisitBinaryAsExpression(BinaryExpressionSyntax node) {
-        SetBoundType(typeof(UnaryExpression));
+        CurrentExpr.SetType(typeof(UnaryExpression));
         return _builder.CreateExpression(nameof(Expression.TypeAs), [
-            Bind($"{nameof(UnaryExpression.Operand)}").WithValue(Visit(node.Left)),
-            BindValue($"{nameof(UnaryExpression.Type)}")
+            CurrentExpr.Bind($"{nameof(UnaryExpression.Operand)}").WithValue(Visit(node.Left)),
+            CurrentExpr.BindValue($"{nameof(UnaryExpression.Type)}")
         ]);
     }
 
     private InterpolatedTree VisitBinaryIsExpression(BinaryExpressionSyntax node) {
-        SetBoundType(typeof(TypeBinaryExpression));
+        CurrentExpr.SetType(typeof(TypeBinaryExpression));
         return _builder.CreateExpression(nameof(Expression.TypeIs), [
-            Bind($"{nameof(TypeBinaryExpression.Expression)}").WithValue(Visit(node.Left)),
-            BindValue($"{nameof(TypeBinaryExpression.TypeOperand)}")
+            CurrentExpr.Bind($"{nameof(TypeBinaryExpression.Expression)}").WithValue(Visit(node.Left)),
+            CurrentExpr.BindValue($"{nameof(TypeBinaryExpression.TypeOperand)}")
         ]);
     }
 
@@ -544,12 +544,12 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         if(TryVisitUnarySpecialExpression(node, operand, out var special))
             return special;
 
-        SetBoundType(typeof(UnaryExpression));
+        CurrentExpr.SetType(typeof(UnaryExpression));
         return _builder.CreateExpression(nameof(Expression.MakeUnary),
-            BindValue($"{nameof(UnaryExpression.NodeType)}"),
-            Bind($"{nameof(UnaryExpression.Operand)}").WithValue(Visit(operand)),
-            BindValue($"{nameof(UnaryExpression.Type)}"),
-            BindValue($"{nameof(UnaryExpression.Method)}")
+            CurrentExpr.BindValue($"{nameof(UnaryExpression.NodeType)}"),
+            CurrentExpr.Bind($"{nameof(UnaryExpression.Operand)}").WithValue(Visit(operand)),
+            CurrentExpr.BindValue($"{nameof(UnaryExpression.Type)}"),
+            CurrentExpr.BindValue($"{nameof(UnaryExpression.Method)}")
         );
     }
 
@@ -570,7 +570,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
     }
 
     public override InterpolatedTree VisitLiteralExpression(LiteralExpressionSyntax node) {
-        SetBoundType(typeof(ConstantExpression));
+        CurrentExpr.SetType(typeof(ConstantExpression));
         return CurrentExpr.Identifier;
     }
 }

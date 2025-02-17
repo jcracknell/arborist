@@ -118,7 +118,7 @@ public class DiagnosticTests {
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
-        Assert.False(results.AnalysisResults[0].BodyTree.IsModified);
+        Assert.False(results.AnalysisResults[0].BodyTree.IsMarked);
         Assert.True(results.AnalysisResults[0].IsSupported);
         Assert.Contains(results.Diagnostics, diagnostic => diagnostic is {
             Id: InterpolationDiagnostics.ARB004_NoSplices,

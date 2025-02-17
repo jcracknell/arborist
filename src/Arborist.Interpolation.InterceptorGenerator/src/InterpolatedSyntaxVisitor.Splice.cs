@@ -28,7 +28,7 @@ public partial class InterpolatedSyntaxVisitor {
             _ => _context.Diagnostics.UnsupportedInterpolatedSyntax(node)
         };
 
-        return spliced.AsModified();
+        return spliced.AsMarked();
     }
 
     private InterpolatedTree VisitSplice(InvocationExpressionSyntax node, IMethodSymbol method) {

@@ -29,6 +29,10 @@ public partial class InterpolatedSyntaxVisitor {
             _visitor.CurrentExpr = value!;
         }
 
+        // If the tree is unmarked, we return the binding (the analyzed expression value)
+        protected override InterpolatedTree GetUnmarkedValue(InterpolatedTree binding, InterpolatedTree value) =>
+            binding;
+
         protected override ExpressionBinding Bind(string identifier, InterpolatedTree binding, Type? expressionType) =>
             new InterpolatedExpressionBinding(
                 parent: this,

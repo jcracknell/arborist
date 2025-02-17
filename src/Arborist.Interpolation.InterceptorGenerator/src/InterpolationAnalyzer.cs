@@ -84,7 +84,7 @@ public static class InterpolationAnalyzer {
         // Report an interpolated expression containing no splices, which is completely useless.
         // In this case we still emit the interceptor, as this will be more performant than having the runtime
         // fallback rewrite the expression.
-        if(!bodyTree.IsModified)
+        if(!bodyTree.IsMarked)
             diagnostics.NoSplices(interpolatedExpression);
 
         var dataTypeRef = treeBuilder.CreateTypeRef(dataParameter.Type);

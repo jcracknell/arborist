@@ -35,6 +35,7 @@ public abstract class ExpressionBinding {
 
     protected abstract ExpressionBinding GetCurrent();
     protected abstract void SetCurrent(ExpressionBinding? value);
+    protected abstract InterpolatedTree GetUnmarkedValue(InterpolatedTree binding, InterpolatedTree value);
     protected abstract ExpressionBinding Bind(string identifier, InterpolatedTree binding, Type? expressionType);
 
     public InterpolatedTree Identifier =>
@@ -58,11 +59,9 @@ public abstract class ExpressionBinding {
         // Restore the parent expression node as the current node.
         SetCurrent(_parent);
 
-        // If the provided value is unmodified, we can return the input node binding directly instead of the
-        // generated replacement tree. This is how the interpolation process retains subtrees which are unmodified
-        // and do not contain splices.
-        if(!value.IsModified)
-            return _binding;
+        // If the provided value is unmarked, we defer to the implementation as to which tree should be returned
+        if(!value.IsMarked)
+            return GetUnmarkedValue(_binding, value);
 
         var typedBinding = _expressionType is null ? _binding : InterpolatedTree.Concat([
             InterpolatedTree.Verbatim($"(global::{_expressionType.FullName})("),

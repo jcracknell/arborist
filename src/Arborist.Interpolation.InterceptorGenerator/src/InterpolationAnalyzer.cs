@@ -87,8 +87,8 @@ public static class InterpolationAnalyzer {
         if(!bodyTree.IsMarked)
             diagnostics.NoSplices(interpolatedExpression);
 
-        var dataTypeRef = treeBuilder.CreateTypeRef(dataParameter.Type);
-        var dataDeclaration = InterpolatedTree.Interpolate($"var {treeBuilder.DataIdentifier} = {dataTypeRef}.Cast({dataParameter.Name});");
+        var dataCast = treeBuilder.CreateCast(dataParameter.Type, InterpolatedTree.Verbatim(dataParameter.Name));
+        var dataDeclaration = InterpolatedTree.Interpolate($"var {treeBuilder.DataIdentifier} = {dataCast};");
 
         var typeParameters = TypeSymbolHelpers.GetInheritedTypeParameters(methodSymbol.ContainingType.OriginalDefinition)
         .AddRange(methodSymbol.OriginalDefinition.TypeParameters);

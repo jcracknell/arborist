@@ -64,6 +64,14 @@ public class InterpolatedTreeBuilder {
         return InterpolatedTree.Member(typeRef, InterpolatedTree.Verbatim("Default"));
     }
 
+    public InterpolatedTree CreateCast(ITypeSymbol type, InterpolatedTree tree) {
+        if(TryCreateTypeName(type, out var typeName))
+            return InterpolatedTree.Interpolate($"({typeName}){tree}");
+
+        var typeRef = CreateTypeRef(type);
+        return InterpolatedTree.Interpolate($"{typeRef}.Cast({tree})");
+    }
+
     public InterpolatedTree CreateType(ITypeSymbol type) {
         if(!TypeSymbolHelpers.IsAccessible(type))
             return _diagnostics.InaccessibleSymbol(type, default);

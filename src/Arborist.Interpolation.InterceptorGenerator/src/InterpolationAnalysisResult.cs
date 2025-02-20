@@ -10,7 +10,7 @@ public class InterpolationAnalysisResult(
     InterpolatedTree interceptsLocationAttribute,
     InterpolatedTree interceptorMethodDeclaration,
     InterpolatedTree bodyTree,
-    InterpolatedTree dataDeclaration,
+    InterpolatedTree? dataDeclaration,
     InterpolatedTree returnStatement,
     IReadOnlyList<InterpolatedValueDefinition> valueDefinitions,
     IReadOnlyList<InterpolatedTree> methodDefinitions
@@ -25,13 +25,13 @@ public class InterpolationAnalysisResult(
     public InterpolatedTree BodyTree { get; } = bodyTree;
     public IReadOnlyList<InterpolatedValueDefinition> ValueDefinitions { get; } = valueDefinitions;
     public IReadOnlyList<InterpolatedTree> MethodDefinitions { get; } = methodDefinitions;
-    public InterpolatedTree DataDeclaration { get; } = dataDeclaration;
+    public InterpolatedTree? DataDeclaration { get; } = dataDeclaration;
     public InterpolatedTree ReturnStatement { get; } = returnStatement;
 
     public bool IsSupported =>
         ReturnStatement.IsSupported
         && InterceptorMethodDeclaration.IsSupported
-        && DataDeclaration.IsSupported
+        && DataDeclaration?.IsSupported is not false
         && ValueDefinitions.All(static d => d.IsSupported)
         && MethodDefinitions.All(static d => d.IsSupported);
 
@@ -46,7 +46,7 @@ public class InterpolationAnalysisResult(
         && this.InterceptsLocationAttribute.Equals(that.InterceptsLocationAttribute)
         && this.ReturnStatement.Equals(that.ReturnStatement)
         && this.InterceptorMethodDeclaration.Equals(that.InterceptorMethodDeclaration)
-        && this.DataDeclaration.Equals(that.DataDeclaration)
+        && (this.DataDeclaration?.Equals(that.DataDeclaration!) ?? that.DataDeclaration is null)
         && this.ValueDefinitions.SequenceEqual(that.ValueDefinitions)
         && this.MethodDefinitions.SequenceEqual(that.MethodDefinitions);
 }

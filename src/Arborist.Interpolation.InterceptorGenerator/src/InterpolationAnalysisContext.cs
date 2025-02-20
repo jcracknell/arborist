@@ -10,7 +10,7 @@ public class InterpolationAnalysisContext(
     InterpolationDiagnosticsCollector diagnostics,
     InterpolatedTreeBuilder treeBuilder,
     LambdaExpressionSyntax interpolatedExpression,
-    IParameterSymbol dataParameter,
+    IParameterSymbol? dataParameter,
     IParameterSymbol expressionParameter,
     CancellationToken cancellationToken
 ) {
@@ -21,7 +21,7 @@ public class InterpolationAnalysisContext(
     public InterpolationDiagnosticsCollector Diagnostics { get; } = diagnostics;
     public InterpolatedTreeBuilder TreeBuilder { get; } = treeBuilder;
     public LambdaExpressionSyntax InterpolatedExpression { get; } = interpolatedExpression;
-    public IParameterSymbol DataParameter { get; } = dataParameter;
+    public IParameterSymbol? DataParameter { get; } = dataParameter;
     public IParameterSymbol ExpressionParameter { get; } = expressionParameter;
     public CancellationToken CancellationToken { get; } = cancellationToken;
 

@@ -27,18 +27,32 @@ public static class InterpolationAnalyzer {
         );
 
         switch(invocation.ArgumentList.Arguments.Count) {
-            case 2 when TryGetLambdaParameter(methodSymbol, methodSymbol.Parameters[1], out var dataType, typeSymbols)
-                && TypeSymbolHelpers.IsSubtype(dataType, methodSymbol.Parameters[0].Type):
+            case 1 when TryGetLambdaParameter(methodSymbol, methodSymbol.Parameters[0], out var dataType, typeSymbols)
+                && dataType is null:
                 return (diagnostics, AnalyzeInterpolation(
-                    semanticModel,
-                    diagnostics,
-                    invocation,
-                    interceptionRequired,
-                    methodSymbol,
-                    methodSymbol.Parameters[0],
-                    methodSymbol.Parameters[1],
-                    typeSymbols,
-                    cancellationToken
+                    semanticModel: semanticModel,
+                    diagnostics: diagnostics,
+                    invocation: invocation,
+                    interceptionRequired: interceptionRequired,
+                    methodSymbol: methodSymbol,
+                    dataParameter: default,
+                    expressionParameter: methodSymbol.Parameters[0],
+                    typeSymbols: typeSymbols,
+                    cancellationToken: cancellationToken
+                ));
+
+            case 2 when TryGetLambdaParameter(methodSymbol, methodSymbol.Parameters[1], out var dataType, typeSymbols)
+                && TypeSymbolHelpers.IsSubtype(methodSymbol.Parameters[0].Type, dataType):
+                return (diagnostics, AnalyzeInterpolation(
+                    semanticModel: semanticModel,
+                    diagnostics: diagnostics,
+                    invocation: invocation,
+                    interceptionRequired: interceptionRequired,
+                    methodSymbol: methodSymbol,
+                    dataParameter: methodSymbol.Parameters[0],
+                    expressionParameter: methodSymbol.Parameters[1],
+                    typeSymbols: typeSymbols,
+                    cancellationToken: cancellationToken
                 ));
 
             default:
@@ -53,7 +67,7 @@ public static class InterpolationAnalyzer {
         InvocationExpressionSyntax invocation,
         bool interceptionRequired,
         IMethodSymbol methodSymbol,
-        IParameterSymbol dataParameter,
+        IParameterSymbol? dataParameter,
         IParameterSymbol expressionParameter,
         InterpolationTypeSymbols typeSymbols,
         CancellationToken cancellationToken
@@ -87,8 +101,7 @@ public static class InterpolationAnalyzer {
         if(!bodyTree.IsMarked)
             diagnostics.NoSplices(interpolatedExpression);
 
-        var dataCast = treeBuilder.CreateCast(dataParameter.Type, InterpolatedTree.Verbatim(dataParameter.Name));
-        var dataDeclaration = InterpolatedTree.Interpolate($"var {treeBuilder.DataIdentifier} = {dataCast};");
+        var dataDeclaration = GenerateDataDeclaration(treeBuilder, dataParameter);
 
         var typeParameters = TypeSymbolHelpers.GetInheritedTypeParameters(methodSymbol.ContainingType.OriginalDefinition)
         .AddRange(methodSymbol.OriginalDefinition.TypeParameters);
@@ -116,6 +129,18 @@ public static class InterpolationAnalyzer {
             valueDefinitions: treeBuilder.ValueDefinitions.ToList(),
             methodDefinitions: treeBuilder.MethodDefinitions.ToList()
         );
+    }
+
+    [return: NotNullIfNotNull("dataParameter")]
+    private static InterpolatedTree? GenerateDataDeclaration(
+        InterpolatedTreeBuilder treeBuilder,
+        IParameterSymbol? dataParameter
+    ) {
+        if(dataParameter is null)
+            return null;
+
+        var typeRef = treeBuilder.CreateTypeRef(dataParameter.Type);
+        return InterpolatedTree.Interpolate($"var {treeBuilder.DataIdentifier} = {typeRef}.Cast({dataParameter.Name});");
     }
 
     private static InterpolatedTree GenerateReturnStatement(
@@ -202,7 +227,7 @@ public static class InterpolationAnalyzer {
     private static bool TryGetLambdaParameter(
         IMethodSymbol methodSymbol,
         IParameterSymbol parameter,
-        [NotNullWhen(true)] out ITypeSymbol? dataType,
+        out ITypeSymbol? dataType,
         InterpolationTypeSymbols typeSymbols
     ) {
         dataType = default;
@@ -224,8 +249,13 @@ public static class InterpolationAnalyzer {
         if(!TypeSymbolHelpers.IsSubtype(methodSymbol.ReturnType, typeSymbols.Expression1.ConstructedFrom.Construct(resultType)))
             return false;
 
-        if(TypeSymbolHelpers.TryGetInterfaceImplementation(typeSymbols.IInterpolationContext1, interpolatedDelegateType.TypeArguments[0], out var ic1Impl)) {
-            dataType = ic1Impl.TypeArguments[0];
+        if(TypeSymbolHelpers.IsSubtype(interpolatedDelegateType.TypeArguments[0], typeSymbols.IInterpolationContext)) {
+            if(TypeSymbolHelpers.TryGetInterfaceImplementation(typeSymbols.IInterpolationContext1, interpolatedDelegateType.TypeArguments[0], out var ic1Impl)) {
+                dataType = ic1Impl.TypeArguments[0];
+                return true;
+            }
+
+            dataType = default;
             return true;
         }
 

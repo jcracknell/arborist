@@ -7,7 +7,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_a_constant() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(42));
+            ExpressionOnNone.Interpolate(x => x.SpliceValue(42));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -28,7 +28,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_constructor() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(new string('0', 3)));
+            ExpressionOnNone.Interpolate(x => x.SpliceValue(new string('0', 3)));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -71,7 +71,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_default_expression() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(default(string)));
+            ExpressionOnNone.Interpolate(x => x.SpliceValue(default(string)));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -92,7 +92,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_default_literal() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue<string>(default));
+            ExpressionOnNone.Interpolate(x => x.SpliceValue<string>(default));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);

@@ -5,7 +5,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_work_for_i32_add() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate(default(object), (x, o) => o.Id + x.SpliceValue(42));
+            ExpressionOn<Owner>.Interpolate((x, o) => o.Id + x.SpliceValue(42));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -34,7 +34,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_work_for_i32_lt() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Id < x.SpliceValue(42))
+            ExpressionOn<Cat>.Interpolate((x, c) => c.Id < x.SpliceValue(42))
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -63,7 +63,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_work_for_string_add() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Name + x.SpliceValue(""bar""));
+            ExpressionOn<Cat>.Interpolate((x, c) => c.Name + x.SpliceValue(""bar""));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -92,7 +92,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_work_for_as() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue<object>(default!) as IFormattable);
+            ExpressionOnNone.Interpolate(x => x.SpliceValue<object>(default!) as IFormattable);
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -118,7 +118,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_work_for_is() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue<object>(default!) is IFormattable);
+            ExpressionOnNone.Interpolate(x => x.SpliceValue<object>(default!) is IFormattable);
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);

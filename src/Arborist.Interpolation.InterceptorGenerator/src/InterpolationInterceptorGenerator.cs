@@ -80,7 +80,7 @@ public class InterpolationInterceptorGenerator : IIncrementalGenerator {
 
         context.RegisterSourceOutput(analysisGroupsAndEnabled, (spc, inputs) => {
             var (analysisGroup, interceptorsEnabled) = inputs;
-            if(interceptorsEnabled) 
+            if(interceptorsEnabled)
                 spc.AddSource(
                     hintName: analysisGroup.GeneratedSourceName,
                     source: RenderInterceptorGroup(analysisGroup, spc.CancellationToken)
@@ -209,8 +209,11 @@ public class InterpolationInterceptorGenerator : IIncrementalGenerator {
             writer.WriteLine(";");
         }
 
-        analysis.DataDeclaration.WriteTo(writer, 3);
-        writer.WriteLine();
+        if(analysis.DataDeclaration is not null) {
+            analysis.DataDeclaration.WriteTo(writer, 3);
+            writer.WriteLine();
+        }
+
         writer.WriteLine();
         analysis.ReturnStatement.WriteTo(writer, 3);
         writer.WriteLine();

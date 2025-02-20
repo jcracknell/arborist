@@ -7,7 +7,7 @@ public class DiagnosticTests {
     public void Should_produce_ARB001_for_context_reference_in_interpolated() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(object), x => x == x.SpliceValue(default(object)));
+            ExpressionOnNone.Interpolate(x => x == x.SpliceValue(default(object)));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -54,7 +54,7 @@ public class DiagnosticTests {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             var owner = new Owner();
-            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Owner.Id == x.SpliceValue(owner.Id));
+            ExpressionOn<Cat>.Interpolate((x, c) => c.Owner.Id == x.SpliceValue(owner.Id));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -69,7 +69,7 @@ public class DiagnosticTests {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             var owner = new Owner();
-            ExpressionOnNone.Interpolate(default(object), x => owner.Id == x.SpliceValue(42));
+            ExpressionOnNone.Interpolate(x => owner.Id == x.SpliceValue(42));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -83,7 +83,7 @@ public class DiagnosticTests {
     public void Should_produce_ARB003_for_evaluating_interpolated_identifier() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Owner.Id == x.SpliceValue(c.Id));
+            ExpressionOn<Cat>.Interpolate((x, c) => c.Owner.Id == x.SpliceValue(c.Id));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -97,7 +97,7 @@ public class DiagnosticTests {
     public void Should_produce_ARB003_for_evaluating_interpolated_identifier_introduced_in_lambda() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
+            ExpressionOn<Owner>.Interpolate((x, o) =>
                 o.Cats.Any(c => c.Name == x.SpliceValue(c.Name))
             );
         ");
@@ -114,7 +114,7 @@ public class DiagnosticTests {
     public void Should_produce_ARB004_for_an_expression_without_splices() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Name == ""Garfield"");
+            ExpressionOn<Cat>.Interpolate((x, c) => c.Name == ""Garfield"");
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -135,7 +135,7 @@ public class DiagnosticTests {
                 private int _privateField;
 
                 public void Main() {
-                    ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(_privateField));
+                    ExpressionOnNone.Interpolate(x => x.SpliceValue(_privateField));
                 }
             }
         ");
@@ -157,7 +157,7 @@ public class DiagnosticTests {
                 private int PrivateMethod() => throw new NotImplementedException();
 
                 public void Main() {
-                    ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(PrivateMethod()));
+                    ExpressionOnNone.Interpolate(x => x.SpliceValue(PrivateMethod()));
                 }
             }
         ");
@@ -179,7 +179,7 @@ public class DiagnosticTests {
                 private static int PrivateMethod() => throw new NotImplementedException();
 
                 public void Main() {
-                    ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(PrivateMethod()));
+                    ExpressionOnNone.Interpolate(x => x.SpliceValue(PrivateMethod()));
                 }
             }
         ");
@@ -201,7 +201,7 @@ public class DiagnosticTests {
                 private int PrivateProperty => throw new NotImplementedException();
 
                 public void Main() {
-                    ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(PrivateProperty));
+                    ExpressionOnNone.Interpolate(x => x.SpliceValue(PrivateProperty));
                 }
             }
         ");
@@ -256,8 +256,8 @@ public class DiagnosticTests {
     public void Should_produce_ARB007_for_non_literal_expression() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            var expression = ExpressionOn<IInterpolationContext<object?>>.Of(x => 42);
-            ExpressionOnNone.Interpolate(default(object), expression);
+            var expression = ExpressionOn<IInterpolationContext>.Of(x => 42);
+            ExpressionOnNone.Interpolate(expression);
         ");
 
         Assert.Contains(results.Diagnostics, diagnostic => diagnostic is {

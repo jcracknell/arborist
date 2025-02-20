@@ -489,7 +489,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_handle_orderby_clause() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate(default(object), (x, o) =>
+            ExpressionOn<Owner>.Interpolate((x, o) =>
                 from c in o.Cats
                 orderby x.SpliceValue(42) ascending, c.Age descending
                 select c.Name

@@ -101,7 +101,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_object_initializer() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(new Cat { Name = ""Garfield"" }));
+            ExpressionOnNone.Interpolate(x => x.SpliceValue(new Cat { Name = ""Garfield"" }));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -122,7 +122,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_collection_initializer() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(new List<string> { ""foo"", ""bar"" }));
+            ExpressionOnNone.Interpolate(x => x.SpliceValue(new List<string> { ""foo"", ""bar"" }));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -146,7 +146,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_dictionary_initializer() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(new Dictionary<string, int> {
+            ExpressionOnNone.Interpolate(x => x.SpliceValue(new Dictionary<string, int> {
                 { ""foo"", 1 },
                 { ""bar"", 2 }
             }));
@@ -173,7 +173,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_nested_object_initializer() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(object), x =>
+            ExpressionOnNone.Interpolate(x =>
                 x.SpliceValue(new Cat { Owner = { Name = ""Jon"" } })
             );
         ");
@@ -196,7 +196,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_nested_collection_initializer() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(object), x =>
+            ExpressionOnNone.Interpolate(x =>
                 x.SpliceValue(new NestedCollectionInitializerFixture<string> {
                     List = { ""foo"" },
                     Dictionary = { { ""bar"", ""baz"" } }

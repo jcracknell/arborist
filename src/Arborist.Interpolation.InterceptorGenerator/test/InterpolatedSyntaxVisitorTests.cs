@@ -5,7 +5,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_constructor() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(object), x => new string(x.SpliceValue('0'), x.SpliceValue(3)));
+            ExpressionOnNone.Interpolate(x => new string(x.SpliceValue('0'), x.SpliceValue(3)));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -84,7 +84,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_instance_field() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(default(MemberFixture)!).InstanceField);
+            ExpressionOnNone.Interpolate(x => x.SpliceValue(default(MemberFixture)!).InstanceField);
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -110,7 +110,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_instance_property() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(default(MemberFixture)!).InstanceProperty);
+            ExpressionOnNone.Interpolate(x => x.SpliceValue(default(MemberFixture)!).InstanceProperty);
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -137,7 +137,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_static_field() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(object), x => MemberFixture.StaticField + x.SpliceValue(""foo"");
+            ExpressionOnNone.Interpolate(x => MemberFixture.StaticField + x.SpliceValue(""foo"");
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -166,7 +166,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_static_property() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(object), x => MemberFixture.StaticProperty + x.SpliceValue(""foo""));
+            ExpressionOnNone.Interpolate(x => MemberFixture.StaticProperty + x.SpliceValue(""foo""));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -195,7 +195,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_instance_method() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<MemberFixture>.Interpolate(default(object), (x, f) => f.InstanceMethod(x.SpliceValue(""foo"")));
+            ExpressionOn<MemberFixture>.Interpolate((x, f) => f.InstanceMethod(x.SpliceValue(""foo"")));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -224,7 +224,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_static_method() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(object), x => MemberFixture.StaticMethod(x.SpliceValue(""foo"")));
+            ExpressionOnNone.Interpolate(x => MemberFixture.StaticMethod(x.SpliceValue(""foo"")));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -252,7 +252,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_unary() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(object), x => !x.SpliceValue(true));
+            ExpressionOnNone.Interpolate(x => !x.SpliceValue(true));
         ");
 
 
@@ -281,7 +281,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_cast() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(object), x => (decimal)x.SpliceValue(42));
+            ExpressionOnNone.Interpolate(x => (decimal)x.SpliceValue(42));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -308,7 +308,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_binary() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.Name + x.SpliceValue(""foo""));
+            ExpressionOn<Cat>.Interpolate((x, c) => c.Name + x.SpliceValue(""foo""));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -337,7 +337,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_ternary() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => c.IsAlive == x.SpliceValue(true) ? x.SpliceValue(""true"") : x.SpliceValue(""false""));
+            ExpressionOn<Cat>.Interpolate((x, c) => c.IsAlive == x.SpliceValue(true) ? x.SpliceValue(""true"") : x.SpliceValue(""false""));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -383,7 +383,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_lambda() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Owner>.Interpolate(default(object), (x, o) => o.Cats.Any(c => c.IsAlive == x.SpliceValue(true)));
+            ExpressionOn<Owner>.Interpolate((x, o) => o.Cats.Any(c => c.IsAlive == x.SpliceValue(true)));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -425,7 +425,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_default_value_type() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(42) == default);
+            ExpressionOnNone.Interpolate(x => x.SpliceValue(42) == default);
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -454,7 +454,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_default_reference_type() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(object), x => x.SpliceValue(""foo"") == default);
+            ExpressionOnNone.Interpolate(x => x.SpliceValue(""foo"") == default);
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -483,7 +483,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_handle_anonymous_type() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => new {
+            ExpressionOn<Cat>.Interpolate((x, c) => new {
                 foo = x.SpliceValue(""foo""),
                 bar = x.SpliceValue(42)
             });
@@ -549,7 +549,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_work_for_checked() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => checked(c.Id + x.SpliceValue(42)));
+            ExpressionOn<Cat>.Interpolate((x, c) => checked(c.Id + x.SpliceValue(42)));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -578,7 +578,7 @@ public partial class InterpolatedSyntaxVisitorTests {
     public void Should_work_for_unchecked() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Cat>.Interpolate(default(object), (x, c) => unchecked(c.Id + x.SpliceValue(42)));
+            ExpressionOn<Cat>.Interpolate((x, c) => unchecked(c.Id + x.SpliceValue(42)));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);

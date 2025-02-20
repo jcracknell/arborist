@@ -26,11 +26,18 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
         new BinaryNode(@operator, left, right);
 
     /// <summary>
-    /// Binds the provided <paramref name="value"/> to a variable with the specified <paramref name="identifier"/>
+    /// Binds the provided <paramref name="bound"/> tree to a variable with the specified <paramref name="identifier"/>
     /// using a single-arm switch expression with the provided <paramref name="body"/>.
     /// </summary>
-    public static InterpolatedTree Bind(string identifier, InterpolatedTree value, InterpolatedTree body) =>
-        Switch(value, [SwitchCase(Interpolate($"var {identifier}"), body)]);
+    public static InterpolatedTree Bind(string identifier, InterpolatedTree bound, InterpolatedTree body) =>
+        Switch(bound, [SwitchCase(Interpolate($"var {identifier}"), body)]);
+
+    /// <summary>
+    /// Binds the provided <paramref name="bound"/> tree to a variable with the specified <paramref name="identifier"/>
+    /// using a single-arm switch expression with the provided <paramref name="body"/>.
+    /// </summary>
+    public static InterpolatedTree Bind(InterpolatedTree identifier, InterpolatedTree bound, InterpolatedTree body) =>
+        Switch(bound, [SwitchCase(Interpolate($"var {identifier}"), body)]);
 
     public static InterpolatedTree Call(
         InterpolatedTree method,

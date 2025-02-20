@@ -93,12 +93,13 @@ public static class InterpolationAnalyzer {
             cancellationToken: cancellationToken
         );
 
-        var bodyTree = new InterpolatedSyntaxVisitor(context).Apply(interpolatedExpression);
+        var visitor = new InterpolatedSyntaxVisitor(context);
+        var bodyTree = visitor.Apply(interpolatedExpression);
 
         // Report an interpolated expression containing no splices, which is completely useless.
         // In this case we still emit the interceptor, as this will be more performant than having the runtime
         // fallback rewrite the expression.
-        if(!bodyTree.IsMarked)
+        if(visitor.SpliceCount == 0)
             diagnostics.NoSplices(interpolatedExpression);
 
         var dataDeclaration = GenerateDataDeclaration(treeBuilder, dataParameter);

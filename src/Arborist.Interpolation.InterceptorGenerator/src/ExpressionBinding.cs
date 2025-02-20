@@ -43,6 +43,17 @@ public abstract class ExpressionBinding {
 
     public int Depth => (_parent?.Depth + 1) ?? 0;
 
+    public bool IsMarked { get; private set; }
+
+    /// <summary>
+    /// Marks the subject <see cref="ExpressionBinding"/>, signaling that the bound expression has been
+    /// altered in some way in the result tree.
+    /// </summary>
+    public void Mark() {
+        IsMarked = true;
+        _parent?.Mark();
+    }
+
     public void SetType(Type type) {
         if(_expressionType is not null && !_expressionType.IsAssignableFrom(type))
             throw new InvalidOperationException($"Invalid attempt to rebind expression node type from {_expressionType} to {type}.");
@@ -60,7 +71,7 @@ public abstract class ExpressionBinding {
         SetCurrent(_parent);
 
         // If the provided value is unmarked, we defer to the implementation as to which tree should be returned
-        if(!value.IsMarked)
+        if(!IsMarked && value.IsSupported)
             return GetUnmarkedValue(_binding, value);
 
         var typedBinding = _expressionType is null ? _binding : InterpolatedTree.Concat([
@@ -74,14 +85,14 @@ public abstract class ExpressionBinding {
 
     /// <summary>
     /// Binds the descendant of the current expression tree node identified by the provided <paramref name="binding"/>
-    /// as the <see cref="CurrentExpr"/>.
+    /// as the current expression.
     /// </summary>
     public ExpressionBinding Bind(ref InterpolatedTree.InterpolationHandler binding) =>
         Bind(default!, ref binding);
 
     /// <summary>
     /// Binds the descendant of the current expression tree node identified by the provided <paramref name="binding"/>
-    /// as the <see cref="CurrentExpr"/>.
+    /// as the current expression.
     /// </summary>
     public ExpressionBinding Bind(Type expressionType, ref InterpolatedTree.InterpolationHandler binding) {
         var depth = Depth + 1;

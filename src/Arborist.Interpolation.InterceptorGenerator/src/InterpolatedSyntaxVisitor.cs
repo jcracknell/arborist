@@ -29,6 +29,8 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         _interpolatedIdentifiers = ImmutableHashSet.Create<string>(IdentifierEqualityComparer.Instance);
     }
 
+    public int SpliceCount { get; private set; }
+
     private void AddInterpolatedIdentifier(string identifier) {
         // Handle rebinding/shadowing of the context parameter
         _contextIdentifier = _contextIdentifier.Remove(identifier);

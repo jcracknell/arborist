@@ -20,15 +20,18 @@ public partial class InterpolatedSyntaxVisitor {
     }
 
     private InterpolatedTree VisitSplicingInvocation(InvocationExpressionSyntax node, IMethodSymbol method) {
-        var spliced = method.Name switch {
+        // Increment the splice count
+        SpliceCount += 1;
+        // Mark the current expression tree path to signal that it contains a splice
+        CurrentExpr.Mark();
+
+        return method.Name switch {
             "Splice" => VisitSplice(node, method),
             "SpliceBody" => VisitSpliceBody(node, method),
             "SpliceValue" => VisitSpliceValue(node, method),
             "SpliceQuoted" => VisitSpliceQuoted(node, method),
             _ => _context.Diagnostics.UnsupportedInterpolatedSyntax(node)
         };
-
-        return spliced.AsMarked();
     }
 
     private InterpolatedTree VisitSplice(InvocationExpressionSyntax node, IMethodSymbol method) {

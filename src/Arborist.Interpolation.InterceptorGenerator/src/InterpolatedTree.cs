@@ -48,6 +48,9 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
     ) =>
         new CallNode(method, args);
 
+    public static InterpolatedTree CastTree(InterpolatedTree typeName, InterpolatedTree body) =>
+        new CastTreeNode(typeName, body);
+
     public static InterpolatedTree Concat(params InterpolatedTree[] nodes) =>
         new ConcatNode(nodes);
 
@@ -332,7 +335,38 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
             && this.Right.Equals(that.Right);
     }
 
-    private class LambdaNode(IReadOnlyList<InterpolatedTree> args, InterpolatedTree body)
+    private sealed class CastTreeNode(InterpolatedTree typeName, InterpolatedTree body)
+        : InterpolatedTree
+    {
+        public InterpolatedTree TypeName { get; } = typeName;
+        public InterpolatedTree Body { get; } = body;
+
+        public override bool IsSupported =>
+            TypeName.IsSupported && Body.IsSupported;
+
+        protected override InterpolatedTree ReplaceChildren(Func<InterpolatedTree, InterpolatedTree> replacer) =>
+            new CastTreeNode(replacer(TypeName), replacer(Body));
+
+        public override void Render(ref RenderingContext context) {
+            context.AppendIndent("((");
+            context.Append(TypeName);
+            context.Append(")");
+            context.AppendNewLine();
+            context.Indent(Body);
+            context.AppendNewLine();
+            context.AppendIndent(")");
+        }
+
+        public override int GetHashCode() =>
+            HashCode.Combine(TypeName, Body);
+
+        public override bool Equals(InterpolatedTree? obj) =>
+            obj is CastTreeNode that
+            && this.TypeName.Equals(that.TypeName)
+            && this.Body.Equals(that.Body);
+    }
+
+    private sealed class LambdaNode(IReadOnlyList<InterpolatedTree> args, InterpolatedTree body)
         : InterpolatedTree
     {
         public IReadOnlyList<InterpolatedTree> Args { get; } = args;

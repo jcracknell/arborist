@@ -36,6 +36,7 @@ public sealed class InterpolationInterceptorGeneratorTestBuilder {
         Using(typeof(System.Collections.Generic.List<>));
         Using(typeof(System.Collections.Immutable.ImmutableList<>));
         Using(typeof(System.Linq.Enumerable));
+        Using(typeof(System.Linq.Queryable));
         Using(typeof(System.Linq.Expressions.Expression));
         Using(typeof(Arborist.ExpressionHelper));
         Using(typeof(Arborist.Interpolation.IInterpolationContext));

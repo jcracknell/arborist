@@ -99,7 +99,7 @@ public static class InterpolationAnalyzer {
         // Report an interpolated expression containing no splices, which is completely useless.
         // In this case we still emit the interceptor, as this will be more performant than having the runtime
         // fallback rewrite the expression.
-        if(visitor.SpliceCount == 0)
+        if(!visitor.SplicesFound)
             diagnostics.NoSplices(interpolatedExpression);
 
         var dataDeclaration = GenerateDataDeclaration(treeBuilder, dataParameter);

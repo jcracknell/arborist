@@ -63,6 +63,27 @@ internal static partial class TypeSymbolHelpers {
             : Recurse(type.ContainingType).AddRange(type.TypeParameters);
     }
 
+    /// <summary>
+    /// Gets the number of parameters expected by the provided <paramref name="methodSymbol"/>,
+    /// including the receiver (this) parameter.
+    /// </summary>
+    public static int GetParameterCount(IMethodSymbol methodSymbol) =>
+        methodSymbol.Parameters.Length + (methodSymbol.ReceiverType is null ? 0 : 1);
+
+    /// <summary>
+    /// Gets the type of the parameter to the provided <paramref name="methodSymbol"/> with the
+    /// specified <paramref name="index"/>. If the method is not static, then index 0 references
+    /// the receiver (this) parameter.
+    /// </summary>
+    public static ITypeSymbol GetParameterType(IMethodSymbol methodSymbol, int index) {
+        if(methodSymbol.ReceiverType is null)
+            return methodSymbol.Parameters[index].Type;
+        if(index == 0)
+            return methodSymbol.ReceiverType;
+
+        return methodSymbol.Parameters[index - 1].Type;
+    }
+
     public static bool IsAccessible(ISymbol symbol) => symbol.DeclaredAccessibility switch {
         Accessibility.Public or Accessibility.Internal or Accessibility.NotApplicable =>
             symbol.ContainingType is null || IsAccessible(symbol.ContainingType),

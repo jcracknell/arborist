@@ -20,10 +20,7 @@ public partial class InterpolatedSyntaxVisitor {
     }
 
     private InterpolatedTree VisitSplicingInvocation(InvocationExpressionSyntax node, IMethodSymbol method) {
-        // Increment the splice count
-        SpliceCount += 1;
-        // Mark the current expression tree path to signal that it contains a splice
-        CurrentExpr.Mark();
+        CurrentExpr.SetType(typeof(MethodCallExpression));
 
         return method.Name switch {
             "Splice" => VisitSplice(node, method),
@@ -35,18 +32,11 @@ public partial class InterpolatedSyntaxVisitor {
     }
 
     private InterpolatedTree VisitSplice(InvocationExpressionSyntax node, IMethodSymbol method) {
-        var evaluatedNode = node.ArgumentList.Arguments[0].Expression;
-        if(_context.SemanticModel.GetTypeInfo(evaluatedNode).Type is not {} evaluatedType)
-            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
-
+        var expressionArgument = node.ArgumentList.Arguments[0];
         var identifier = _context.TreeBuilder.CreateIdentifier();
 
-        CurrentExpr.SetType(typeof(MethodCallExpression));
         return InterpolatedTree.Switch(
-            InterpolatedTree.Call(
-                InterpolatedTree.Interpolate($"{_context.TreeBuilder.CreateTypeRef(evaluatedType)}.Coerce"),
-                [VisitEvaluatedSyntax(evaluatedNode)]
-            ),
+            CurrentExpr.BindCallArg(method, 1).WithValue(VisitSplicedExpression(expressionArgument, method, 1)),
             [
                 InterpolatedTree.SwitchCase(
                     InterpolatedTree.Interpolate($"var {identifier}"),
@@ -86,10 +76,10 @@ public partial class InterpolatedSyntaxVisitor {
                 ]
             );
 
-        var expressionTree = VisitSpliceBodyExpression(expressionNode, method);
+        var expressionTree = CurrentExpr.BindCallArg(method, method.Parameters.Length)
+        .WithValue(VisitSplicedExpression(expressionNode, method, method.Parameters.Length));
 
         // We'll use a switch expression with a single case to bind the evaluated expression tree
-        CurrentExpr.SetType(typeof(MethodCallExpression));
         return InterpolatedTree.Bind(
             identifier,
             expressionTree,
@@ -109,16 +99,17 @@ public partial class InterpolatedSyntaxVisitor {
         );
     }
 
-    private InterpolatedTree VisitSpliceBodyExpression(ArgumentSyntax node, IMethodSymbol method) {
+    private InterpolatedTree VisitSplicedExpression(ArgumentSyntax node, IMethodSymbol method, int parameterIndex) {
         // If this is not a lambda literal, we can return the resulting lambda directly
         if(node.Expression is not LambdaExpressionSyntax)
             return VisitEvaluatedSyntax(node.Expression);
 
         // Otherwise we need to provide the target expression type for the lambda
-        var expressionType = method.Parameters.Last().Type;
+        var expressionType = TypeSymbolHelpers.GetParameterType(method, parameterIndex);
+        var expressionTypeRef = _builder.CreateTypeRef(expressionType);
 
         return InterpolatedTree.Call(
-            InterpolatedTree.Interpolate($"{_builder.CreateTypeRef(expressionType)}.Coerce"),
+            InterpolatedTree.Interpolate($"{expressionTypeRef}.Coerce"),
             [VisitEvaluatedSyntax(node.Expression)]
         );
     }
@@ -126,9 +117,8 @@ public partial class InterpolatedSyntaxVisitor {
     private InterpolatedTree VisitSpliceValue(InvocationExpressionSyntax node, IMethodSymbol method) {
         var valueNode = node.ArgumentList.Arguments[0].Expression;
 
-        CurrentExpr.SetType(typeof(MethodCallExpression));
         return _builder.CreateExpression(nameof(Expression.Constant),
-            VisitEvaluatedSyntax(valueNode),
+            CurrentExpr.BindCallArg(method, 1).WithValue(VisitEvaluatedSyntax(valueNode)),
             CurrentExpr.BindValue($"{nameof(MethodCallExpression.Type)}")
         );
     }
@@ -136,7 +126,9 @@ public partial class InterpolatedSyntaxVisitor {
     private InterpolatedTree VisitSpliceQuoted(InvocationExpressionSyntax node, IMethodSymbol method) {
         var expressionNode = node.ArgumentList.Arguments[0].Expression;
 
-        CurrentExpr.SetType(typeof(MethodCallExpression));
-        return _builder.CreateExpression(nameof(Expression.Quote), VisitEvaluatedSyntax(expressionNode));
+        return _builder.CreateExpression(
+            nameof(Expression.Quote),
+            CurrentExpr.BindCallArg(method, 1).WithValue(VisitEvaluatedSyntax(expressionNode))
+        );
     }
 }

@@ -31,4 +31,33 @@ internal static class SyntaxHelpers {
         node is InvocationExpressionSyntax {
             Expression: GenericNameSyntax or MemberAccessExpressionSyntax { Name: GenericNameSyntax }
         };
+
+    public static bool HasImplicitConversion(SyntaxNode node, SemanticModel semanticModel) {
+        var conversion = semanticModel.GetConversion(node);
+        switch(conversion) {
+            case not { Exists: true, IsImplicit: true }:
+                return false;
+
+            case { IsBoxing: true }:
+            case { IsConditionalExpression: true }:
+            case { IsConstantExpression: true }:
+            case { IsDefaultLiteral: true }:
+            case { IsEnumeration: true }:
+            case { IsNullable: true }:
+            case { IsNumeric: true }:
+            case { IsUserDefined: true }:
+                break;
+
+            default:
+                return false;
+        }
+
+        var typeInfo = semanticModel.GetTypeInfo(node);
+        if(typeInfo.ConvertedType is null)
+            return false;
+        if(SymbolEqualityComparer.IncludeNullability.Equals(typeInfo.ConvertedType, typeInfo.Type))
+            return false;
+
+        return true;
+    }
 }

@@ -29,7 +29,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         _interpolatedIdentifiers = ImmutableHashSet.Create<string>(IdentifierEqualityComparer.Instance);
     }
 
-    public int SpliceCount { get; private set; }
+    public bool SplicesFound { get; private set; }
 
     private void AddInterpolatedIdentifier(string identifier) {
         // Handle rebinding/shadowing of the context parameter
@@ -68,15 +68,17 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         // evaluated expression. We don't use the helper method here to preserve the context identifier.
         _interpolatedIdentifiers = _interpolatedIdentifiers.Union(parameters.Select(p => p.Identifier.ValueText));
 
-        CurrentExpr = new InterpolatedExpressionBinding(
+        var rootExpr = CurrentExpr = new InterpolatedExpressionBinding(
             parent: default,
             visitor: this,
-            identifier: ExpressionBinding.CreateIdentifier(0),
             binding: InterpolatedTree.Interpolate($"{_context.ExpressionParameter.Name}.{nameof(LambdaExpression.Body)}"),
             expressionType: default
         );
 
-        return CurrentExpr.WithValue(Visit(lambda.Body));
+        var result = rootExpr.WithValue(Visit(lambda.Body));
+
+        SplicesFound = rootExpr.IsMarked;
+        return result;
     }
 
     private IReadOnlyList<ParameterSyntax> GetLambdaParameters(LambdaExpressionSyntax node) =>
@@ -91,10 +93,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         // Check for cancellation every time we visit (iterate) over a node
         _context.CancellationToken.ThrowIfCancellationRequested();
 
-        return node switch {
-            null => base.Visit(node)!,
-            not null => ApplyImplicitConversion(node)
-        };
+        return node is null ? base.Visit(node)! : ApplyImplicitConversion(node);
     }
 
     public override InterpolatedTree DefaultVisit(SyntaxNode node) {
@@ -106,29 +105,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
     /// conversion associated with the provided <paramref name="node"/>.
     /// </summary>
     private InterpolatedTree ApplyImplicitConversion(SyntaxNode node) {
-        var conversion = _context.SemanticModel.GetConversion(node);
-        switch(conversion) {
-            case not { Exists: true, IsImplicit: true }:
-                return base.Visit(node)!;
-
-            case { IsBoxing: true }:
-            case { IsConditionalExpression: true }:
-            case { IsConstantExpression: true }:
-            case { IsDefaultLiteral: true }:
-            case { IsEnumeration: true }:
-            case { IsNullable: true }:
-            case { IsNumeric: true }:
-            case { IsUserDefined: true }:
-                break;
-
-            default:
-                return base.Visit(node)!;
-        }
-
-        var typeInfo = _context.SemanticModel.GetTypeInfo(node);
-        if(typeInfo.ConvertedType is null)
-            return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
-        if(SymbolEqualityComparer.IncludeNullability.Equals(typeInfo.ConvertedType, typeInfo.Type))
+        if(!SyntaxHelpers.HasImplicitConversion(node, _context.SemanticModel))
             return base.Visit(node)!;
 
         // In the case of a user-defined conversion, information about the method is provided, however
@@ -150,8 +127,10 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         );
     }
 
-    private InterpolatedTree VisitEvaluatedSyntax(SyntaxNode node) =>
-        new EvaluatedSyntaxVisitor(_context, _interpolatedIdentifiers).Visit(node);
+    private InterpolatedTree VisitEvaluatedSyntax(SyntaxNode node) {
+        CurrentExpr.Mark();
+        return new EvaluatedSyntaxVisitor(_context, CurrentExpr, _interpolatedIdentifiers).Apply(node);
+    }
 
     public override InterpolatedTree VisitThisExpression(ThisExpressionSyntax node) {
         CurrentExpr.SetType(typeof(Expression));
@@ -394,9 +373,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         if(node is not AssignmentExpressionSyntax { Left: IdentifierNameSyntax } assignment)
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
 
-        // The C# language spec doesn't really specify a name for this, but DOES note that an
-        // `initializer_value` can be either an `expression` or an `object_or_collection_initializer`,
-        // and if it's an object initializer then it's called a "nested object initializer"...
+        // Handle the case of a nested object/collection initializer
         if(assignment.Right is InitializerExpressionSyntax initializer) switch(initializer.Kind()) {
             case SyntaxKind.ObjectInitializerExpression:
                 CurrentExpr.SetType(typeof(MemberMemberBinding));
@@ -457,16 +434,16 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
         // If the lambda is an expression, then it is enclosed in a quoted UnaryExpression
         if(!TypeSymbolHelpers.IsSubtype(typeSymbol, _context.TypeSymbols.Expression))
-            return VisitLambdaExpressionUnquoted(node);
+            return VisitLambdaExpressionCore(node);
 
         CurrentExpr.SetType(typeof(UnaryExpression));
         return _builder.CreateExpression(nameof(Expression.Quote), [
             CurrentExpr.Bind($"{nameof(UnaryExpression.Operand)}")
-            .WithValue(VisitLambdaExpressionUnquoted(node))
+            .WithValue(VisitLambdaExpressionCore(node))
         ]);
     }
 
-    private InterpolatedTree VisitLambdaExpressionUnquoted(LambdaExpressionSyntax node) {
+    private InterpolatedTree VisitLambdaExpressionCore(LambdaExpressionSyntax node) {
         using var snapshot = CreateIdentifiersSnapshot();
 
         foreach(var parameter in GetLambdaParameters(node))

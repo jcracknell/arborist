@@ -1,45 +1,79 @@
 namespace Arborist.Interpolation.InterceptorGenerator;
 
 public partial class InterpolatedSyntaxVisitor {
-    private ExpressionBinding CurrentExpr { get; set; } = default!;
+    private InterpolatedExpressionBinding CurrentExpr { get; set; } = default!;
 
-    private sealed class InterpolatedExpressionBinding : ExpressionBinding {
-        private readonly InterpolatedSyntaxVisitor _visitor;
+    public sealed class InterpolatedExpressionBinding(
+        InterpolatedExpressionBinding? parent,
+        InterpolatedSyntaxVisitor visitor,
+        InterpolatedTree binding,
+        Type? expressionType
+    ) : ExpressionBinding(
+        parent: parent,
+        binding: binding,
+        expressionType: expressionType
+    ) {
 
-        public InterpolatedExpressionBinding(
-            ExpressionBinding? parent,
-            InterpolatedSyntaxVisitor visitor,
-            string identifier,
-            InterpolatedTree binding,
-            Type? expressionType
-        ) : base(
-            parent: parent,
-            identifierString: identifier,
-            binding: binding,
-            expressionType: expressionType
-        ) {
-            _visitor = visitor;
-        }
+        public InterpolatedTree Identifier { get; } = CreateIdentifier(parent?.Depth + 1 ?? 0);
+        public bool IsMarked { get; private set; }
+
+        private int Depth => (parent?.Depth + 1) ?? 0;
+
+        private static InterpolatedTree CreateIdentifier(int depth) =>
+            InterpolatedTree.Verbatim($"__e{depth}");
 
         protected override ExpressionBinding GetCurrent() {
-            return _visitor.CurrentExpr;
+            return visitor.CurrentExpr;
         }
 
         protected override void SetCurrent(ExpressionBinding? value) {
-            _visitor.CurrentExpr = value!;
+            visitor.CurrentExpr = (InterpolatedExpressionBinding)value!;
         }
 
-        // If the tree is unmarked, we return the binding (the analyzed expression value)
-        protected override InterpolatedTree GetUnmarkedValue(InterpolatedTree binding, InterpolatedTree value) =>
-            binding;
+        /// <summary>
+        /// Marks the subject <see cref="ExpressionBinding"/>, signaling that the bound expression has been
+        /// altered in some way in the result tree.
+        /// </summary>
+        public void Mark() {
+            if(!IsMarked) {
+                IsMarked = true;
+                ((InterpolatedExpressionBinding?)Parent)?.Mark();
+            }
+        }
 
-        protected override ExpressionBinding Bind(string identifier, InterpolatedTree binding, Type? expressionType) =>
+        /// <summary>
+        /// Creates an <see cref="InterpolatedTree"/> referencing the descendant of the current expression tree node
+        /// identified by the provided <paramref name="binding"/>.
+        /// </summary>
+        public InterpolatedTree BindValue(ref InterpolatedTree.InterpolationHandler binding) =>
+            InterpolatedTree.Concat(Identifier, InterpolatedTree.Verbatim("."), binding.GetTree());
+
+        protected override ExpressionBinding BindDescendant(Type? expressionType, ref InterpolatedTree.InterpolationHandler binding) =>
             new InterpolatedExpressionBinding(
                 parent: this,
-                visitor: _visitor,
-                identifier: identifier,
-                binding: binding,
+                visitor: visitor,
+                binding: BindValue(ref binding),
                 expressionType: expressionType
             );
+
+        protected override InterpolatedTree CreateResult(InterpolatedTree value) {
+            // If the provided value is unmarked, we return the binding directly to output the original
+            // expression tree instead of the rewritten version of the tree
+            if(!IsMarked && value.IsSupported)
+                return Binding;
+
+            if(ExpressionType is null) {
+                if(value.IsSupported)
+                    throw new InvalidOperationException($"Expression type is not set for body: {value}");
+
+                return InterpolatedTree.Bind(Identifier, Binding, value);
+            }
+
+            return InterpolatedTree.Bind(
+                Identifier,
+                InterpolatedTree.Interpolate($"(global::{ExpressionType.FullName})({Binding})"),
+                value
+            );
+        }
     }
 }

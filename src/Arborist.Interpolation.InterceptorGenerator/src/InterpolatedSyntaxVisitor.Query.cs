@@ -5,9 +5,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Arborist.Interpolation.InterceptorGenerator;
 
 public partial class InterpolatedSyntaxVisitor {
-    public override InterpolatedTree VisitQueryExpression(QueryExpressionSyntax node) {
-        return VisitQueryBody(node.Body);
-    }
+    public override InterpolatedTree VisitQueryExpression(QueryExpressionSyntax node) =>
+        VisitQueryBody(node.Body);
 
     public override InterpolatedTree VisitQueryBody(QueryBodySyntax node) {
         // Drill all the way down to the last query continuation (the outermost call)
@@ -84,6 +83,11 @@ public partial class InterpolatedSyntaxVisitor {
 
         var inputTree = CurrentExpr.BindCallArg(method, 0).WithValue(_queryContext.VisitNext());
         var keySelectorTree = CreateQueryLambda(method, 1, node.ByExpression);
+
+        // If the element selector is the identity function, the two parameter overload is used
+        if(TypeSymbolHelpers.GetParameterCount(method) == 2)
+            return CreateQueryCall(node, method, [inputTree, keySelectorTree]);
+
         var elementSelectorTree = CreateQueryLambda(method, 2, node.GroupExpression);
 
         return CreateQueryCall(node, method, [inputTree, keySelectorTree, elementSelectorTree]);

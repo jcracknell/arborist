@@ -13,7 +13,6 @@ public static class InterpolationDiagnostics {
 
     public const string ARB000_SetInterpolatorsNamespaces = "ARB000";
     public const string ARB001_InterpolationContextReference = "ARB001";
-    public const string ARB002_EvaluatedScopeReference = "ARB002";
     public const string ARB003_EvaluatedInterpolatedParameter = "ARB003";
     public const string ARB004_NoSplices = "ARB004";
     public const string ARB005_InaccessibleSymbolReference = "ARB005";
@@ -73,14 +72,6 @@ public static class InterpolationDiagnostics {
             severity: severity ?? DiagnosticSeverity.Info,
             title: "Unsupported type in interpolated expression",
             message: $"Interpolated expression contains unsupported type symbol {typeSymbol} and cannot be interpolated at compile time."
-        );
-
-    public static DiagnosticDescriptor EvaluatedScopeReference(DiagnosticSeverity? severity, SyntaxNode node) =>
-        Create(
-            code: ARB002_EvaluatedScopeReference,
-            severity: severity ?? DiagnosticSeverity.Warning,
-            title: "Evaluated splice argument references scope identifier",
-            message: $"Evaluated splice argument references identifier `{node}` defined in an enclosing scope."
         );
 
     public static DiagnosticDescriptor EvaluatedInterpolatedIdentifier(DiagnosticSeverity? severity, IdentifierNameSyntax node) =>

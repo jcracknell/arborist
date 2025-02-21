@@ -11,77 +11,36 @@ namespace Arborist.Interpolation.InterceptorGenerator;
 // in the instance context, which is then consumed by a subsequent visitation occurring in (or before)
 // the call to set the bound value.
 
-public abstract class ExpressionBinding {
-    public static string CreateIdentifier(int depth) =>
-        $"__e{depth}";
-
-    private readonly ExpressionBinding? _parent;
-    private readonly string _identifierString;
-    private InterpolatedTree? _identifier;
-    private readonly InterpolatedTree _binding;
-    private Type? _expressionType;
-
-    public ExpressionBinding(
-        ExpressionBinding? parent,
-        string identifierString,
-        InterpolatedTree binding,
-        Type? expressionType
-    ) {
-        _parent = parent;
-        _identifierString = identifierString;
-        _binding = binding;
-        _expressionType = expressionType;
-    }
+public abstract class ExpressionBinding(
+    ExpressionBinding? parent,
+    InterpolatedTree binding,
+    Type? expressionType
+) {
+    protected ExpressionBinding? Parent { get; } = parent;
+    protected InterpolatedTree Binding { get; } = binding;
+    protected Type? ExpressionType { get; private set; } = expressionType;
 
     protected abstract ExpressionBinding GetCurrent();
     protected abstract void SetCurrent(ExpressionBinding? value);
-    protected abstract InterpolatedTree GetUnmarkedValue(InterpolatedTree binding, InterpolatedTree value);
-    protected abstract ExpressionBinding Bind(string identifier, InterpolatedTree binding, Type? expressionType);
+    protected abstract InterpolatedTree CreateResult(InterpolatedTree value);
 
-    public InterpolatedTree Identifier =>
-        _identifier ??= InterpolatedTree.Verbatim(_identifierString);
+    public virtual void SetType(Type type) {
+        if(ExpressionType is not null && !ExpressionType.IsAssignableFrom(type))
+            throw new InvalidOperationException($"Invalid attempt to rebind expression node type from {ExpressionType} to {type}.");
 
-    public int Depth => (_parent?.Depth + 1) ?? 0;
-
-    public bool IsMarked { get; private set; }
-
-    /// <summary>
-    /// Marks the subject <see cref="ExpressionBinding"/>, signaling that the bound expression has been
-    /// altered in some way in the result tree.
-    /// </summary>
-    public void Mark() {
-        IsMarked = true;
-        _parent?.Mark();
-    }
-
-    public void SetType(Type type) {
-        if(_expressionType is not null && !_expressionType.IsAssignableFrom(type))
-            throw new InvalidOperationException($"Invalid attempt to rebind expression node type from {_expressionType} to {type}.");
-
-        _expressionType = type;
+        ExpressionType = type;
     }
 
     public InterpolatedTree WithValue(InterpolatedTree value) {
-        if(_expressionType is null && value.IsSupported)
-            throw new InvalidOperationException($"Expression type is not set for body: {value}");
         if(!ReferenceEquals(this, GetCurrent()))
             throw new InvalidOperationException($"Subject {nameof(ExpressionBinding)} is not the current expression.");
 
         // Restore the parent expression node as the current node.
-        SetCurrent(_parent);
-
-        // If the provided value is unmarked, we defer to the implementation as to which tree should be returned
-        if(!IsMarked && value.IsSupported)
-            return GetUnmarkedValue(_binding, value);
-
-        var typedBinding = _expressionType is null ? _binding : InterpolatedTree.Concat([
-            InterpolatedTree.Verbatim($"(global::{_expressionType.FullName})("),
-            _binding,
-            InterpolatedTree.Verbatim(")")
-        ]);
-
-        return InterpolatedTree.Bind(_identifierString, typedBinding, value);
+        SetCurrent(Parent);
+        return CreateResult(value);
     }
+
+    protected abstract ExpressionBinding BindDescendant(Type? expressionType, ref InterpolatedTree.InterpolationHandler binding);
 
     /// <summary>
     /// Binds the descendant of the current expression tree node identified by the provided <paramref name="binding"/>
@@ -95,23 +54,10 @@ public abstract class ExpressionBinding {
     /// as the current expression.
     /// </summary>
     public ExpressionBinding Bind(Type expressionType, ref InterpolatedTree.InterpolationHandler binding) {
-        var depth = Depth + 1;
-        var bound = Bind(
-            identifier: CreateIdentifier(depth),
-            binding: BindValue(ref binding),
-            expressionType: expressionType
-        );
-
+        var bound = BindDescendant(expressionType, ref binding);
         SetCurrent(bound);
         return bound;
     }
-
-    /// <summary>
-    /// Creates an <see cref="InterpolatedTree"/> referencing the descendant of the current expression tree node
-    /// identified by the provided <paramref name="binding"/>.
-    /// </summary>
-    public InterpolatedTree BindValue(ref InterpolatedTree.InterpolationHandler binding) =>
-        InterpolatedTree.Concat(GetCurrent().Identifier, InterpolatedTree.Verbatim("."), binding.GetTree());
 
     /// <summary>
     /// Binds the argument of the current expression tree node at the specified <paramref name="index"/>, on the

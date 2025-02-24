@@ -107,6 +107,20 @@ public abstract class InterpolatedTree : IEquatable<InterpolatedTree> {
     ) =>
         new TernaryNode(condition, thenNode, elseNode);
 
+    public static InterpolatedTree TupleBind(
+        IReadOnlyList<KeyValuePair<string, InterpolatedTree>> bindings,
+        InterpolatedTree body
+    ) =>
+        bindings.Count switch {
+            0 => body,
+            1 => Bind(Verbatim(bindings[0].Key), bindings[0].Value, body),
+            _ => Bind(
+                Verbatim(bindings.MkString("(", kvp => kvp.Key, ", ", ")")),
+                Call(Empty, bindings.SelectEager(kvp => kvp.Value)),
+                body
+            )
+        };
+
     public abstract bool IsSupported { get; }
     protected abstract InterpolatedTree ReplaceChildren(Func<InterpolatedTree, InterpolatedTree> replacer);
     public abstract void Render(ref RenderingContext context);

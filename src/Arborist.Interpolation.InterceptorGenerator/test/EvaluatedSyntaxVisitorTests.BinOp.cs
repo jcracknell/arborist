@@ -1,5 +1,3 @@
-using Xunit;
-
 namespace Arborist.Interpolation.InterceptorGenerator;
 
 public partial class EvaluatedSyntaxVisitorTests {
@@ -14,8 +12,10 @@ public partial class EvaluatedSyntaxVisitorTests {
         CodeGenAssert.CodeEqual(
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
-                    var __e0 => global::System.Linq.Expressions.Expression.Constant( 
-                        (__data as global::System.IFormattable),
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        (global::System.Linq.Expressions.UnaryExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => (__data as global::System.IFormattable)
+                        },
                         __e0.Type
                     )
                 }
@@ -35,8 +35,10 @@ public partial class EvaluatedSyntaxVisitorTests {
         CodeGenAssert.CodeEqual(
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
-                    var __e0 => global::System.Linq.Expressions.Expression.Constant( 
-                        (__data is global::System.IFormattable),
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        (global::System.Linq.Expressions.TypeBinaryExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => (__data is global::System.IFormattable)
+                        },
                         __e0.Type
                     )
                 }

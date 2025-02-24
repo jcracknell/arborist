@@ -16,7 +16,9 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        new[] { ""foo"", ""bar"" },
+                        (global::System.Linq.Expressions.NewArrayExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => new[] { ""foo"", ""bar"" }
+                        },
                         __e0.Type
                     )
                 }
@@ -40,7 +42,9 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        new global::System.String[] { ""foo"", ""bar"" },
+                        (global::System.Linq.Expressions.NewArrayExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => new global::System.String[] { ""foo"", ""bar"" }
+                        },
                         __e0.Type
                     )
                 }
@@ -64,7 +68,9 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        new global::System.String[3,42],
+                        (global::System.Linq.Expressions.NewArrayExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => new global::System.String[3,42]
+                        },
                         __e0.Type
                     )
                 }
@@ -88,7 +94,9 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        new global::System.String[2, 42][],
+                        (global::System.Linq.Expressions.NewArrayExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => new global::System.String[2, 42][]
+                        },
                         __e0.Type
                     )
                 }
@@ -109,7 +117,9 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        new global::Arborist.TestFixtures.Cat() { Name = ""Garfield"" },
+                        (global::System.Linq.Expressions.MemberInitExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => new global::Arborist.TestFixtures.Cat() { Name = ""Garfield"" }
+                        },
                         __e0.Type
                     )
                 }
@@ -130,9 +140,11 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        new global::System.Collections.Generic.List<global::System.String>() {
-                            ""foo"",
-                            ""bar""
+                        (global::System.Linq.Expressions.ListInitExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => new global::System.Collections.Generic.List<global::System.String>() {
+                                ""foo"",
+                                ""bar""
+                            }
                         },
                         __e0.Type
                     )
@@ -157,9 +169,11 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        new global::System.Collections.Generic.Dictionary<global::System.String, global::System.Int32>(){
-                            { ""foo"", 1 },
-                            { ""bar"", 2 }
+                        (global::System.Linq.Expressions.ListInitExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => new global::System.Collections.Generic.Dictionary<global::System.String, global::System.Int32>(){
+                                { ""foo"", 1 },
+                                { ""bar"", 2 }
+                            }
                         },
                         __e0.Type
                     )
@@ -183,7 +197,9 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        new global::Arborist.TestFixtures.Cat() { Owner = { Name = ""Jon"" } },
+                        (global::System.Linq.Expressions.MemberInitExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => new global::Arborist.TestFixtures.Cat() { Owner = { Name = ""Jon"" } }
+                        },
                         __e0.Type
                     )
                 }
@@ -209,9 +225,11 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        new global::Arborist.TestFixtures.NestedCollectionInitializerFixture<global::System.String>(){
-                            List = { ""foo"" },
-                            Dictionary = { { ""bar"", ""baz"" } }
+                        (global::System.Linq.Expressions.MemberInitExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => new global::Arborist.TestFixtures.NestedCollectionInitializerFixture<global::System.String>(){
+                                List = { ""foo"" },
+                                Dictionary = { { ""bar"", ""baz"" } }
+                            }
                         },
                         __e0.Type
                     )

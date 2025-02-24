@@ -16,10 +16,12 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        global::System.Linq.Enumerable.Select(
-                            __data.Cats,
-                            (c) => c.Name
-                        ),
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => global::System.Linq.Enumerable.Select(
+                                __data.Cats,
+                                (c) => c.Name
+                            )
+                        },
                         __e0.Type
                     )
                 }
@@ -43,11 +45,12 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        global::System.Linq.Enumerable.GroupBy(
-                            __data.Cats,
-                            (c) => c.Age,
-                            (c) => c
-                        ),
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => global::System.Linq.Enumerable.GroupBy(
+                                __data.Cats,
+                                (c) => c.Age
+                            )
+                        },
                         __e0.Type
                     )
                 }
@@ -73,14 +76,15 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        global::System.Linq.Enumerable.Select(
-                            global::System.Linq.Enumerable.GroupBy(
-                                __data.Cats,
-                                (c) => c.Age,
-                                (c) => c
-                            ),
-                            (ageGroup) => global::System.Linq.Enumerable.Count(ageGroup)
-                        ),
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => global::System.Linq.Enumerable.Select(
+                                global::System.Linq.Enumerable.GroupBy(
+                                    __data.Cats,
+                                    (c) => c.Age
+                                ),
+                                (ageGroup) => global::System.Linq.Enumerable.Count(ageGroup)
+                            )
+                        },
                         __e0.Type
                     )
                 }
@@ -105,13 +109,15 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        global::System.Linq.Enumerable.Join(
-                            __data.Cats,
-                            __data.Cats,
-                            (c) => c.Id,
-                            (c1) => c1.Id,
-                            (c, c1) => c1.Name
-                        ),
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => global::System.Linq.Enumerable.Join(
+                                __data.Cats,
+                                __data.Cats,
+                                (c) => c.Id,
+                                (c1) => c1.Id,
+                                (c, c1) => c1.Name
+                            )
+                        },
                         __e0.Type
                     )
                 }
@@ -137,19 +143,21 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        global::System.Linq.Enumerable.Select(
-                            global::System.Linq.Enumerable.Where(
-                                global::System.Linq.Enumerable.Join(
-                                    __data.Cats,
-                                    __data.Cats,
-                                    (c) => c.Id,
-                                    (c1) => c1.Id,
-                                    (c, c1) => new { c, c1 }
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => global::System.Linq.Enumerable.Select(
+                                global::System.Linq.Enumerable.Where(
+                                    global::System.Linq.Enumerable.Join(
+                                        __data.Cats,
+                                        __data.Cats,
+                                        (c) => c.Id,
+                                        (c1) => c1.Id,
+                                        (c, c1) => new { c, c1 }
+                                    ),
+                                    (__v0) => (__v0.c.Age == 8)
                                 ),
-                                (__v0) => (__v0.c.Age == 8)
-                            ),
-                            (__v0) => __v0.c1.Name
-                        ),
+                                (__v0) => __v0.c1.Name
+                            )
+                        },
                         __e0.Type
                     )
                 }
@@ -175,17 +183,19 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        global::System.Linq.Enumerable.SelectMany(
-                            global::System.Linq.Enumerable.GroupJoin(
-                                __data.Cats,
-                                __data.Cats,
-                                (c) => c.Id,
-                                (c1) => c1.Id,
-                                (c, cs) => new { c, cs }
-                            ),
-                            (__v0) => __v0.cs,
-                            (__v0, cc) => cc.Age
-                        ),
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => global::System.Linq.Enumerable.SelectMany(
+                                global::System.Linq.Enumerable.GroupJoin(
+                                    __data.Cats,
+                                    __data.Cats,
+                                    (c) => c.Id,
+                                    (c1) => c1.Id,
+                                    (c, cs) => new { c, cs }
+                                ),
+                                (__v0) => __v0.cs,
+                                (__v0, cc) => cc.Age
+                            )
+                        },
                         __e0.Type
                     )
                 }
@@ -210,13 +220,15 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        global::System.Linq.Enumerable.Select(
-                            global::System.Linq.Enumerable.Select(
-                                __data.Cats,
-                                (c) => new { c, name = c.Name }
-                            ),
-                            (__v0) => __v0.name
-                        ),
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => global::System.Linq.Enumerable.Select(
+                                global::System.Linq.Enumerable.Select(
+                                    __data.Cats,
+                                    (c) => new { c, name = c.Name }
+                                ),
+                                (__v0) => __v0.name
+                            )
+                        },
                         __e0.Type
                     )
                 }
@@ -241,13 +253,15 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        global::System.Linq.Enumerable.Select(
-                            global::System.Linq.Enumerable.Where(
-                                __data.Cats,
-                                (c) => (c.Age == 8)
-                            ),
-                            (c) => c.Name
-                        ),
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => global::System.Linq.Enumerable.Select(
+                                global::System.Linq.Enumerable.Where(
+                                    __data.Cats,
+                                    (c) => (c.Age == 8)
+                                ),
+                                (c) => c.Name
+                            )
+                        },
                         __e0.Type
                     )
                 }
@@ -273,19 +287,21 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        global::System.Linq.Enumerable.SelectMany(
-                            global::System.Linq.Enumerable.SelectMany(
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => global::System.Linq.Enumerable.SelectMany(
                                 global::System.Linq.Enumerable.SelectMany(
-                                    __data.Cats,
-                                    (a) => __data.Cats,
-                                    (a, b) => new { a, b }
+                                    global::System.Linq.Enumerable.SelectMany(
+                                        __data.Cats,
+                                        (a) => __data.Cats,
+                                        (a, b) => new { a, b }
+                                    ),
+                                    (__v0) => __data.Cats,
+                                    (__v0, c) => new { __v0, c }
                                 ),
-                                (__v0) => __data.Cats,
-                                (__v0, c) => new { __v0, c }
-                            ),
-                            (__v1) => __data.Cats,
-                            (__v1, d) => __v1.__v0.b
-                        ),
+                                (__v1) => __data.Cats,
+                                (__v1, d) => __v1.__v0.b
+                            )
+                        },
                         __e0.Type
                     )
                 }
@@ -312,25 +328,27 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        global::System.Linq.Enumerable.Join(
-                            global::System.Linq.Enumerable.Join(
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => global::System.Linq.Enumerable.Join(
                                 global::System.Linq.Enumerable.Join(
+                                    global::System.Linq.Enumerable.Join(
+                                        __data.Cats,
+                                        __data.Cats,
+                                        (a) => a.Id,
+                                        (b) => b.Id,
+                                        (a, b) => new { a, b }
+                                    ),
                                     __data.Cats,
-                                    __data.Cats,
-                                    (a) => a.Id,
-                                    (b) => b.Id,
-                                    (a, b) => new { a, b }
+                                    (__v0) => __v0.a.Id,
+                                    (c) => c.Id,
+                                    (__v0, c) => new { __v0, c }
                                 ),
                                 __data.Cats,
-                                (__v0) => __v0.a.Id,
-                                (c) => c.Id,
-                                (__v0, c) => new { __v0, c }
-                            ),
-                            __data.Cats,
-                            (__v1) => __v1.__v0.a.Id,
-                            (d) => d.Id,
-                            (__v1, d) => __v1.__v0.a
-                        ),
+                                (__v1) => __v1.__v0.a.Id,
+                                (d) => d.Id,
+                                (__v1, d) => __v1.__v0.a
+                            )
+                        },
                         __e0.Type
                     )
                 }
@@ -356,16 +374,18 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        global::System.Linq.Enumerable.Select(
-                            global::System.Linq.Enumerable.Select(
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => global::System.Linq.Enumerable.Select(
                                 global::System.Linq.Enumerable.Select(
-                                    __data.Cats,
-                                    (c) => new { c, n = c.Name }
+                                    global::System.Linq.Enumerable.Select(
+                                        __data.Cats,
+                                        (c) => new { c, n = c.Name }
+                                    ),
+                                    (__v0) => new { __v0, i = __v0.c.Id }
                                 ),
-                                (__v0) => new { __v0, i = __v0.c.Id }
-                            ),
-                            (__v1) => __v1.__v0.n
-                        ),
+                                (__v1) => __v1.__v0.n
+                            )
+                        },
                         __e0.Type
                     )
                 }

@@ -13,7 +13,9 @@ public class SpliceTests {
         CodeGenAssert.CodeEqual(
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
-                    var __e0 => __t0.Coerce(global::System.Linq.Expressions.Expression.Constant(3)) switch {
+                    var __e0 => (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                        var __e1 => global::System.Linq.Expressions.Expression.Constant(3)
+                    } switch {
                         var __v0 => (__e0.Type == __v0.Type
                         ?   __v0
                         :   global::System.Linq.Expressions.Expression.Convert(
@@ -39,7 +41,9 @@ public class SpliceTests {
         CodeGenAssert.CodeEqual(
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
-                    var __e0 => __t0.Coerce(__data) switch {
+                    var __e0 => (global::System.Linq.Expressions.MemberExpression)(__e0.Arguments[0]) switch {
+                        var __e1 => __data
+                    } switch {
                         var __v0 => (__e0.Type == __v0.Type
                         ?   __v0
                         :   global::System.Linq.Expressions.Expression.Convert(

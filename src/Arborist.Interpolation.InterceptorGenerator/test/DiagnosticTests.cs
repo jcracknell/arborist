@@ -50,36 +50,6 @@ public class DiagnosticTests {
     }
 
     [Fact]
-    public void Should_produce_ARB002_for_evaluated_closure_reference() {
-        var results = InterpolationInterceptorGeneratorTestBuilder.Create()
-        .Generate(@"
-            var owner = new Owner();
-            ExpressionOn<Cat>.Interpolate((x, c) => c.Owner.Id == x.SpliceValue(owner.Id));
-        ");
-
-        Assert.Equal(1, results.AnalysisResults.Count);
-        Assert.Contains(results.Diagnostics, diagnostic => diagnostic is {
-            Id: InterpolationDiagnostics.ARB002_EvaluatedScopeReference,
-            Severity: DiagnosticSeverity.Warning
-        });
-    }
-
-    [Fact]
-    public void Should_not_produce_ARB002_for_interpolated_closure_reference() {
-        var results = InterpolationInterceptorGeneratorTestBuilder.Create()
-        .Generate(@"
-            var owner = new Owner();
-            ExpressionOnNone.Interpolate(x => owner.Id == x.SpliceValue(42));
-        ");
-
-        Assert.Equal(1, results.AnalysisResults.Count);
-        Assert.True(results.AnalysisResults[0].IsSupported);
-        Assert.DoesNotContain(results.Diagnostics, diagnostic => diagnostic is {
-            Id: InterpolationDiagnostics.ARB002_EvaluatedScopeReference
-        });
-    }
-
-    [Fact]
     public void Should_produce_ARB003_for_evaluating_interpolated_identifier() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"

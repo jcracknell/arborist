@@ -17,7 +17,9 @@ public partial class InterpolatedSyntaxVisitorTests {
                         __e0.Left,
                         (global::System.Linq.Expressions.MethodCallExpression)(__e0.Right) switch {
                             var __e1 => global::System.Linq.Expressions.Expression.Constant(
-                                42,
+                                (global::System.Linq.Expressions.ConstantExpression)(__e1.Arguments[0]) switch {
+                                    var __e2 => 42
+                                },
                                 __e1.Type
                             )
                         },
@@ -46,7 +48,9 @@ public partial class InterpolatedSyntaxVisitorTests {
                         __e0.Left,
                         (global::System.Linq.Expressions.MethodCallExpression)(__e0.Right) switch {
                             var __e1 => global::System.Linq.Expressions.Expression.Constant(
-                                42,
+                                (global::System.Linq.Expressions.ConstantExpression)(__e1.Arguments[0]) switch {
+                                    var __e2 => 42
+                                },
                                 __e1.Type
                             )
                         },
@@ -75,7 +79,9 @@ public partial class InterpolatedSyntaxVisitorTests {
                         __e0.Left,
                         (global::System.Linq.Expressions.MethodCallExpression)(__e0.Right) switch {
                             var __e1 => global::System.Linq.Expressions.Expression.Constant(
-                                ""bar"",
+                                (global::System.Linq.Expressions.ConstantExpression)(__e1.Arguments[0]) switch {
+                                    var __e2 => ""bar""
+                                },
                                 __e1.Type
                             )
                         },
@@ -102,7 +108,9 @@ public partial class InterpolatedSyntaxVisitorTests {
                     var __e0 => global::System.Linq.Expressions.Expression.TypeAs(
                         (global::System.Linq.Expressions.MethodCallExpression)(__e0.Operand) switch {
                             var __e1 => global::System.Linq.Expressions.Expression.Constant(
-                                default(global::System.Object)!,
+                                (global::System.Linq.Expressions.ConstantExpression)(__e1.Arguments[0]) switch {
+                                    var __e2 => default(global::System.Object)!
+                                },
                                 __e1.Type
                             )
                         },
@@ -128,7 +136,9 @@ public partial class InterpolatedSyntaxVisitorTests {
                     var __e0 => global::System.Linq.Expressions.Expression.TypeIs(
                         (global::System.Linq.Expressions.MethodCallExpression)(__e0.Expression) switch {
                             var __e1 => global::System.Linq.Expressions.Expression.Constant(
-                                default(global::System.Object)!,
+                                (global::System.Linq.Expressions.ConstantExpression)(__e1.Arguments[0]) switch {
+                                    var __e2 => default(global::System.Object)!
+                                },
                                 __e1.Type
                             )
                         },

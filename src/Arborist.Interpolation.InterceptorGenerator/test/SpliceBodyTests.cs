@@ -20,7 +20,9 @@ public class SpliceBodyTests {
                     var __e0 => global::System.Linq.Expressions.Expression.MakeBinary(
                         __e0.NodeType,
                         (global::System.Linq.Expressions.MethodCallExpression)(__e0.Left) switch {
-                            var __e1 => __data.Thunk switch {
+                            var __e1 => (global::System.Linq.Expressions.MemberExpression)(__e1.Arguments[0]) switch {
+                                var __e2 => __data.Thunk
+                            } switch {
                                 var __v0 => __v0.Body
                             }
                         },
@@ -53,7 +55,9 @@ public class SpliceBodyTests {
                     var __e0 => global::System.Linq.Expressions.Expression.MakeBinary(
                         __e0.NodeType,
                         (global::System.Linq.Expressions.MethodCallExpression)(__e0.Left) switch {
-                            var __e1 => __t0.Coerce(() => 41) switch {
+                            var __e1 => (global::System.Linq.Expressions.UnaryExpression)(__e1.Arguments[0]) switch {
+                                var __e2 => __t0.Coerce(() => 41)
+                            } switch {
                                 var __v0 => __v0.Body
                             }
                         },
@@ -81,7 +85,9 @@ public class SpliceBodyTests {
         CodeGenAssert.CodeEqual(
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
-                    var __e0 => __data.OwnerPredicate switch {
+                    var __e0 => (global::System.Linq.Expressions.MemberExpression)(__e0.Arguments[1]) switch {
+                        var __e1 => __data.OwnerPredicate
+                    } switch {
                         var __v0 => global::Arborist.ExpressionHelper.Replace(
                             __v0.Body,
                             global::Arborist.Internal.Collections.SmallDictionary.Create(
@@ -111,7 +117,9 @@ public class SpliceBodyTests {
         CodeGenAssert.CodeEqual(
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
-                    var __e0 => __t0.Coerce((o) => (o.Name == ""Jon"")) switch {
+                    var __e0 => (global::System.Linq.Expressions.UnaryExpression)(__e0.Arguments[1]) switch {
+                        var __e1 => __t0.Coerce((o) => (o.Name == ""Jon""))
+                    } switch {
                         var __v0 => global::Arborist.ExpressionHelper.Replace(
                             __v0.Body,
                             global::Arborist.Internal.Collections.SmallDictionary.Create(

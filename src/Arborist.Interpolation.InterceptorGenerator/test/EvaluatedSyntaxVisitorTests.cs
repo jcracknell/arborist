@@ -1,5 +1,3 @@
-using Xunit;
-
 namespace Arborist.Interpolation.InterceptorGenerator;
 
 public partial class EvaluatedSyntaxVisitorTests {
@@ -15,7 +13,9 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        42,
+                        (global::System.Linq.Expressions.ConstantExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => 42
+                        },
                         __e0.Type
                     )
                 }
@@ -36,7 +36,9 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        new global::System.String('0', 3),
+                        (global::System.Linq.Expressions.NewExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => new global::System.String('0', 3)
+                        },
                         __e0.Type
                     )
                 }
@@ -57,7 +59,9 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        __data.InstanceMethod(new('0', 3)),
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => __data.InstanceMethod(new('0', 3))
+                        },
                         __e0.Type
                     )
                 }
@@ -79,7 +83,9 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        default(global::System.String),
+                        (global::System.Linq.Expressions.ConstantExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => default(global::System.String)
+                        },
                         __e0.Type
                     )
                 }
@@ -100,7 +106,9 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        default(global::System.String),
+                        (global::System.Linq.Expressions.ConstantExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => default(global::System.String)
+                        },
                         __e0.Type
                     )
                 }
@@ -124,7 +132,9 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        !__data.Cat.IsAlive,
+                        (global::System.Linq.Expressions.UnaryExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => !__data.Cat.IsAlive
+                        },
                         __e0.Type
                     )
                 }
@@ -148,7 +158,9 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        (__data.Cat.Name + ""foo""),
+                        (global::System.Linq.Expressions.BinaryExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => (__data.Cat.Name + ""foo"")
+                        },
                         __e0.Type
                     )
                 }
@@ -172,7 +184,9 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        (__data.Cat.IsAlive ? ""foo"" : ""bar""),
+                        (global::System.Linq.Expressions.ConditionalExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => (__data.Cat.IsAlive ? ""foo"" : ""bar"")
+                        },
                         __e0.Type
                     )
                 }
@@ -196,7 +210,9 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        (global::System.Object)__data.Cat,
+                        (global::System.Linq.Expressions.UnaryExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => (global::System.Object)__data.Cat
+                        },
                         __e0.Type
                     )
                 }
@@ -220,7 +236,9 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        __data.InstanceMethod(""foo""),
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => __data.InstanceMethod(""foo"")
+                        },
                         __e0.Type
                     )
                 }
@@ -244,7 +262,9 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        global::Arborist.TestFixtures.MemberFixture.StaticMethod(""foo""),
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => global::Arborist.TestFixtures.MemberFixture.StaticMethod(""foo"")
+                        },
                         __e0.Type
                     )
                 }
@@ -268,7 +288,9 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        global::Arborist.TestFixtures.MemberFixture.GenericStaticMethod(42),
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => global::Arborist.TestFixtures.MemberFixture.GenericStaticMethod(42)
+                        },
                         __e0.Type
                     )
                 }
@@ -292,7 +314,9 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        __data.GenericInstanceMethod(""foo""),
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => __data.GenericInstanceMethod(""foo"")
+                        },
                         __e0.Type
                     )
                 }
@@ -316,7 +340,9 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        __data.GenericInstanceMethod<global::System.Collections.Generic.IEnumerable<global::System.Char>>(""foo""),
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => __data.GenericInstanceMethod<global::System.Collections.Generic.IEnumerable<global::System.Char>>(""foo"")
+                        },
                         __e0.Type
                     )
                 }
@@ -340,7 +366,9 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        global::Arborist.TestFixtures.MemberFixture.GenericStaticMethod<global::System.Collections.Generic.IEnumerable<global::System.Char>>(""foo""),
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => global::Arborist.TestFixtures.MemberFixture.GenericStaticMethod<global::System.Collections.Generic.IEnumerable<global::System.Char>>(""foo"")
+                        },
                         __e0.Type
                     )
                 }
@@ -364,7 +392,9 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        new { foo = ""foo"", bar = 42, global::System.String.Empty },
+                        (global::System.Linq.Expressions.NewExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => new { foo = ""foo"", bar = 42, global::System.String.Empty }
+                        },
                         __e0.Type
                     )
                 }
@@ -385,7 +415,9 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        checked((__data + 1)),
+                        (global::System.Linq.Expressions.BinaryExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => checked((__data + 1))
+                        },
                         __e0.Type
                     )
                 }
@@ -406,7 +438,9 @@ public partial class EvaluatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Constant(
-                        unchecked((__data + 1)),
+                        (global::System.Linq.Expressions.BinaryExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => unchecked((__data + 1))
+                        },
                         __e0.Type
                     )
                 }

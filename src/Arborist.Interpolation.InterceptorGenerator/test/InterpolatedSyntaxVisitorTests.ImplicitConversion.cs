@@ -15,7 +15,9 @@ public partial class InterpolatedSyntaxVisitorTests {
                     var __e0 => global::System.Linq.Expressions.Expression.Convert(
                         (global::System.Linq.Expressions.MethodCallExpression)(__e0.Operand) switch {
                             var __e1 => global::System.Linq.Expressions.Expression.Constant(
-                                42,
+                                (global::System.Linq.Expressions.ConstantExpression)(__e1.Arguments[0]) switch {
+                                    var __e2 => 42
+                                },
                                 __e1.Type
                             )
                         },
@@ -42,7 +44,9 @@ public partial class InterpolatedSyntaxVisitorTests {
                     var __e0 => global::System.Linq.Expressions.Expression.Convert(
                         (global::System.Linq.Expressions.MethodCallExpression)(__e0.Operand) switch {
                             var __e1 => global::System.Linq.Expressions.Expression.Constant(
-                                42,
+                                (global::System.Linq.Expressions.ConstantExpression)(__e1.Arguments[0]) switch {
+                                    var __e2 => 42
+                                },
                                 __e1.Type
                             )
                         },
@@ -69,7 +73,9 @@ public partial class InterpolatedSyntaxVisitorTests {
                     var __e0 => global::System.Linq.Expressions.Expression.Convert(
                         (global::System.Linq.Expressions.MethodCallExpression)(__e0.Operand) switch {
                             var __e1 => global::System.Linq.Expressions.Expression.Constant(
-                                ""foo"",
+                                (global::System.Linq.Expressions.ConstantExpression)(__e1.Arguments[0]) switch {
+                                    var __e2 => ""foo""
+                                },
                                 __e1.Type
                             )
                         },

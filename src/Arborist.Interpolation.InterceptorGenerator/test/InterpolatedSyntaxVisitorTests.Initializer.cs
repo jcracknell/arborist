@@ -19,14 +19,18 @@ public partial class InterpolatedSyntaxVisitorTests {
                         new global::System.Linq.Expressions.Expression[] {
                             (global::System.Linq.Expressions.MethodCallExpression)(__e0.Expressions[0]) switch {
                                 var __e1 => global::System.Linq.Expressions.Expression.Constant(
-                                    ""foo"",
+                                    (global::System.Linq.Expressions.ConstantExpression)(__e1.Arguments[0]) switch {
+                                        var __e2 => ""foo""
+                                    },
                                     __e1.Type
                                 )
                             },
                             __e0.Expressions[1],
                             (global::System.Linq.Expressions.MethodCallExpression)(__e0.Expressions[2]) switch {
                                 var __e1 => global::System.Linq.Expressions.Expression.Constant(
-                                    ""baz"",
+                                    (global::System.Linq.Expressions.ConstantExpression)(__e1.Arguments[0]) switch {
+                                        var __e2 => ""baz""
+                                    },
                                     __e1.Type
                                 )
                             }
@@ -57,7 +61,9 @@ public partial class InterpolatedSyntaxVisitorTests {
                         new global::System.Linq.Expressions.Expression[] {
                             (global::System.Linq.Expressions.MethodCallExpression)(__e0.Expressions[0]) switch {
                                 var __e1 => global::System.Linq.Expressions.Expression.Constant(
-                                    ""foo"",
+                                    (global::System.Linq.Expressions.ConstantExpression)(__e1.Arguments[0]) switch {
+                                        var __e2 => ""foo""
+                                    },
                                     __e1.Type
                                 )
                             },
@@ -89,7 +95,9 @@ public partial class InterpolatedSyntaxVisitorTests {
                         new global::System.Linq.Expressions.Expression[] {
                             (global::System.Linq.Expressions.MethodCallExpression)(__e0.Expressions[0]) switch {
                                 var __e1 => global::System.Linq.Expressions.Expression.Constant(
-                                    3,
+                                    (global::System.Linq.Expressions.ConstantExpression)(__e1.Arguments[0]) switch {
+                                        var __e2 => 3
+                                    },
                                     __e1.Type
                                 )
                             },
@@ -123,7 +131,9 @@ public partial class InterpolatedSyntaxVisitorTests {
                                     __e1.Member,
                                     (global::System.Linq.Expressions.MethodCallExpression)(__e1.Expression) switch {
                                         var __e2 => global::System.Linq.Expressions.Expression.Constant(
-                                            ""Garfield"",
+                                            (global::System.Linq.Expressions.ConstantExpression)(__e2.Arguments[0]) switch {
+                                                var __e3 => ""Garfield""
+                                            },
                                             __e2.Type
                                         )
                                     }
@@ -157,7 +167,9 @@ public partial class InterpolatedSyntaxVisitorTests {
                                     new global::System.Linq.Expressions.Expression[] {
                                         (global::System.Linq.Expressions.MethodCallExpression)(__e1.Arguments[0]) switch {
                                             var __e2 => global::System.Linq.Expressions.Expression.Constant(
-                                                ""foo"",
+                                                (global::System.Linq.Expressions.ConstantExpression)(__e2.Arguments[0]) switch {
+                                                    var __e3 => ""foo""
+                                                },
                                                 __e2.Type
                                             )
                                         }
@@ -196,7 +208,9 @@ public partial class InterpolatedSyntaxVisitorTests {
                                     new global::System.Linq.Expressions.Expression[] {
                                         (global::System.Linq.Expressions.MethodCallExpression)(__e1.Arguments[0]) switch {
                                             var __e2 => global::System.Linq.Expressions.Expression.Constant(
-                                                ""foo"",
+                                                (global::System.Linq.Expressions.ConstantExpression)(__e2.Arguments[0]) switch {
+                                                    var __e3 => ""foo""
+                                                },
                                                 __e2.Type
                                             )
                                         },
@@ -211,7 +225,9 @@ public partial class InterpolatedSyntaxVisitorTests {
                                         __e1.Arguments[0],
                                         (global::System.Linq.Expressions.MethodCallExpression)(__e1.Arguments[1]) switch {
                                             var __e2 => global::System.Linq.Expressions.Expression.Constant(
-                                                2,
+                                                (global::System.Linq.Expressions.ConstantExpression)(__e2.Arguments[0]) switch {
+                                                    var __e3 => 2
+                                                },
                                                 __e2.Type
                                             )
                                         }
@@ -254,7 +270,9 @@ public partial class InterpolatedSyntaxVisitorTests {
                                                         new global::System.Linq.Expressions.Expression[] {
                                                             (global::System.Linq.Expressions.MethodCallExpression)(__e3.Arguments[0]) switch {
                                                                 var __e4 => global::System.Linq.Expressions.Expression.Constant(
-                                                                    default(global::Arborist.TestFixtures.Cat)!,
+                                                                    (global::System.Linq.Expressions.ConstantExpression)(__e4.Arguments[0]) switch {
+                                                                        var __e5 => default(global::Arborist.TestFixtures.Cat)!
+                                                                    },
                                                                     __e4.Type
                                                                 )
                                                             }
@@ -301,7 +319,9 @@ public partial class InterpolatedSyntaxVisitorTests {
                                                             __e3.Member,
                                                             (global::System.Linq.Expressions.MethodCallExpression)(__e3.Expression) switch {
                                                                 var __e4 => global::System.Linq.Expressions.Expression.Constant(
-                                                                    ""Garfield"",
+                                                                    (global::System.Linq.Expressions.ConstantExpression)(__e4.Arguments[0]) switch {
+                                                                        var __e5 => ""Garfield""
+                                                                    },
                                                                     __e4.Type
                                                                 )
                                                             }
@@ -346,7 +366,9 @@ public partial class InterpolatedSyntaxVisitorTests {
                                                 __e2.Member,
                                                 (global::System.Linq.Expressions.MethodCallExpression)(__e2.Expression) switch {
                                                     var __e3 => global::System.Linq.Expressions.Expression.Constant(
-                                                        ""Jon"",
+                                                        (global::System.Linq.Expressions.ConstantExpression)(__e3.Arguments[0]) switch {
+                                                            var __e4 => ""Jon""
+                                                        },
                                                         __e3.Type
                                                     )
                                                 }
@@ -392,7 +414,9 @@ public partial class InterpolatedSyntaxVisitorTests {
                                                 new global::System.Linq.Expressions.Expression[] {
                                                     (global::System.Linq.Expressions.MethodCallExpression)(__e2.Arguments[0]) switch {
                                                         var __e3 => global::System.Linq.Expressions.Expression.Constant(
-                                                            ""foo"",
+                                                            (global::System.Linq.Expressions.ConstantExpression)(__e3.Arguments[0]) switch {
+                                                                var __e4 => ""foo""
+                                                            },
                                                             __e3.Type
                                                         )
                                                     }
@@ -412,13 +436,17 @@ public partial class InterpolatedSyntaxVisitorTests {
                                                 new global::System.Linq.Expressions.Expression[] {
                                                     (global::System.Linq.Expressions.MethodCallExpression)(__e2.Arguments[0]) switch {
                                                         var __e3 => global::System.Linq.Expressions.Expression.Constant(
-                                                            ""bar"",
+                                                            (global::System.Linq.Expressions.ConstantExpression)(__e3.Arguments[0]) switch {
+                                                                var __e4 => ""bar""
+                                                            },
                                                             __e3.Type
                                                         )
                                                     },
                                                     (global::System.Linq.Expressions.MethodCallExpression)(__e2.Arguments[1]) switch {
                                                         var __e3 => global::System.Linq.Expressions.Expression.Constant(
-                                                            ""baz"",
+                                                            (global::System.Linq.Expressions.ConstantExpression)(__e3.Arguments[0]) switch {
+                                                                var __e4 => ""baz""
+                                                            },
                                                             __e3.Type
                                                         )
                                                     }

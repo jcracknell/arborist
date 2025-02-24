@@ -91,8 +91,11 @@ internal static class EnumerableExtensions {
         this IReadOnlyCollection<A> collection,
         Func<A, B> projection
     ) {
-        var index = 0;
         var count = collection.Count;
+        if(count == 0)
+            return Array.Empty<B>();
+
+        var index = 0;
         var results = new B[count];
         if(collection is IReadOnlyList<A> list) {
             while(index < count) {
@@ -117,8 +120,11 @@ internal static class EnumerableExtensions {
         this IReadOnlyCollection<A> collection,
         Func<A, int, B> projection
     ) {
-        var index = 0;
         var count = collection.Count;
+        if(count == 0)
+            return Array.Empty<B>();
+
+        var index = 0;
         var results = new B[count];
         if(collection is IReadOnlyList<A> list) {
             while(index < count) {

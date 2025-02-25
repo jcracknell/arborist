@@ -9,6 +9,26 @@ public static class InterpolationTestOn<A, B> {
     /// Generates errors in the event that the source generator fails to create an interceptor for any reason.
     /// </summary>
     [InterceptedExpressionInterpolator(InterceptionRequired = true)]
+    public static Expression<Func<A, B, R>> Interpolate<R>(
+        Expression<Func<IInterpolationContext, A, B, R>> expression
+    ) =>
+        throw new NotImplementedException();
+
+    /// <summary>
+    /// Expression interpolator provided for unit-testing purposes.
+    /// Generates errors in the event that the source generator fails to create an interceptor for any reason.
+    /// </summary>
+    [InterceptedExpressionInterpolator(InterceptionRequired = true)]
+    public static Expression<Action<A, B>> Interpolate(
+        Expression<Action<IInterpolationContext, A, B>> expression
+    ) =>
+        throw new NotImplementedException();
+
+    /// <summary>
+    /// Expression interpolator provided for unit-testing purposes.
+    /// Generates errors in the event that the source generator fails to create an interceptor for any reason.
+    /// </summary>
+    [InterceptedExpressionInterpolator(InterceptionRequired = true)]
     public static Expression<Func<A, B, R>> Interpolate<TData, R>(
         TData data,
         Expression<Func<IInterpolationContext<TData>, A, B, R>> expression

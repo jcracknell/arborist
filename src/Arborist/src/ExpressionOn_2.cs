@@ -31,6 +31,15 @@ public static class ExpressionOn<A, B> {
         ExpressionHelper.AsCore<Func<A, B, T>>(typeof(T), expression);
 
     /// <summary>
+    /// Creates a constant-valued expression with the provided <paramref name="value"/>.
+    /// </summary>
+    /// <typeparam name="T">
+    /// The result type of the constant-valued expression.
+    /// </typeparam>
+    public static Expression<Func<A, B, T>> Constant<T>(T value) =>
+        ExpressionHelper.Const<Func<A, B, T>>(default, value);
+
+    /// <summary>
     /// Wraps the body of the provided lambda <paramref name="expression"/> in a
     /// <see cref="System.Linq.Expressions.ExpressionType.Convert"/> node of the form
     /// <c>(T)body</c>.

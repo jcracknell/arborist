@@ -36,13 +36,13 @@ public partial class EvaluatedSyntaxVisitor {
             ]);
         }
 
-        if(!TypeSymbolHelpers.IsAccessible(method))
+        if(!SymbolHelpers.IsAccessible(method))
             return _context.Diagnostics.InaccessibleSymbol(method, node);
 
         var inputTree = CurrentExpr.BindCallArg(method, 0).WithValue(_queryContext.VisitNext());
 
         var selectorTree = CurrentExpr.BindCallArg(method, 1).WithValue(CreateQueryLambda(
-            lambdaType: TypeSymbolHelpers.GetParameterType(method, 1),
+            lambdaType: SymbolHelpers.GetParameterType(method, 1),
             argumentTrees: [InterpolatedTree.Verbatim(_queryContext.InputIdentifier)],
             bodyFactory: () => CreateQueryInput(node, node.Expression, qci.CastInfo.Symbol)
         ));
@@ -68,14 +68,14 @@ public partial class EvaluatedSyntaxVisitor {
             && _context.SemanticModel.GetSymbolInfo(selectClause).Symbol is not IMethodSymbol
         )
             return CurrentExpr.BindCallArg(method, 2).WithValue(CreateQueryLambda(
-                lambdaType: TypeSymbolHelpers.GetParameterType(method, 2),
+                lambdaType: SymbolHelpers.GetParameterType(method, 2),
                 argumentTrees: [inputParameter, joinedParameter],
                 bodyFactory: () => Visit(selectClause.Expression)
             ));
 
         // The default projection does not appear in code and does not require binding
         return CurrentExpr.BindCallArg(method, 2).WithValue(CreateQueryLambda(
-            lambdaType: TypeSymbolHelpers.GetParameterType(method, 2),
+            lambdaType: SymbolHelpers.GetParameterType(method, 2),
             argumentTrees: [inputParameter, joinedParameter],
             bodyFactory: () => InterpolatedTree.AnonymousClass([inputParameter, joinedParameter])
         ));
@@ -84,23 +84,23 @@ public partial class EvaluatedSyntaxVisitor {
     public override InterpolatedTree VisitGroupClause(GroupClauseSyntax node) {
         if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not IMethodSymbol method)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
-        if(!TypeSymbolHelpers.IsAccessible(method))
+        if(!SymbolHelpers.IsAccessible(method))
             return _context.Diagnostics.InaccessibleSymbol(method, node);
 
         var inputTree = CurrentExpr.BindCallArg(method, 0).WithValue(_queryContext.VisitNext());
 
         var keySelectorTree = CurrentExpr.BindCallArg(method, 1).WithValue(CreateQueryLambda(
-            lambdaType: TypeSymbolHelpers.GetParameterType(method, 1),
+            lambdaType: SymbolHelpers.GetParameterType(method, 1),
             argumentTrees: [InterpolatedTree.Verbatim(_queryContext.InputIdentifier)],
             bodyFactory: () => Visit(node.ByExpression)
         ));
 
         // If the element selector is the identity function, the two parameter overload is used
-        if(TypeSymbolHelpers.GetParameterCount(method) == 2)
+        if(SymbolHelpers.GetParameterCount(method) == 2)
             return CreateQueryCall(node, method, [inputTree, keySelectorTree]);
 
         var elementSelectorTree = CurrentExpr.BindCallArg(method, 2).WithValue(CreateQueryLambda(
-            lambdaType: TypeSymbolHelpers.GetParameterType(method, 2),
+            lambdaType: SymbolHelpers.GetParameterType(method, 2),
             argumentTrees: [InterpolatedTree.Verbatim(_queryContext.InputIdentifier)],
             bodyFactory: () => Visit(node.GroupExpression)
         ));
@@ -112,21 +112,21 @@ public partial class EvaluatedSyntaxVisitor {
         var qci = _context.SemanticModel.GetQueryClauseInfo(node);
         if(qci.OperationInfo.Symbol is not IMethodSymbol method)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
-        if(!TypeSymbolHelpers.IsAccessible(method))
+        if(!SymbolHelpers.IsAccessible(method))
             return _context.Diagnostics.InaccessibleSymbol(method, node);
 
         var inputTree = CurrentExpr.BindCallArg(method, 0).WithValue(_queryContext.VisitNext());
         var selectorTree = CurrentExpr.BindCallArg(method, 1).WithValue(CreateQueryInput(node, node.InExpression, qci.CastInfo.Symbol));
 
         var leftSelectorTree = CurrentExpr.BindCallArg(method, 2).WithValue(CreateQueryLambda(
-            lambdaType: TypeSymbolHelpers.GetParameterType(method, 2),
+            lambdaType: SymbolHelpers.GetParameterType(method, 2),
             argumentTrees: [InterpolatedTree.Verbatim(_queryContext.InputIdentifier)],
             bodyFactory: () => Visit(node.LeftExpression)
         ));
 
         _queryContext.BindJoined(node.Identifier.ValueText);
         var rightSelectorTree = CurrentExpr.BindCallArg(method, 3).WithValue(CreateQueryLambda(
-            lambdaType: TypeSymbolHelpers.GetParameterType(method, 3),
+            lambdaType: SymbolHelpers.GetParameterType(method, 3),
             argumentTrees: [InterpolatedTree.Verbatim(node.Identifier.ValueText)],
             bodyFactory: () => Visit(node.RightExpression)
         ));
@@ -157,7 +157,7 @@ public partial class EvaluatedSyntaxVisitor {
             && _context.SemanticModel.GetSymbolInfo(selectClause).Symbol is not IMethodSymbol
         )
             return CreateQueryLambda(
-                lambdaType: TypeSymbolHelpers.GetParameterType(method, 4),
+                lambdaType: SymbolHelpers.GetParameterType(method, 4),
                 argumentTrees: [
                     InterpolatedTree.Verbatim(_queryContext.InputIdentifier),
                     InterpolatedTree.Verbatim(resultIdentifier)
@@ -167,7 +167,7 @@ public partial class EvaluatedSyntaxVisitor {
 
         // The default projection does not appear in code and does not require binding
         return CreateQueryLambda(
-            lambdaType: TypeSymbolHelpers.GetParameterType(method, 4),
+            lambdaType: SymbolHelpers.GetParameterType(method, 4),
             argumentTrees: [
                 InterpolatedTree.Verbatim(_queryContext.InputIdentifier),
                 InterpolatedTree.Verbatim(resultIdentifier)
@@ -183,13 +183,13 @@ public partial class EvaluatedSyntaxVisitor {
         var qci = _context.SemanticModel.GetQueryClauseInfo(node);
         if(qci.OperationInfo.Symbol is not IMethodSymbol method)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
-        if(!TypeSymbolHelpers.IsAccessible(method))
+        if(!SymbolHelpers.IsAccessible(method))
             return _context.Diagnostics.InaccessibleSymbol(method, node);
 
         var inputTree = CurrentExpr.BindCallArg(method, 0).WithValue(_queryContext.VisitNext());
 
         var projectionTree = CurrentExpr.BindCallArg(method, 1).WithValue(CreateQueryLambda(
-            lambdaType: TypeSymbolHelpers.GetParameterType(method, 1),
+            lambdaType: SymbolHelpers.GetParameterType(method, 1),
             argumentTrees: [InterpolatedTree.Verbatim(_queryContext.InputIdentifier)],
             bodyFactory: () => {
                 CurrentExpr.SetType(typeof(NewExpression));
@@ -223,7 +223,7 @@ public partial class EvaluatedSyntaxVisitor {
         });
 
         var selectorTree = CurrentExpr.BindCallArg(method, 1).WithValue(CreateQueryLambda(
-            lambdaType: TypeSymbolHelpers.GetParameterType(method, 1),
+            lambdaType: SymbolHelpers.GetParameterType(method, 1),
             argumentTrees: [InterpolatedTree.Verbatim(_queryContext.InputIdentifier)],
             bodyFactory: () => Visit(node.Expression)
         ));
@@ -237,12 +237,12 @@ public partial class EvaluatedSyntaxVisitor {
         if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not IMethodSymbol method)
             return _queryContext.VisitNext();
 
-        if(!TypeSymbolHelpers.IsAccessible(method))
+        if(!SymbolHelpers.IsAccessible(method))
             return _context.Diagnostics.InaccessibleSymbol(method, node);
 
         var inputTree = CurrentExpr.BindCallArg(method, 0).WithValue(_queryContext.VisitNext());
         var projectionTree = CurrentExpr.BindCallArg(method, 1).WithValue(CreateQueryLambda(
-            lambdaType: TypeSymbolHelpers.GetParameterType(method, 1),
+            lambdaType: SymbolHelpers.GetParameterType(method, 1),
             argumentTrees: [InterpolatedTree.Verbatim(_queryContext.InputIdentifier)],
             bodyFactory: () => Visit(node.Expression)
         ));
@@ -254,12 +254,12 @@ public partial class EvaluatedSyntaxVisitor {
         var qci = _context.SemanticModel.GetQueryClauseInfo(node);
         if(qci.OperationInfo.Symbol is not IMethodSymbol method)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
-        if(!TypeSymbolHelpers.IsAccessible(method))
+        if(!SymbolHelpers.IsAccessible(method))
             return _context.Diagnostics.InaccessibleSymbol(method, node);
 
         var inputTree = CurrentExpr.BindCallArg(method, 0).WithValue(_queryContext.VisitNext());
         var predicateTree = CurrentExpr.BindCallArg(method, 1).WithValue(CreateQueryLambda(
-            lambdaType: TypeSymbolHelpers.GetParameterType(method, 1),
+            lambdaType: SymbolHelpers.GetParameterType(method, 1),
             argumentTrees: [InterpolatedTree.Verbatim(_queryContext.InputIdentifier)],
             bodyFactory: () => Visit(node.Condition)
         ));
@@ -290,7 +290,7 @@ public partial class EvaluatedSyntaxVisitor {
     ) {
         if(
             lambdaType is INamedTypeSymbol { IsGenericType: true } namedType
-            && TypeSymbolHelpers.IsSubtype(namedType.ConstructUnboundGenericType(), _context.TypeSymbols.Expression1)
+            && SymbolHelpers.IsSubtype(namedType.ConstructUnboundGenericType(), _context.TypeSymbols.Expression1)
         ) {
             CurrentExpr.SetType(typeof(UnaryExpression));
             return CurrentExpr.Bind(typeof(LambdaExpression), $"{nameof(UnaryExpression.Operand)}")
@@ -312,7 +312,7 @@ public partial class EvaluatedSyntaxVisitor {
             return Visit(inputNode);
         if(castMethodSymbol is not IMethodSymbol castMethod)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(clause);
-        if(!TypeSymbolHelpers.IsAccessible(castMethod))
+        if(!SymbolHelpers.IsAccessible(castMethod))
             return _context.Diagnostics.InaccessibleSymbol(castMethod, clause);
         if(castMethod is not { IsGenericMethod: true, TypeArguments.Length: 1 })
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(clause);

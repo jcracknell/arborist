@@ -12,7 +12,7 @@ public partial class InterpolatedSyntaxVisitor {
         if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not IMethodSymbol methodSymbol)
             return false;
 
-        if(!TypeSymbolHelpers.IsSubtype(methodSymbol.ContainingType, _context.TypeSymbols.IInterpolationContext))
+        if(!SymbolHelpers.IsSubtype(methodSymbol.ContainingType, _context.TypeSymbols.IInterpolationContext))
             return false;
 
         splicingMethod = methodSymbol;
@@ -105,7 +105,7 @@ public partial class InterpolatedSyntaxVisitor {
             return VisitEvaluatedSyntax(node.Expression);
 
         // Otherwise we need to provide the target expression type for the lambda
-        var expressionType = TypeSymbolHelpers.GetParameterType(method, parameterIndex);
+        var expressionType = SymbolHelpers.GetParameterType(method, parameterIndex);
         var expressionTypeRef = _builder.CreateTypeRef(expressionType);
 
         return InterpolatedTree.Call(

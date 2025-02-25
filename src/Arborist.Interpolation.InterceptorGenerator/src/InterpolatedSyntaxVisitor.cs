@@ -433,7 +433,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
         if(_context.SemanticModel.GetTypeInfo(node).ConvertedType is not {} typeSymbol)
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
         // If the lambda is an expression, then it is enclosed in a quoted UnaryExpression
-        if(!TypeSymbolHelpers.IsSubtype(typeSymbol, _context.TypeSymbols.Expression))
+        if(!SymbolHelpers.IsSubtype(typeSymbol, _context.TypeSymbols.Expression))
             return VisitLambdaExpressionCore(node);
 
         CurrentExpr.SetType(typeof(UnaryExpression));

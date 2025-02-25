@@ -74,7 +74,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
             // If this is an extension method invoked as a postfix method, then we need to rewrite the call
             // as a static method invocation so we don't have to import the extension into scope.
             case { ReducedFrom: { } }:
-                if(!TypeSymbolHelpers.IsAccessible(methodSymbol))
+                if(!SymbolHelpers.IsAccessible(methodSymbol))
                     return _context.Diagnostics.InaccessibleSymbol(methodSymbol, node);
 
                 // A postfix extension method invocation should always be MemberAccessExpressionSyntax
@@ -150,7 +150,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
 
         switch(symbol) {
             case IFieldSymbol fieldSymbol:
-                if(!TypeSymbolHelpers.IsAccessible(fieldSymbol))
+                if(!SymbolHelpers.IsAccessible(fieldSymbol))
                     return _context.Diagnostics.InaccessibleSymbol(fieldSymbol, node);
 
                 var fieldObjectTree = fieldSymbol.IsStatic switch {
@@ -162,7 +162,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
                 return InterpolatedTree.Interpolate($"{fieldObjectTree}.{fieldSymbol.Name}");
 
             case IPropertySymbol propertySymbol:
-                if(!TypeSymbolHelpers.IsAccessible(propertySymbol))
+                if(!SymbolHelpers.IsAccessible(propertySymbol))
                     return _context.Diagnostics.InaccessibleSymbol(propertySymbol, node);
 
                 var propertyObjectTree = propertySymbol.IsStatic switch {
@@ -174,7 +174,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
                 return InterpolatedTree.Interpolate($"{propertyObjectTree}.{propertySymbol.Name}");
 
             case IMethodSymbol methodSymbol:
-                if(!TypeSymbolHelpers.IsAccessible(methodSymbol))
+                if(!SymbolHelpers.IsAccessible(methodSymbol))
                     return _context.Diagnostics.InaccessibleSymbol(methodSymbol, node);
 
                 var methodName = GetInvocationMethodName(node.Parent, node.Name);
@@ -201,7 +201,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
             case IFieldSymbol fieldSymbol:
                 // N.B. for consistency accessibility takes precedence over the closure warning because you can't
                 // know about the closure when processing a member access
-                if(!TypeSymbolHelpers.IsAccessible(fieldSymbol))
+                if(!SymbolHelpers.IsAccessible(fieldSymbol))
                     return _context.Diagnostics.InaccessibleSymbol(symbol, node);
 
                 var fieldObjectTree = fieldSymbol.IsStatic switch {
@@ -214,7 +214,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
                 return InterpolatedTree.Interpolate($"{fieldObjectTree}.{fieldSymbol.Name}");
 
             case IPropertySymbol propertySymbol:
-                if(!TypeSymbolHelpers.IsAccessible(propertySymbol))
+                if(!SymbolHelpers.IsAccessible(propertySymbol))
                     return _context.Diagnostics.InaccessibleSymbol(symbol, node);
 
                 var propertyObjectTree = propertySymbol.IsStatic switch {
@@ -227,7 +227,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
                 return InterpolatedTree.Interpolate($"{propertyObjectTree}.{propertySymbol.Name}");
 
             case IMethodSymbol methodSymbol:
-                if(!TypeSymbolHelpers.IsAccessible(methodSymbol))
+                if(!SymbolHelpers.IsAccessible(methodSymbol))
                     return _context.Diagnostics.InaccessibleSymbol(symbol, node);
 
                 var methodName = GetInvocationMethodName(node.Parent, node);
@@ -335,7 +335,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
     private InterpolatedTree VisitBaseObjectCreationExpressionCore(BaseObjectCreationExpressionSyntax node, ITypeSymbol typeSymbol) {
         if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not IMethodSymbol methodSymbol)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
-        if(!TypeSymbolHelpers.IsAccessible(methodSymbol))
+        if(!SymbolHelpers.IsAccessible(methodSymbol))
             return _context.Diagnostics.InaccessibleSymbol(methodSymbol, node);
 
         CurrentExpr.SetType(typeof(NewExpression));
@@ -366,7 +366,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
     public override InterpolatedTree VisitArrayCreationExpression(ArrayCreationExpressionSyntax node) {
         if(_context.SemanticModel.GetTypeInfo(node).Type is not IArrayTypeSymbol typeSymbol)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
-        var elementType = TypeSymbolHelpers.GetRootArrayElementType(typeSymbol);
+        var elementType = SymbolHelpers.GetRootArrayElementType(typeSymbol);
         if(!_builder.TryCreateTypeName(elementType, out var elementTypeName))
             return _context.Diagnostics.UnsupportedType(typeSymbol, node);
 
@@ -472,7 +472,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
         if(_context.SemanticModel.GetTypeInfo(node).ConvertedType is not {} typeSymbol)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
 
-        if(!TypeSymbolHelpers.IsSubtype(typeSymbol, _context.TypeSymbols.Expression))
+        if(!SymbolHelpers.IsSubtype(typeSymbol, _context.TypeSymbols.Expression))
             return VisitLambdaExpressionCore(node, parameters);
 
         CurrentExpr.SetType(typeof(UnaryExpression));

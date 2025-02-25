@@ -42,7 +42,7 @@ public static class InterpolationAnalyzer {
                 ));
 
             case 2 when TryGetLambdaParameter(methodSymbol, methodSymbol.Parameters[1], out var dataType, typeSymbols)
-                && TypeSymbolHelpers.IsSubtype(methodSymbol.Parameters[0].Type, dataType):
+                && SymbolHelpers.IsSubtype(methodSymbol.Parameters[0].Type, dataType):
                 return (diagnostics, AnalyzeInterpolation(
                     semanticModel: semanticModel,
                     diagnostics: diagnostics,
@@ -104,7 +104,7 @@ public static class InterpolationAnalyzer {
 
         var dataDeclaration = GenerateDataDeclaration(treeBuilder, dataParameter);
 
-        var typeParameters = TypeSymbolHelpers.GetInheritedTypeParameters(methodSymbol.ContainingType.OriginalDefinition)
+        var typeParameters = SymbolHelpers.GetInheritedTypeParameters(methodSymbol.ContainingType.OriginalDefinition)
         .AddRange(methodSymbol.OriginalDefinition.TypeParameters);
 
         var typeParameterMappings = typeParameters.ZipWithIndex().ToDictionary(
@@ -242,16 +242,16 @@ public static class InterpolationAnalyzer {
 
         if(parameterType.TypeArguments[0] is not INamedTypeSymbol { IsGenericType: true } interpolatedDelegateType)
             return false;
-        if(!TypeSymbolHelpers.IsSubtype(interpolatedDelegateType.TypeArguments[0], typeSymbols.IInterpolationContext))
+        if(!SymbolHelpers.IsSubtype(interpolatedDelegateType.TypeArguments[0], typeSymbols.IInterpolationContext))
             return false;
         if(!TryGetResultDelegateTypeFromInterpolated(interpolatedDelegateType, out var resultType, typeSymbols))
             return false;
 
-        if(!TypeSymbolHelpers.IsSubtype(methodSymbol.ReturnType, typeSymbols.Expression1.ConstructedFrom.Construct(resultType)))
+        if(!SymbolHelpers.IsSubtype(methodSymbol.ReturnType, typeSymbols.Expression1.ConstructedFrom.Construct(resultType)))
             return false;
 
-        if(TypeSymbolHelpers.IsSubtype(interpolatedDelegateType.TypeArguments[0], typeSymbols.IInterpolationContext)) {
-            if(TypeSymbolHelpers.TryGetInterfaceImplementation(typeSymbols.IInterpolationContext1, interpolatedDelegateType.TypeArguments[0], out var ic1Impl)) {
+        if(SymbolHelpers.IsSubtype(interpolatedDelegateType.TypeArguments[0], typeSymbols.IInterpolationContext)) {
+            if(SymbolHelpers.TryGetInterfaceImplementation(typeSymbols.IInterpolationContext1, interpolatedDelegateType.TypeArguments[0], out var ic1Impl)) {
                 dataType = ic1Impl.TypeArguments[0];
                 return true;
             }

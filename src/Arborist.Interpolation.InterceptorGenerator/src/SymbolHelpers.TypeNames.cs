@@ -2,7 +2,7 @@ using Microsoft.CodeAnalysis;
 
 namespace Arborist.Interpolation.InterceptorGenerator;
 
-internal static partial class TypeSymbolHelpers {
+internal static partial class SymbolHelpers {
     public enum TypeNameFailureReason {
         AnonymousType,
         Inaccessible,

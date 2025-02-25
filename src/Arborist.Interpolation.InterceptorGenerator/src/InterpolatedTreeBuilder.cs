@@ -73,7 +73,7 @@ public class InterpolatedTreeBuilder {
     }
 
     public InterpolatedTree CreateType(ITypeSymbol type) {
-        if(!TypeSymbolHelpers.IsAccessible(type))
+        if(!SymbolHelpers.IsAccessible(type))
             return _diagnostics.InaccessibleSymbol(type, default);
 
         // If this is a nameable type, then return an inline type reference
@@ -93,7 +93,7 @@ public class InterpolatedTreeBuilder {
         SyntaxNode? node,
         IReadOnlyDictionary<ITypeParameterSymbol, string>? typeParameterMappings = default
     ) {
-        var result = TypeSymbolHelpers.TryGetTypeName(
+        var result = SymbolHelpers.TryGetTypeName(
             typeSymbol: typeSymbol,
             typeParameterMappings: typeParameterMappings ?? ImmutableDictionary<ITypeParameterSymbol, string>.Empty,
             out var typeName
@@ -103,16 +103,16 @@ public class InterpolatedTreeBuilder {
             return InterpolatedTree.Verbatim(typeName);
 
         switch(result.Reason) {
-            case TypeSymbolHelpers.TypeNameFailureReason.Unhandled:
-            case TypeSymbolHelpers.TypeNameFailureReason.AnonymousType:
+            case SymbolHelpers.TypeNameFailureReason.Unhandled:
+            case SymbolHelpers.TypeNameFailureReason.AnonymousType:
                 return _diagnostics.UnsupportedType(result.TypeSymbol, node);
 
-            case TypeSymbolHelpers.TypeNameFailureReason.TypeParameter:
+            case SymbolHelpers.TypeNameFailureReason.TypeParameter:
                 // A type parameter symbol must be from the call site, as declaration site type parameters are
                 // obviously only in scope within the declaration.
                 return _diagnostics.ReferencesCallSiteTypeParameter(result.TypeSymbol, node);
 
-            case TypeSymbolHelpers.TypeNameFailureReason.Inaccessible:
+            case SymbolHelpers.TypeNameFailureReason.Inaccessible:
                 return _diagnostics.InaccessibleSymbol(result.TypeSymbol, node);
 
             default:
@@ -129,7 +129,7 @@ public class InterpolatedTreeBuilder {
         [NotNullWhen(true)] out InterpolatedTree? typeName,
         IReadOnlyDictionary<ITypeParameterSymbol, string>? typeParameterMappings = default
     ) {
-        var result = TypeSymbolHelpers.TryGetTypeName(
+        var result = SymbolHelpers.TryGetTypeName(
             typeSymbol: typeSymbol,
             typeParameterMappings: typeParameterMappings ?? ImmutableDictionary<ITypeParameterSymbol, string>.Empty,
             out var typeNameString
@@ -145,7 +145,7 @@ public class InterpolatedTreeBuilder {
     }
 
     public InterpolatedTree CreateTypeRef(ITypeSymbol type) {
-        if(!TypeSymbolHelpers.IsAccessible(type))
+        if(!SymbolHelpers.IsAccessible(type))
             return _diagnostics.InaccessibleSymbol(type, default);
 
         if(_typeRefs.TryGetValue(type, out var cached)) {
@@ -201,7 +201,7 @@ public class InterpolatedTreeBuilder {
             methodName = $"TypeRefFactory{_typeRefFactories.Count}";
             _typeRefFactories[constructedFrom] = methodName;
 
-            var typeParameters = TypeSymbolHelpers.GetInheritedTypeParameters(constructedFrom);
+            var typeParameters = SymbolHelpers.GetInheritedTypeParameters(constructedFrom);
             var typeParameterMappings = typeParameters.ZipWithIndex().ToDictionary(
                 tup => (ITypeParameterSymbol)tup.Value.WithNullableAnnotation(NullableAnnotation.None),
                 tup => $"TR{tup.Index}",
@@ -225,7 +225,7 @@ public class InterpolatedTreeBuilder {
 
         return InterpolatedTree.Call(
             InterpolatedTree.Verbatim(methodName),
-            [..TypeSymbolHelpers.GetInheritedTypeArguments(type).Select(CreateTypeRef)]
+            [..SymbolHelpers.GetInheritedTypeArguments(type).Select(CreateTypeRef)]
         );
     }
 

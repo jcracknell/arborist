@@ -85,7 +85,7 @@ public partial class InterpolatedSyntaxVisitor {
         var keySelectorTree = CreateQueryLambda(method, 1, node.ByExpression);
 
         // If the element selector is the identity function, the two parameter overload is used
-        if(TypeSymbolHelpers.GetParameterCount(method) == 2)
+        if(SymbolHelpers.GetParameterCount(method) == 2)
             return CreateQueryCall(node, method, [inputTree, keySelectorTree]);
 
         var elementSelectorTree = CreateQueryLambda(method, 2, node.GroupExpression);

@@ -73,7 +73,7 @@ public class InterpolatedTreeBuilder {
     }
 
     public InterpolatedTree CreateType(ITypeSymbol type) {
-        if(!SymbolHelpers.IsAccessible(type))
+        if(!SymbolHelpers.IsAccessibleFromInterceptor(type))
             return _diagnostics.InaccessibleSymbol(type, default);
 
         // If this is a nameable type, then return an inline type reference
@@ -145,7 +145,7 @@ public class InterpolatedTreeBuilder {
     }
 
     public InterpolatedTree CreateTypeRef(ITypeSymbol type) {
-        if(!SymbolHelpers.IsAccessible(type))
+        if(!SymbolHelpers.IsAccessibleFromInterceptor(type))
             return _diagnostics.InaccessibleSymbol(type, default);
 
         if(_typeRefs.TryGetValue(type, out var cached)) {

@@ -80,7 +80,7 @@ internal static partial class SymbolHelpers {
               return TypeNameResult.Failure(TypeNameFailureReason.AnonymousType, typeSymbol);
 
             case INamedTypeSymbol named:
-                if(!IsAccessible(named))
+                if(!IsAccessibleFromInterceptor(named))
                     return TypeNameResult.Failure(TypeNameFailureReason.Inaccessible, typeSymbol);
 
                 var containingTypeResult = TryWriteContainingTypeName(writer, named, typeParameterMappings);

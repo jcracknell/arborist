@@ -36,7 +36,7 @@ public partial class EvaluatedSyntaxVisitor {
             ]);
         }
 
-        if(!SymbolHelpers.IsAccessible(method))
+        if(!SymbolHelpers.IsAccessibleFromInterceptor(method))
             return _context.Diagnostics.InaccessibleSymbol(method, node);
 
         var inputTree = CurrentExpr.BindCallArg(method, 0).WithValue(_queryContext.VisitNext());
@@ -84,7 +84,7 @@ public partial class EvaluatedSyntaxVisitor {
     public override InterpolatedTree VisitGroupClause(GroupClauseSyntax node) {
         if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not IMethodSymbol method)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
-        if(!SymbolHelpers.IsAccessible(method))
+        if(!SymbolHelpers.IsAccessibleFromInterceptor(method))
             return _context.Diagnostics.InaccessibleSymbol(method, node);
 
         var inputTree = CurrentExpr.BindCallArg(method, 0).WithValue(_queryContext.VisitNext());
@@ -112,7 +112,7 @@ public partial class EvaluatedSyntaxVisitor {
         var qci = _context.SemanticModel.GetQueryClauseInfo(node);
         if(qci.OperationInfo.Symbol is not IMethodSymbol method)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
-        if(!SymbolHelpers.IsAccessible(method))
+        if(!SymbolHelpers.IsAccessibleFromInterceptor(method))
             return _context.Diagnostics.InaccessibleSymbol(method, node);
 
         var inputTree = CurrentExpr.BindCallArg(method, 0).WithValue(_queryContext.VisitNext());
@@ -183,7 +183,7 @@ public partial class EvaluatedSyntaxVisitor {
         var qci = _context.SemanticModel.GetQueryClauseInfo(node);
         if(qci.OperationInfo.Symbol is not IMethodSymbol method)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
-        if(!SymbolHelpers.IsAccessible(method))
+        if(!SymbolHelpers.IsAccessibleFromInterceptor(method))
             return _context.Diagnostics.InaccessibleSymbol(method, node);
 
         var inputTree = CurrentExpr.BindCallArg(method, 0).WithValue(_queryContext.VisitNext());
@@ -237,7 +237,7 @@ public partial class EvaluatedSyntaxVisitor {
         if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not IMethodSymbol method)
             return _queryContext.VisitNext();
 
-        if(!SymbolHelpers.IsAccessible(method))
+        if(!SymbolHelpers.IsAccessibleFromInterceptor(method))
             return _context.Diagnostics.InaccessibleSymbol(method, node);
 
         var inputTree = CurrentExpr.BindCallArg(method, 0).WithValue(_queryContext.VisitNext());
@@ -254,7 +254,7 @@ public partial class EvaluatedSyntaxVisitor {
         var qci = _context.SemanticModel.GetQueryClauseInfo(node);
         if(qci.OperationInfo.Symbol is not IMethodSymbol method)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
-        if(!SymbolHelpers.IsAccessible(method))
+        if(!SymbolHelpers.IsAccessibleFromInterceptor(method))
             return _context.Diagnostics.InaccessibleSymbol(method, node);
 
         var inputTree = CurrentExpr.BindCallArg(method, 0).WithValue(_queryContext.VisitNext());
@@ -312,7 +312,7 @@ public partial class EvaluatedSyntaxVisitor {
             return Visit(inputNode);
         if(castMethodSymbol is not IMethodSymbol castMethod)
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(clause);
-        if(!SymbolHelpers.IsAccessible(castMethod))
+        if(!SymbolHelpers.IsAccessibleFromInterceptor(castMethod))
             return _context.Diagnostics.InaccessibleSymbol(castMethod, clause);
         if(castMethod is not { IsGenericMethod: true, TypeArguments.Length: 1 })
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(clause);

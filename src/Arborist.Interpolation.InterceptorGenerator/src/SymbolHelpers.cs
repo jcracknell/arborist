@@ -84,11 +84,18 @@ internal static partial class SymbolHelpers {
         return methodSymbol.Parameters[index - 1].Type;
     }
 
-    public static bool IsAccessible(ISymbol symbol) => symbol.DeclaredAccessibility switch {
-        Accessibility.Public or Accessibility.Internal or Accessibility.NotApplicable =>
-            symbol.ContainingType is null || IsAccessible(symbol.ContainingType),
-        _ => false
-    };
+    public static bool IsAccessibleFromInterceptor(ISymbol symbol) {
+        switch(symbol.DeclaredAccessibility) {
+            case Accessibility.Public:
+            case Accessibility.Internal:
+            case Accessibility.ProtectedOrInternal:
+            case Accessibility.NotApplicable:
+                return symbol.ContainingType is null || IsAccessibleFromInterceptor(symbol.ContainingType);
+
+            default:
+                return false;
+        }
+    }
 
     public static bool IsSubtype(ITypeSymbol? a, ITypeSymbol? b) {
         if(a is null)

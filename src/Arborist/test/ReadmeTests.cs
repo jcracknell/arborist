@@ -128,6 +128,10 @@ public class ReadmeTests {
     [Fact]
     public void NotNullAnd_should_work() {
         Assert.Equivalent(
+            expected: ExpressionOn<string?>.Of(s => s != null && s.Length == 4),
+            actual: ExpressionHelper.NotNullAnd(ExpressionOn<string>.Of(s => s.Length == 4))
+        );
+        Assert.Equivalent(
             expected: ExpressionOn<int?>.Of(i => i.HasValue && i.Value % 2 == 0),
             actual: ExpressionHelper.NotNullAnd(ExpressionOn<int>.Of(i => i % 2 == 0))
         );
@@ -135,6 +139,10 @@ public class ReadmeTests {
 
     [Fact]
     public void NullOr_should_work() {
+        Assert.Equivalent(
+            expected: ExpressionOn<string?>.Of(s => s == null || s.Length == 4),
+            actual: ExpressionHelper.NullOr(ExpressionOn<string>.Of(s => s.Length == 4))
+        );
         Assert.Equivalent(
             expected: ExpressionOn<int?>.Of(i => !i.HasValue || i.Value % 2 == 0),
             actual: ExpressionHelper.NullOr(ExpressionOn<int>.Of(i => i % 2 == 0))

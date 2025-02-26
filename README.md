@@ -235,10 +235,13 @@ ExpressionHelper.Not(ExpressionOn<Cat>.Of(c => c.Name == "Garfield"));
 Given a predicate Expression&lt;Func&lt;A,&nbsp;bool&gt;&gt;, creates an
 Expression&lt;Func&lt;A?,&nbsp;bool&gt;&gt; asserting that the input value is not null,
 and satisfies the provided predicate expression.
+Has overloads handling both class and struct types.
 
 ```csharp
-ExpressionHelper.NotNullAnd(ExpressionOn<int>.Of(i => i % 2 == 0))
+ExpressionHelper.NotNullAnd(ExpressionOn<string>.Of(s => s.Length == 4))
+// s => s != null && s.Length == 4
 
+ExpressionHelper.NotNullAnd(ExpressionOn<int>.Of(i => i % 2 == 0))
 // i => i.HasValue && i.Value % 2 == 0
 ```
 
@@ -247,10 +250,13 @@ ExpressionHelper.NotNullAnd(ExpressionOn<int>.Of(i => i % 2 == 0))
 Given a predicate Expression&lt;Func&lt;A,&nbsp;bool&gt;&gt;, creates an
 Expression&lt;Func&lt;A?,&nbsp;bool&gt;&gt; asserting that the input value is null,
 or satisfies the provided predicate expression.
+Has overloads handling both class and struct types.
 
 ```csharp
-ExpressionHelper.NullOr(ExpressionOn<int>.Of(i => i % 2 == 0))
+ExpressionHelper.NullOr(ExpressionOn<string>.Of(s => s.Length == 4))
+// s => s == null || s.Length == 4
 
+ExpressionHelper.NullOr(ExpressionOn<int>.Of(i => i % 2 == 0))
 // i => !i.HasValue || i.Value % 2 == 0
 ```
 

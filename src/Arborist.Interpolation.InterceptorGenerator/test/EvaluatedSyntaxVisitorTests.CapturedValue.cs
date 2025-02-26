@@ -793,6 +793,52 @@ public partial class EvaluatedSyntaxVisitorTests {
     }
 
     [Fact]
+    public void Should_handle_captured_local_in_quoted_select_clause() {
+        var results = InterpolationInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            var value = ""foo"";
+            ExpressionOnNone.Interpolate(x => x.SpliceValue(
+                from c in Array.Empty<Cat>().AsQueryable()
+                select c.Name + value
+            ));
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => ((global::System.String)
+                                global::Arborist.Interpolation.Internal.InterpolationInterceptorHelpers.GetCapturedLocalValue(
+                                    ((global::System.Linq.Expressions.MemberExpression)
+                                        ((global::System.Linq.Expressions.BinaryExpression)
+                                            ((global::System.Linq.Expressions.LambdaExpression)
+                                                ((global::System.Linq.Expressions.UnaryExpression)
+                                                    __e1.Arguments[1]
+                                                ).Operand
+                                            ).Body
+                                        ).Right
+                                    )
+                                )
+                            ) switch {
+                                var __c0 => global::System.Linq.Queryable.Select(
+                                    global::System.Linq.Queryable.AsQueryable(
+                                        global::System.Array.Empty<global::Arborist.TestFixtures.Cat>()
+                                    ),
+                                    (c) => (c.Name + __c0)
+                                )
+                            }
+                        },
+                        __e0.Type
+                    )
+                }
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
     public void Should_handle_captured_local_in_where_clause() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"

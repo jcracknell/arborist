@@ -24,6 +24,43 @@ public partial class InterpolateTests {
     }
 
     [Fact]
+    public void Should_handle_quoted_select_clause() {
+        var interpolated = InterpolationTestOnNone.Interpolate(x =>
+            from c in Array.Empty<Cat>().AsQueryable()
+            select x.SpliceValue("foo")
+        );
+
+        var expected = ExpressionOnNone.Of(
+            () => Array.Empty<Cat>().AsQueryable().Select(c => "foo")
+        );
+
+        Assert.Equivalent(expected, interpolated);
+    }
+
+    [Fact]
+    public void Should_handle_quoted_from_clause() {
+        var data = new {
+            CatOwnerCats = ExpressionOn<Cat>.Of(c => c.Owner.CatsQueryable),
+            ObjectHashCode = ExpressionOn<object>.Of(o => o.GetHashCode())
+        };
+
+        var expected = ExpressionOn<Owner>.Of(
+            o => o.CatsQueryable.SelectMany(
+                c => c.Owner.CatsQueryable,
+                (c, d) => c.Name + d.Name
+            )
+        );
+
+        var interpolated = InterpolationTestOn<Owner>.Interpolate(data, (x, o) =>
+            from c in o.CatsQueryable
+            from d in x.SpliceBody(c, x.Data.CatOwnerCats)
+            select c.Name + d.Name
+        );
+
+        Assert.Equivalent(expected, interpolated);
+    }
+
+    [Fact]
     public void Should_handle_from_clause_with_cast() {
         var data = new {
             OwnerCats = ExpressionOn<Owner>.Of(o => o.Cats),
@@ -119,6 +156,31 @@ public partial class InterpolateTests {
             from c in o.Cats
             join c1 in o.Cats on c.Id equals 42
             select c1.Name
+        );
+
+        Assert.Equivalent(expected, interpolated);
+    }
+
+    [Fact]
+    public void Should_handle_quoted_join_clause() {
+        var data = new {
+            OwnerCats = ExpressionOn<Owner>.Of(o => o.Cats),
+            CatId = ExpressionOn<Cat>.Of(c => c.Id)
+        };
+
+        var interpolated = InterpolationTestOn<Owner>.Interpolate(data, (x, o) =>
+            from c in o.CatsQueryable
+            join c1 in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceValue(42)
+            select c1.Name
+        );
+
+        var expected = ExpressionOn<Owner>.Of(
+            o => o.CatsQueryable.Join(
+                o.Cats,
+                c => c.Id,
+                c1 => 42,
+                (c, c1) => c1.Name
+            )
         );
 
         Assert.Equivalent(expected, interpolated);

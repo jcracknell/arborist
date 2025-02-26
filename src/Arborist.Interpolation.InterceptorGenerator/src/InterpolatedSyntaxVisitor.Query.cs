@@ -50,7 +50,7 @@ public partial class InterpolatedSyntaxVisitor {
 
     private InterpolatedTree CreateFromSelector(FromClauseSyntax node, IMethodSymbol method, IMethodSymbol? castMethod) {
         if(castMethod is null)
-            return CreateQueryLambda(method, 1, node.Expression);
+            return CreateQueryLambda(method, 1, bodyFactory: () => Visit(node.Expression));
 
         // The selector has the form _ => {expr}.Cast<T>()
         return CurrentExpr.BindCallArg(typeof(LambdaExpression), method, 1)
@@ -69,7 +69,7 @@ public partial class InterpolatedSyntaxVisitor {
             && _queryContext.QueryBody.SelectOrGroup is SelectClauseSyntax selectClause
             && _context.SemanticModel.GetSymbolInfo(selectClause).Symbol is not IMethodSymbol
         )
-            return CreateQueryLambda(method, 2, selectClause.Expression);
+            return CreateQueryLambda(method, 2, bodyFactory: () => Visit(selectClause.Expression));
 
         // If this is a join projection, we don't need to do anything as the expression is not present in code
         // and thus cannot contain interpolations.
@@ -82,13 +82,13 @@ public partial class InterpolatedSyntaxVisitor {
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
 
         var inputTree = CurrentExpr.BindCallArg(method, 0).WithValue(_queryContext.VisitNext());
-        var keySelectorTree = CreateQueryLambda(method, 1, node.ByExpression);
+        var keySelectorTree = CreateQueryLambda(method, 1, bodyFactory: () => Visit(node.ByExpression));
 
         // If the element selector is the identity function, the two parameter overload is used
         if(SymbolHelpers.GetParameterCount(method) == 2)
             return CreateQueryCall(node, method, [inputTree, keySelectorTree]);
 
-        var elementSelectorTree = CreateQueryLambda(method, 2, node.GroupExpression);
+        var elementSelectorTree = CreateQueryLambda(method, 2, bodyFactory: () => Visit(node.GroupExpression));
 
         return CreateQueryCall(node, method, [inputTree, keySelectorTree, elementSelectorTree]);
     }
@@ -100,7 +100,7 @@ public partial class InterpolatedSyntaxVisitor {
 
         var inputTree = CurrentExpr.BindCallArg(method, 0).WithValue(_queryContext.VisitNext());
         var selectorTree = CreateJoinSelector(node, method, qci.CastInfo.Symbol as IMethodSymbol);
-        var outerKeySelectorTree = CreateQueryLambda(method, 2, node.LeftExpression);
+        var outerKeySelectorTree = CreateQueryLambda(method, 2, bodyFactory: () => Visit(node.LeftExpression));
         var innerKeySelectorTree = CreateJoinInnerKeySelector(node, method);
         var resultProjectionTree = CreateJoinResultProjection(node, method);
 
@@ -130,7 +130,7 @@ public partial class InterpolatedSyntaxVisitor {
         using var snapshot = CreateIdentifiersSnapshot();
 
         AddInterpolatedIdentifier(node.Identifier.ValueText);
-        return CreateQueryLambda(method, 3, node.RightExpression);
+        return CreateQueryLambda(method, 3, bodyFactory: () => Visit(node.RightExpression));
     }
 
     private InterpolatedTree CreateJoinResultProjection(JoinClauseSyntax node, IMethodSymbol method) {
@@ -146,7 +146,7 @@ public partial class InterpolatedSyntaxVisitor {
             && _queryContext.QueryBody.SelectOrGroup is SelectClauseSyntax selectClause
             && _context.SemanticModel.GetSymbolInfo(selectClause).Symbol is not IMethodSymbol
         )
-            return CreateQueryLambda(method, 4, selectClause.Expression);
+            return CreateQueryLambda(method, 4, bodyFactory: () => Visit(selectClause.Expression));
 
         // Otherwise the result projection does not appear in code and does not need to be interpolated
         return CurrentExpr.BindCallArg(typeof(LambdaExpression), method, 4)
@@ -160,10 +160,9 @@ public partial class InterpolatedSyntaxVisitor {
 
         var inputTree = CurrentExpr.BindCallArg(method, 0).WithValue(_queryContext.VisitNext());
 
-        var projectionTree = CurrentExpr.BindCallArg(typeof(LambdaExpression), method, 1)
-        .WithValue(_builder.CreateExpression(nameof(Expression.Lambda), [
-            CurrentExpr.Bind(typeof(NewExpression), $"{nameof(LambdaExpression.Body)}")
-            .WithValue(_builder.CreateExpression(nameof(Expression.New), [
+        var projectionTree = CreateQueryLambda(method, 1, bodyFactory: () => {
+            CurrentExpr.SetType(typeof(NewExpression));
+            return _builder.CreateExpression(nameof(Expression.New), [
                 CurrentExpr.BindValue($"{nameof(NewExpression.Constructor)}!"),
                 _builder.CreateExpressionArray([
                     CurrentExpr.BindValue($"{nameof(NewExpression.Arguments)}[0]"),
@@ -171,9 +170,8 @@ public partial class InterpolatedSyntaxVisitor {
                     .WithValue(Visit(node.Expression))
                 ]),
                 CurrentExpr.BindValue($"{nameof(NewExpression.Members)}"),
-            ])),
-            CurrentExpr.BindValue($"{nameof(LambdaExpression.Parameters)}")
-        ]));
+            ]);
+        });
 
         // Register the identifier defined by this clause for consumption by subsequent clauses
         AddInterpolatedIdentifier(node.Identifier.ValueText);
@@ -194,7 +192,7 @@ public partial class InterpolatedSyntaxVisitor {
             _ => VisitOrderByOrdering(orderBy, index - 1)
         });
 
-        var selectorTree = CreateQueryLambda(method, 1, node.Expression);
+        var selectorTree = CreateQueryLambda(method, 1, bodyFactory: () => Visit(node.Expression));
 
         return CreateQueryCall(node, method, [inputTree, selectorTree]);
     }
@@ -206,7 +204,7 @@ public partial class InterpolatedSyntaxVisitor {
             return _queryContext.VisitNext();
 
         var inputTree = CurrentExpr.BindCallArg(method, 0).WithValue(_queryContext.VisitNext());
-        var projectionTree = CreateQueryLambda(method, 1, node.Expression);
+        var projectionTree = CreateQueryLambda(method, 1, bodyFactory: () => Visit(node.Expression));
 
         return CreateQueryCall(node, method, [inputTree, projectionTree]);
     }
@@ -216,17 +214,38 @@ public partial class InterpolatedSyntaxVisitor {
             return _context.Diagnostics.UnsupportedInterpolatedSyntax(node);
 
         var inputTree = CurrentExpr.BindCallArg(method, 0).WithValue(_queryContext.VisitNext());
-        var predicateTree = CreateQueryLambda(method, 1, node.Condition);
+        var predicateTree = CreateQueryLambda(method, 1, bodyFactory: () => Visit(node.Condition));
 
         return CreateQueryCall(node, method, [inputTree, predicateTree]);
     }
 
-    private InterpolatedTree CreateQueryLambda(IMethodSymbol method, int index, SyntaxNode bodyNode) =>
-        CurrentExpr.BindCallArg(typeof(LambdaExpression), method, index)
-        .WithValue(_builder.CreateExpression(nameof(Expression.Lambda), [
-            CurrentExpr.Bind($"{nameof(LambdaExpression.Body)}").WithValue(Visit(bodyNode)),
-            CurrentExpr.BindValue($"{nameof(LambdaExpression.Parameters)}")
-        ]));
+    // N.B. passing a delegate factory here appears to be necessitated by the case of the let clause,
+    // which has a surprisingly complex body
+    private InterpolatedTree CreateQueryLambda(
+        IMethodSymbol method,
+        int index,
+        Func<InterpolatedTree> bodyFactory
+    ) {
+        switch(SymbolHelpers.GetParameterType(method, index)) {
+            case INamedTypeSymbol { IsGenericType: true } namedType
+                when SymbolEqualityComparer.Default.Equals(namedType.ConstructUnboundGenericType(), _context.TypeSymbols.Expression1):
+                return CurrentExpr.BindCallArg(typeof(UnaryExpression), method, index)
+                .WithValue(_builder.CreateExpression(nameof(Expression.Quote), [
+                    CurrentExpr.Bind(typeof(LambdaExpression), $"{nameof(UnaryExpression.Operand)}")
+                    .WithValue(_builder.CreateExpression(nameof(Expression.Lambda), [
+                        CurrentExpr.Bind($"{nameof(LambdaExpression.Body)}").WithValue(bodyFactory()),
+                        CurrentExpr.BindValue($"{nameof(LambdaExpression.Parameters)}")
+                    ]))
+                ]));
+
+            default:
+                return CurrentExpr.BindCallArg(typeof(LambdaExpression), method, index)
+                .WithValue(_builder.CreateExpression(nameof(Expression.Lambda), [
+                    CurrentExpr.Bind($"{nameof(LambdaExpression.Body)}").WithValue(bodyFactory()),
+                    CurrentExpr.BindValue($"{nameof(LambdaExpression.Parameters)}")
+                ]));
+        }
+    }
 
     private InterpolatedTree CreateQueryCall(SyntaxNode node, IMethodSymbol method, IReadOnlyList<InterpolatedTree> args) {
         CurrentExpr.SetType(typeof(MethodCallExpression));

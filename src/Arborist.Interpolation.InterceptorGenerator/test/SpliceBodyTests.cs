@@ -85,15 +85,18 @@ public class SpliceBodyTests {
         CodeGenAssert.CodeEqual(
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
-                    var __e0 => (global::System.Linq.Expressions.MemberExpression)(__e0.Arguments[1]) switch {
-                        var __e1 => __data.OwnerPredicate
-                    } switch {
-                        var __v0 => global::Arborist.ExpressionHelper.Replace(
-                            __v0.Body,
+                    var __e0 => (
+                        __e0.Arguments[0],
+                        (global::System.Linq.Expressions.MemberExpression)(__e0.Arguments[1]) switch {
+                            var __e1 => __data.OwnerPredicate
+                        }
+                    ) switch {
+                        var (__v0, __v1) => global::Arborist.ExpressionHelper.Replace(
+                            __v1.Body,
                             global::Arborist.Internal.Collections.SmallDictionary.Create(
                                 new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
-                                    __v0.Parameters[0],
-                                    __e0.Arguments[0]
+                                    __v1.Parameters[0],
+                                    __v0
                                 )
                             )
                         )
@@ -117,15 +120,20 @@ public class SpliceBodyTests {
         CodeGenAssert.CodeEqual(
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
-                    var __e0 => (global::System.Linq.Expressions.UnaryExpression)(__e0.Arguments[1]) switch {
-                        var __e1 => __t0.Coerce((o) => (o.Name == ""Jon""))
-                    } switch {
-                        var __v0 => global::Arborist.ExpressionHelper.Replace(
-                            __v0.Body,
+                    var __e0 => (
+                        __e0.Arguments[0],
+                        (global::System.Linq.Expressions.UnaryExpression)(__e0.Arguments[1]) switch {
+                            var __e1 => __t0.Coerce(
+                                (o) => (o.Name == ""Jon"")
+                            )
+                        }
+                    ) switch {
+                        var (__v0, __v1) => global::Arborist.ExpressionHelper.Replace(
+                            __v1.Body,
                             global::Arborist.Internal.Collections.SmallDictionary.Create(
                                 new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
-                                    __v0.Parameters[0],
-                                    __e0.Arguments[0]
+                                    __v1.Parameters[0],
+                                    __v0
                                 )
                             )
                         )

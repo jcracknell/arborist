@@ -60,39 +60,45 @@ public partial class InterpolatedSyntaxVisitor {
     }
 
     private InterpolatedTree VisitSpliceBody(InvocationExpressionSyntax node, IMethodSymbol method) {
-        var identifier = _builder.CreateIdentifier();
-        var parameterCount = method.Parameters.Length - 1;
-        var expressionNode = node.ArgumentList.Arguments[parameterCount];
+        // Generate the interpolated parameter trees so that the nodes are evaluated in the declared order
+        var bindings = new KeyValuePair<string, InterpolatedTree>[method.Parameters.Length];
+        for(var i = 0; i < method.Parameters.Length - 1; i++)
+            bindings[i] = new(
+                key: _builder.CreateIdentifier(),
+                value: CurrentExpr.BindCallArg(method, i + 1).WithValue(Visit(node.ArgumentList.Arguments[i]))
+            );
 
-        // Generate the interpolated parameter trees so that the nodes are interpolated in
-        // declaration order.
-        var parameterReplacements = new InterpolatedTree[parameterCount];
-        for(var i = 0; i < parameterCount; i++)
-            parameterReplacements[i] = InterpolatedTree.Call(
+        // Bind the evaluated spliced expression
+        var expressionNode = node.ArgumentList.Arguments[method.Parameters.Length - 1];
+        var expressionIdentifier = _builder.CreateIdentifier();
+        bindings[method.Parameters.Length - 1] = new(
+            key: expressionIdentifier,
+            value: CurrentExpr.BindCallArg(method, method.Parameters.Length)
+            .WithValue(VisitSplicedExpression(expressionNode, method, method.Parameters.Length))
+        );
+
+        var replacements = new InterpolatedTree[method.Parameters.Length - 1];
+        for(var i = 0; i < method.Parameters.Length - 1; i++)
+            replacements[i] = InterpolatedTree.Call(
                 InterpolatedTree.Interpolate($"new global::System.Collections.Generic.KeyValuePair<{_builder.ExpressionTypeName}, {_builder.ExpressionTypeName}>"),
                 [
-                    InterpolatedTree.Verbatim($"{identifier}.{nameof(LambdaExpression.Parameters)}[{i}]"),
-                    CurrentExpr.BindCallArg(method, i + 1).WithValue(Visit(node.ArgumentList.Arguments[i]))
+                    InterpolatedTree.Verbatim($"{expressionIdentifier}.{nameof(LambdaExpression.Parameters)}[{i}]"),
+                    InterpolatedTree.Verbatim(bindings[i].Key)
                 ]
             );
 
-        var expressionTree = CurrentExpr.BindCallArg(method, method.Parameters.Length)
-        .WithValue(VisitSplicedExpression(expressionNode, method, method.Parameters.Length));
-
-        // We'll use a switch expression with a single case to bind the evaluated expression tree
-        return InterpolatedTree.Bind(
-            identifier,
-            expressionTree,
-            parameterReplacements.Length switch {
+        return InterpolatedTree.TupleBind(
+            bindings,
+            method.Parameters.Length switch {
                 // There are no parameters requiring replacement in the case of e.g. an Expression<Func<A>>,
                 // in which case we just embed the body of the expression verbatim
-                0 => InterpolatedTree.Interpolate($"{identifier}.{nameof(LambdaExpression.Body)}"),
+                <= 1 => InterpolatedTree.Interpolate($"{expressionIdentifier}.{nameof(LambdaExpression.Body)}"),
                 // Otherwise we need to replace occurrences of the parameters in the spliced expression body
                 _ => InterpolatedTree.Call(InterpolatedTree.Verbatim("global::Arborist.ExpressionHelper.Replace"), [
-                    InterpolatedTree.Interpolate($"{identifier}.{nameof(LambdaExpression.Body)}"),
+                    InterpolatedTree.Interpolate($"{expressionIdentifier}.{nameof(LambdaExpression.Body)}"),
                     InterpolatedTree.Call(
                         InterpolatedTree.Verbatim("global::Arborist.Internal.Collections.SmallDictionary.Create"),
-                        parameterReplacements
+                        replacements
                     )
                 ])
             }

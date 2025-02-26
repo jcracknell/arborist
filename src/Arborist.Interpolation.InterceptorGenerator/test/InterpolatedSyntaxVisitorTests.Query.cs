@@ -24,15 +24,18 @@ public partial class InterpolatedSyntaxVisitorTests {
                         default(global::System.Linq.Expressions.Expression),
                         __e0.Method,
                         (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
-                            var __e1 => (global::System.Linq.Expressions.MemberExpression)(__e1.Arguments[1]) switch {
-                                var __e2 => __data.OwnerCats
-                            } switch {
-                                var __v0 => global::Arborist.ExpressionHelper.Replace(
-                                    __v0.Body,
+                            var __e1 => (
+                                __e1.Arguments[0],
+                                (global::System.Linq.Expressions.MemberExpression)(__e1.Arguments[1]) switch {
+                                    var __e2 => __data.OwnerCats
+                                }
+                            ) switch {
+                                var (__v0, __v1) => global::Arborist.ExpressionHelper.Replace(
+                                    __v1.Body,
                                     global::Arborist.Internal.Collections.SmallDictionary.Create(
                                         new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
-                                            __v0.Parameters[0],
-                                            __e1.Arguments[0]
+                                            __v1.Parameters[0],
+                                            __v0
                                         )
                                     )
                                 )
@@ -42,15 +45,18 @@ public partial class InterpolatedSyntaxVisitorTests {
                             var __e1 => global::System.Linq.Expressions.Expression.Lambda(
                                 __e1.Type,
                                 (global::System.Linq.Expressions.MethodCallExpression)(__e1.Body) switch {
-                                    var __e2 => (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
-                                        var __e3 => __data.CatName
-                                    } switch {
-                                        var __v1 => global::Arborist.ExpressionHelper.Replace(
-                                            __v1.Body,
+                                    var __e2 => (
+                                        __e2.Arguments[0],
+                                        (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
+                                            var __e3 => __data.CatName
+                                        }
+                                    ) switch {
+                                        var (__v2, __v3) => global::Arborist.ExpressionHelper.Replace(
+                                            __v3.Body,
                                             global::Arborist.Internal.Collections.SmallDictionary.Create(
                                                 new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
-                                                    __v1.Parameters[0],
-                                                    __e2.Arguments[0]
+                                                    __v3.Parameters[0],
+                                                    __v2
                                                 )
                                             )
                                         )
@@ -139,15 +145,18 @@ public partial class InterpolatedSyntaxVisitorTests {
                                     var __e2 => global::System.Linq.Expressions.Expression.Lambda(
                                         __e2.Type,
                                         (global::System.Linq.Expressions.MethodCallExpression)(__e2.Body) switch {
-                                            var __e3 => (global::System.Linq.Expressions.MemberExpression)(__e3.Arguments[1]) switch {
-                                                var __e4 => __data.CatOwnerCats
-                                            } switch {
-                                                var __v0 => global::Arborist.ExpressionHelper.Replace(
-                                                    __v0.Body,
+                                            var __e3 => (
+                                                __e3.Arguments[0],
+                                                (global::System.Linq.Expressions.MemberExpression)(__e3.Arguments[1]) switch {
+                                                    var __e4 => __data.CatOwnerCats
+                                                }
+                                            ) switch {
+                                                var (__v0, __v1) => global::Arborist.ExpressionHelper.Replace(
+                                                    __v1.Body,
                                                     global::Arborist.Internal.Collections.SmallDictionary.Create(
                                                         new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
-                                                            __v0.Parameters[0],
-                                                            __e3.Arguments[0]
+                                                            __v1.Parameters[0],
+                                                            __v0
                                                         )
                                                     )
                                                 )
@@ -193,15 +202,18 @@ public partial class InterpolatedSyntaxVisitorTests {
                                 default(global::System.Linq.Expressions.Expression),
                                 __e1.Method,
                                 (global::System.Linq.Expressions.MethodCallExpression)(__e1.Arguments[0]) switch {
-                                    var __e2 => (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
-                                        var __e3 => __data.OwnerCats
-                                    } switch {
-                                        var __v0 => global::Arborist.ExpressionHelper.Replace(
-                                            __v0.Body,
+                                    var __e2 => (
+                                        __e2.Arguments[0],
+                                        (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
+                                            var __e3 => __data.OwnerCats
+                                        }
+                                    ) switch {
+                                        var (__v0, __v1) => global::Arborist.ExpressionHelper.Replace(
+                                            __v1.Body,
                                             global::Arborist.Internal.Collections.SmallDictionary.Create(
                                                 new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
-                                                    __v0.Parameters[0],
-                                                    __e2.Arguments[0]
+                                                    __v1.Parameters[0],
+                                                    __v0
                                                 )
                                             )
                                         )
@@ -213,15 +225,18 @@ public partial class InterpolatedSyntaxVisitorTests {
                             var __e1 => global::System.Linq.Expressions.Expression.Lambda(
                                 __e1.Type,
                                 (global::System.Linq.Expressions.MethodCallExpression)(__e1.Body) switch {
-                                    var __e2 => (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
-                                        var __e3 => __data.ObjectHashCode
-                                    } switch {
-                                        var __v1 => global::Arborist.ExpressionHelper.Replace(
-                                            __v1.Body,
+                                    var __e2 => (
+                                        __e2.Arguments[0],
+                                        (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
+                                            var __e3 => __data.ObjectHashCode
+                                        }
+                                    ) switch {
+                                        var (__v2, __v3) => global::Arborist.ExpressionHelper.Replace(
+                                            __v3.Body,
                                             global::Arborist.Internal.Collections.SmallDictionary.Create(
                                                 new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
-                                                    __v1.Parameters[0],
-                                                    __e2.Arguments[0]
+                                                    __v3.Parameters[0],
+                                                    __v2
                                                 )
                                             )
                                         )
@@ -235,7 +250,6 @@ public partial class InterpolatedSyntaxVisitorTests {
             ",
             actual: results.AnalysisResults[0].BodyTree.ToString()
         );
-
     }
 
     [Fact]
@@ -263,15 +277,18 @@ public partial class InterpolatedSyntaxVisitorTests {
                         __e0.Method,
                         __e0.Arguments[0],
                         (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[1]) switch {
-                            var __e1 => (global::System.Linq.Expressions.MemberExpression)(__e1.Arguments[1]) switch {
-                                var __e2 => __data.OwnerCats
-                            } switch {
-                                var __v0 => global::Arborist.ExpressionHelper.Replace(
-                                    __v0.Body,
+                            var __e1 => (
+                                __e1.Arguments[0],
+                                (global::System.Linq.Expressions.MemberExpression)(__e1.Arguments[1]) switch {
+                                    var __e2 => __data.OwnerCats
+                                }
+                            ) switch {
+                                var (__v0, __v1) => global::Arborist.ExpressionHelper.Replace(
+                                    __v1.Body,
                                     global::Arborist.Internal.Collections.SmallDictionary.Create(
                                         new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
-                                            __v0.Parameters[0],
-                                            __e1.Arguments[0]
+                                            __v1.Parameters[0],
+                                            __v0
                                         )
                                     )
                                 )
@@ -281,15 +298,18 @@ public partial class InterpolatedSyntaxVisitorTests {
                             var __e1 => global::System.Linq.Expressions.Expression.Lambda(
                                 __e1.Type,
                                 (global::System.Linq.Expressions.MethodCallExpression)(__e1.Body) switch {
-                                    var __e2 => (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
-                                        var __e3 => __data.CatId
-                                    } switch {
-                                        var __v1 => global::Arborist.ExpressionHelper.Replace(
-                                            __v1.Body,
+                                    var __e2 => (
+                                        __e2.Arguments[0],
+                                        (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
+                                            var __e3 => __data.CatId
+                                        }
+                                    ) switch {
+                                        var (__v2, __v3) => global::Arborist.ExpressionHelper.Replace(
+                                            __v3.Body,
                                             global::Arborist.Internal.Collections.SmallDictionary.Create(
                                                 new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
-                                                    __v1.Parameters[0],
-                                                    __e2.Arguments[0]
+                                                    __v3.Parameters[0],
+                                                    __v2
                                                 )
                                             )
                                         )
@@ -345,15 +365,18 @@ public partial class InterpolatedSyntaxVisitorTests {
                         __e0.Method,
                         __e0.Arguments[0],
                         (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[1]) switch {
-                            var __e1 => (global::System.Linq.Expressions.MemberExpression)(__e1.Arguments[1]) switch {
-                                var __e2 => __data.OwnerCats
-                            } switch {
-                                var __v0 => global::Arborist.ExpressionHelper.Replace(
-                                    __v0.Body,
+                            var __e1 => (
+                                __e1.Arguments[0],
+                                (global::System.Linq.Expressions.MemberExpression)(__e1.Arguments[1]) switch {
+                                    var __e2 => __data.OwnerCats
+                                }
+                            ) switch {
+                                var (__v0, __v1) => global::Arborist.ExpressionHelper.Replace(
+                                    __v1.Body,
                                     global::Arborist.Internal.Collections.SmallDictionary.Create(
                                         new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
-                                            __v0.Parameters[0],
-                                            __e1.Arguments[0]
+                                            __v1.Parameters[0],
+                                            __v0
                                         )
                                     )
                                 )
@@ -365,15 +388,18 @@ public partial class InterpolatedSyntaxVisitorTests {
                                     var __e2 => global::System.Linq.Expressions.Expression.Lambda(
                                         __e2.Type,
                                         (global::System.Linq.Expressions.MethodCallExpression)(__e2.Body) switch {
-                                            var __e3 => (global::System.Linq.Expressions.MemberExpression)(__e3.Arguments[1]) switch {
-                                                var __e4 => __data.CatId
-                                            } switch {
-                                                var __v1 => global::Arborist.ExpressionHelper.Replace(
-                                                    __v1.Body,
+                                            var __e3 => (
+                                                __e3.Arguments[0],
+                                                (global::System.Linq.Expressions.MemberExpression)(__e3.Arguments[1]) switch {
+                                                    var __e4 => __data.CatId
+                                                }
+                                            ) switch {
+                                                var (__v2, __v3) => global::Arborist.ExpressionHelper.Replace(
+                                                    __v3.Body,
                                                     global::Arborist.Internal.Collections.SmallDictionary.Create(
                                                         new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
-                                                            __v1.Parameters[0],
-                                                            __e3.Arguments[0]
+                                                            __v3.Parameters[0],
+                                                            __v2
                                                         )
                                                     )
                                                 )
@@ -439,15 +465,18 @@ public partial class InterpolatedSyntaxVisitorTests {
                                 default(global::System.Linq.Expressions.Expression),
                                 __e1.Method,
                                 (global::System.Linq.Expressions.MethodCallExpression)(__e1.Arguments[0]) switch {
-                                    var __e2 => (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
-                                        var __e3 => __data.OwnerCats
-                                    } switch {
-                                        var __v0 => global::Arborist.ExpressionHelper.Replace(
-                                            __v0.Body,
+                                    var __e2 => (
+                                        __e2.Arguments[0],
+                                        (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
+                                            var __e3 => __data.OwnerCats
+                                        }
+                                    ) switch {
+                                        var (__v0, __v1) => global::Arborist.ExpressionHelper.Replace(
+                                            __v1.Body,
                                             global::Arborist.Internal.Collections.SmallDictionary.Create(
                                                 new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
-                                                    __v0.Parameters[0],
-                                                    __e2.Arguments[0]
+                                                    __v1.Parameters[0],
+                                                    __v0
                                                 )
                                             )
                                         )
@@ -459,15 +488,18 @@ public partial class InterpolatedSyntaxVisitorTests {
                             var __e1 => global::System.Linq.Expressions.Expression.Lambda(
                                 __e1.Type,
                                 (global::System.Linq.Expressions.MethodCallExpression)(__e1.Body) switch {
-                                    var __e2 => (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
-                                        var __e3 => __data.CatId
-                                    } switch {
-                                        var __v1 => global::Arborist.ExpressionHelper.Replace(
-                                            __v1.Body,
+                                    var __e2 => (
+                                        __e2.Arguments[0],
+                                        (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
+                                            var __e3 => __data.CatId
+                                        }
+                                    ) switch {
+                                        var (__v2, __v3) => global::Arborist.ExpressionHelper.Replace(
+                                            __v3.Body,
                                             global::Arborist.Internal.Collections.SmallDictionary.Create(
                                                 new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
-                                                    __v1.Parameters[0],
-                                                    __e2.Arguments[0]
+                                                    __v3.Parameters[0],
+                                                    __v2
                                                 )
                                             )
                                         )
@@ -529,15 +561,18 @@ public partial class InterpolatedSyntaxVisitorTests {
                                 __e1.Method,
                                 __e1.Arguments[0],
                                 (global::System.Linq.Expressions.MethodCallExpression)(__e1.Arguments[1]) switch {
-                                    var __e2 => (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
-                                        var __e3 => __data.OwnerCats
-                                    } switch {
-                                        var __v0 => global::Arborist.ExpressionHelper.Replace(
-                                            __v0.Body,
+                                    var __e2 => (
+                                        __e2.Arguments[0],
+                                        (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
+                                            var __e3 => __data.OwnerCats
+                                        }
+                                    ) switch {
+                                        var (__v0, __v1) => global::Arborist.ExpressionHelper.Replace(
+                                            __v1.Body,
                                             global::Arborist.Internal.Collections.SmallDictionary.Create(
                                                 new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
-                                                    __v0.Parameters[0],
-                                                    __e2.Arguments[0]
+                                                    __v1.Parameters[0],
+                                                    __v0
                                                 )
                                             )
                                         )
@@ -547,15 +582,18 @@ public partial class InterpolatedSyntaxVisitorTests {
                                     var __e2 => global::System.Linq.Expressions.Expression.Lambda(
                                         __e2.Type,
                                         (global::System.Linq.Expressions.MethodCallExpression)(__e2.Body) switch {
-                                            var __e3 => (global::System.Linq.Expressions.MemberExpression)(__e3.Arguments[1]) switch {
-                                                var __e4 => __data.CatId
-                                            } switch {
-                                                var __v1 => global::Arborist.ExpressionHelper.Replace(
-                                                    __v1.Body,
+                                            var __e3 => (
+                                                __e3.Arguments[0],
+                                                (global::System.Linq.Expressions.MemberExpression)(__e3.Arguments[1]) switch {
+                                                    var __e4 => __data.CatId
+                                                }
+                                            ) switch {
+                                                var (__v2, __v3) => global::Arborist.ExpressionHelper.Replace(
+                                                    __v3.Body,
                                                     global::Arborist.Internal.Collections.SmallDictionary.Create(
                                                         new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
-                                                            __v1.Parameters[0],
-                                                            __e3.Arguments[0]
+                                                            __v3.Parameters[0],
+                                                            __v2
                                                         )
                                                     )
                                                 )
@@ -617,15 +655,18 @@ public partial class InterpolatedSyntaxVisitorTests {
                             var __e1 => global::System.Linq.Expressions.Expression.Lambda(
                                 __e1.Type,
                                 (global::System.Linq.Expressions.MethodCallExpression)(__e1.Body) switch {
-                                    var __e2 => (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
-                                        var __e3 => __data.AgeSelector
-                                    } switch {
-                                        var __v0 => global::Arborist.ExpressionHelper.Replace(
-                                            __v0.Body,
+                                    var __e2 => (
+                                        __e2.Arguments[0],
+                                        (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
+                                            var __e3 => __data.AgeSelector
+                                        }
+                                    ) switch {
+                                        var (__v0, __v1) => global::Arborist.ExpressionHelper.Replace(
+                                            __v1.Body,
                                             global::Arborist.Internal.Collections.SmallDictionary.Create(
                                                 new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
-                                                    __v0.Parameters[0],
-                                                    __e2.Arguments[0]
+                                                    __v1.Parameters[0],
+                                                    __v0
                                                 )
                                             )
                                         )
@@ -638,15 +679,18 @@ public partial class InterpolatedSyntaxVisitorTests {
                             var __e1 => global::System.Linq.Expressions.Expression.Lambda(
                                 __e1.Type,
                                 (global::System.Linq.Expressions.MethodCallExpression)(__e1.Body) switch {
-                                    var __e2 => (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
-                                        var __e3 => __data.NameSelector
-                                    } switch {
-                                        var __v1 => global::Arborist.ExpressionHelper.Replace(
-                                            __v1.Body,
+                                    var __e2 => (
+                                        __e2.Arguments[0],
+                                        (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
+                                            var __e3 => __data.NameSelector
+                                        }
+                                    ) switch {
+                                        var (__v2, __v3) => global::Arborist.ExpressionHelper.Replace(
+                                            __v3.Body,
                                             global::Arborist.Internal.Collections.SmallDictionary.Create(
                                                 new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
-                                                    __v1.Parameters[0],
-                                                    __e2.Arguments[0]
+                                                    __v3.Parameters[0],
+                                                    __v2
                                                 )
                                             )
                                         )
@@ -688,15 +732,18 @@ public partial class InterpolatedSyntaxVisitorTests {
                             var __e1 => global::System.Linq.Expressions.Expression.Lambda(
                                 __e1.Type,
                                 (global::System.Linq.Expressions.MethodCallExpression)(__e1.Body) switch {
-                                    var __e2 => (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
-                                        var __e3 => __data.AgeSelector
-                                    } switch {
-                                        var __v0 => global::Arborist.ExpressionHelper.Replace(
-                                            __v0.Body,
+                                    var __e2 => (
+                                        __e2.Arguments[0],
+                                        (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
+                                            var __e3 => __data.AgeSelector
+                                        }
+                                    ) switch {
+                                        var (__v0, __v1) => global::Arborist.ExpressionHelper.Replace(
+                                            __v1.Body,
                                             global::Arborist.Internal.Collections.SmallDictionary.Create(
                                                 new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
-                                                    __v0.Parameters[0],
-                                                    __e2.Arguments[0]
+                                                    __v1.Parameters[0],
+                                                    __v0
                                                 )
                                             )
                                         )

@@ -27,13 +27,7 @@ public partial class EvaluatedSyntaxVisitor {
         // If there is no method associated with the operation, then this is the initial from clause
         if(qci.OperationInfo.Symbol is not IMethodSymbol method) {
             _queryContext.BindJoined(node.Identifier.ValueText);
-
-            if(qci.CastInfo.Symbol is not IMethodSymbol castMethod)
-                return Visit(node.Expression);
-
-            return CreateQueryCall(node, castMethod, [
-                CurrentExpr.BindCallArg(castMethod, 0).WithValue(Visit(node.Expression))
-            ]);
+            return CreateQueryInput(node, node.Expression, qci.CastInfo.Symbol);
         }
 
         if(!SymbolHelpers.IsAccessibleFromInterceptor(method))

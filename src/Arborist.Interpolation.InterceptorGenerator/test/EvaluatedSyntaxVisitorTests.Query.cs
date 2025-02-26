@@ -31,6 +31,70 @@ public partial class EvaluatedSyntaxVisitorTests {
     }
 
     [Fact]
+    public void Should_handle_from_clause_with_cast() {
+        var results = InterpolationInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceValue(
+                from object c in x.Data.Cats
+                select c.GetHashCode()
+            ));
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => global::System.Linq.Enumerable.Select(
+                                global::System.Linq.Enumerable.Cast<global::System.Object>(
+                                    __data.Cats
+                                ),
+                                (c) => c.GetHashCode()
+                            )
+                        },
+                        __e0.Type
+                    )
+                }
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
+    public void Should_handle_subsequent_from_clause_with_cast() {
+        var results = InterpolationInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceValue(
+                from c in x.Data.Cats
+                from object o in c.Owner.Cats
+                select o.GetHashCode()
+            ));
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => global::System.Linq.Enumerable.SelectMany(
+                                __data.Cats,
+                                (c) => global::System.Linq.Enumerable.Cast<global::System.Object>(
+                                    c.Owner.Cats
+                                ),
+                                (c, o) => o.GetHashCode()
+                            )
+                        },
+                        __e0.Type
+                    )
+                }
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
     public void Should_handle_group_clause() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
@@ -116,6 +180,41 @@ public partial class EvaluatedSyntaxVisitorTests {
                                 (c) => c.Id,
                                 (c1) => c1.Id,
                                 (c, c1) => c1.Name
+                            )
+                        },
+                        __e0.Type
+                    )
+                }
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
+    public void Should_handle_join_clause_with_cast() {
+        var results = InterpolationInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            ExpressionOnNone.Interpolate(x => x.SpliceValue(
+                from c in Array.Empty<Cat>()
+                join object c1 in Array.Empty<Cat>() on c.Id equals c1.GetHashCode()
+                select c.GetHashCode()
+            ));
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Constant(
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
+                            var __e1 => global::System.Linq.Enumerable.Join(
+                                global::System.Array.Empty<global::Arborist.TestFixtures.Cat>(),
+                                global::System.Linq.Enumerable.Cast<global::System.Object>(
+                                    global::System.Array.Empty<global::Arborist.TestFixtures.Cat>()
+                                ),
+                                (c) => c.Id,
+                                (c1) => c1.GetHashCode(),
+                                (c, c1) => c.GetHashCode()
                             )
                         },
                         __e0.Type

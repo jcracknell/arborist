@@ -11,8 +11,8 @@ public class OrderingDirectionJsonConverterTests {
 
     [Fact]
     public void Should_serialize_Descending_as_expected() {
-        var actual = JsonSerializer.Serialize(OrderingDirection.Ascending);
-        Assert.Equal("\"asc\"", actual);
+        var actual = JsonSerializer.Serialize(OrderingDirection.Descending);
+        Assert.Equal("\"desc\"", actual);
     }
 
     [Fact]

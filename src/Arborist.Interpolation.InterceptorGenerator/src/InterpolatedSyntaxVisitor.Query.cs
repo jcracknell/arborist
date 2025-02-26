@@ -233,6 +233,7 @@ public partial class InterpolatedSyntaxVisitor {
                 .WithValue(_builder.CreateExpression(nameof(Expression.Quote), [
                     CurrentExpr.Bind(typeof(LambdaExpression), $"{nameof(UnaryExpression.Operand)}")
                     .WithValue(_builder.CreateExpression(nameof(Expression.Lambda), [
+                        CurrentExpr.BindValue($"{nameof(LambdaExpression.Type)}"),
                         CurrentExpr.Bind($"{nameof(LambdaExpression.Body)}").WithValue(bodyFactory()),
                         CurrentExpr.BindValue($"{nameof(LambdaExpression.Parameters)}")
                     ]))
@@ -241,6 +242,7 @@ public partial class InterpolatedSyntaxVisitor {
             default:
                 return CurrentExpr.BindCallArg(typeof(LambdaExpression), method, index)
                 .WithValue(_builder.CreateExpression(nameof(Expression.Lambda), [
+                    CurrentExpr.BindValue($"{nameof(LambdaExpression.Type)}"),
                     CurrentExpr.Bind($"{nameof(LambdaExpression.Body)}").WithValue(bodyFactory()),
                     CurrentExpr.BindValue($"{nameof(LambdaExpression.Parameters)}")
                 ]));

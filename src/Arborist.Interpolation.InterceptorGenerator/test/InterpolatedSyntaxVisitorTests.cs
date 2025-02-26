@@ -428,6 +428,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                             __e0.Arguments[0],
                             (global::System.Linq.Expressions.LambdaExpression)(__e0.Arguments[1]) switch {
                                 var __e1 => global::System.Linq.Expressions.Expression.Lambda(
+                                    __e1.Type,
                                     (global::System.Linq.Expressions.BinaryExpression)(__e1.Body) switch {
                                         var __e2 => global::System.Linq.Expressions.Expression.MakeBinary(
                                             __e2.NodeType,

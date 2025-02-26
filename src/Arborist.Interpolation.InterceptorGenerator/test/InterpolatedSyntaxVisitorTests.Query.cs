@@ -40,6 +40,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                         },
                         (global::System.Linq.Expressions.LambdaExpression)(__e0.Arguments[1]) switch {
                             var __e1 => global::System.Linq.Expressions.Expression.Lambda(
+                                __e1.Type,
                                 (global::System.Linq.Expressions.MethodCallExpression)(__e1.Body) switch {
                                     var __e2 => (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
                                         var __e3 => __data.CatName
@@ -87,6 +88,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                             var __e1 => global::System.Linq.Expressions.Expression.Quote(
                                 (global::System.Linq.Expressions.LambdaExpression)(__e1.Operand) switch {
                                     var __e2 => global::System.Linq.Expressions.Expression.Lambda(
+                                        __e2.Type,
                                         (global::System.Linq.Expressions.MethodCallExpression)(__e2.Body) switch {
                                             var __e3 => global::System.Linq.Expressions.Expression.Constant(
                                                 (global::System.Linq.Expressions.ConstantExpression)(__e3.Arguments[0]) switch {
@@ -135,6 +137,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                             var __e1 => global::System.Linq.Expressions.Expression.Quote(
                                 (global::System.Linq.Expressions.LambdaExpression)(__e1.Operand) switch {
                                     var __e2 => global::System.Linq.Expressions.Expression.Lambda(
+                                        __e2.Type,
                                         (global::System.Linq.Expressions.MethodCallExpression)(__e2.Body) switch {
                                             var __e3 => (global::System.Linq.Expressions.MemberExpression)(__e3.Arguments[1]) switch {
                                                 var __e4 => __data.CatOwnerCats
@@ -208,6 +211,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                         },
                         (global::System.Linq.Expressions.LambdaExpression)(__e0.Arguments[1]) switch {
                             var __e1 => global::System.Linq.Expressions.Expression.Lambda(
+                                __e1.Type,
                                 (global::System.Linq.Expressions.MethodCallExpression)(__e1.Body) switch {
                                     var __e2 => (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
                                         var __e3 => __data.ObjectHashCode
@@ -275,6 +279,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                         },
                         (global::System.Linq.Expressions.LambdaExpression)(__e0.Arguments[2]) switch {
                             var __e1 => global::System.Linq.Expressions.Expression.Lambda(
+                                __e1.Type,
                                 (global::System.Linq.Expressions.MethodCallExpression)(__e1.Body) switch {
                                     var __e2 => (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
                                         var __e3 => __data.CatId
@@ -295,6 +300,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                         },
                         (global::System.Linq.Expressions.LambdaExpression)(__e0.Arguments[3]) switch {
                             var __e1 => global::System.Linq.Expressions.Expression.Lambda(
+                                __e1.Type,
                                 (global::System.Linq.Expressions.MethodCallExpression)(__e1.Body) switch {
                                     var __e2 => global::System.Linq.Expressions.Expression.Constant(
                                         (global::System.Linq.Expressions.ConstantExpression)(__e2.Arguments[0]) switch {
@@ -357,6 +363,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                             var __e1 => global::System.Linq.Expressions.Expression.Quote(
                                 (global::System.Linq.Expressions.LambdaExpression)(__e1.Operand) switch {
                                     var __e2 => global::System.Linq.Expressions.Expression.Lambda(
+                                        __e2.Type,
                                         (global::System.Linq.Expressions.MethodCallExpression)(__e2.Body) switch {
                                             var __e3 => (global::System.Linq.Expressions.MemberExpression)(__e3.Arguments[1]) switch {
                                                 var __e4 => __data.CatId
@@ -381,6 +388,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                             var __e1 => global::System.Linq.Expressions.Expression.Quote(
                                 (global::System.Linq.Expressions.LambdaExpression)(__e1.Operand) switch {
                                     var __e2 => global::System.Linq.Expressions.Expression.Lambda(
+                                        __e2.Type,
                                         (global::System.Linq.Expressions.MethodCallExpression)(__e2.Body) switch {
                                             var __e3 => global::System.Linq.Expressions.Expression.Constant(
                                                 (global::System.Linq.Expressions.ConstantExpression)(__e3.Arguments[0]) switch {
@@ -449,6 +457,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                         },
                         (global::System.Linq.Expressions.LambdaExpression)(__e0.Arguments[2]) switch {
                             var __e1 => global::System.Linq.Expressions.Expression.Lambda(
+                                __e1.Type,
                                 (global::System.Linq.Expressions.MethodCallExpression)(__e1.Body) switch {
                                     var __e2 => (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
                                         var __e3 => __data.CatId
@@ -469,6 +478,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                         },
                         (global::System.Linq.Expressions.LambdaExpression)(__e0.Arguments[3]) switch {
                             var __e1 => global::System.Linq.Expressions.Expression.Lambda(
+                                __e1.Type,
                                 (global::System.Linq.Expressions.MethodCallExpression)(__e1.Body) switch {
                                     var __e2 => global::System.Linq.Expressions.Expression.Constant(
                                         (global::System.Linq.Expressions.ConstantExpression)(__e2.Arguments[0]) switch {
@@ -535,6 +545,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                                 },
                                 (global::System.Linq.Expressions.LambdaExpression)(__e1.Arguments[2]) switch {
                                     var __e2 => global::System.Linq.Expressions.Expression.Lambda(
+                                        __e2.Type,
                                         (global::System.Linq.Expressions.MethodCallExpression)(__e2.Body) switch {
                                             var __e3 => (global::System.Linq.Expressions.MemberExpression)(__e3.Arguments[1]) switch {
                                                 var __e4 => __data.CatId
@@ -555,6 +566,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                                 },
                                 (global::System.Linq.Expressions.LambdaExpression)(__e1.Arguments[3]) switch {
                                     var __e2 => global::System.Linq.Expressions.Expression.Lambda(
+                                        __e2.Type,
                                         (global::System.Linq.Expressions.MethodCallExpression)(__e2.Body) switch {
                                             var __e3 => global::System.Linq.Expressions.Expression.Constant(
                                                 (global::System.Linq.Expressions.ConstantExpression)(__e3.Arguments[0]) switch {
@@ -603,6 +615,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                         __e0.Arguments[0],
                         (global::System.Linq.Expressions.LambdaExpression)(__e0.Arguments[1]) switch {
                             var __e1 => global::System.Linq.Expressions.Expression.Lambda(
+                                __e1.Type,
                                 (global::System.Linq.Expressions.MethodCallExpression)(__e1.Body) switch {
                                     var __e2 => (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
                                         var __e3 => __data.AgeSelector
@@ -623,6 +636,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                         },
                         (global::System.Linq.Expressions.LambdaExpression)(__e0.Arguments[2]) switch {
                             var __e1 => global::System.Linq.Expressions.Expression.Lambda(
+                                __e1.Type,
                                 (global::System.Linq.Expressions.MethodCallExpression)(__e1.Body) switch {
                                     var __e2 => (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
                                         var __e3 => __data.NameSelector
@@ -672,6 +686,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                         __e0.Arguments[0],
                         (global::System.Linq.Expressions.LambdaExpression)(__e0.Arguments[1]) switch {
                             var __e1 => global::System.Linq.Expressions.Expression.Lambda(
+                                __e1.Type,
                                 (global::System.Linq.Expressions.MethodCallExpression)(__e1.Body) switch {
                                     var __e2 => (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
                                         var __e3 => __data.AgeSelector
@@ -722,6 +737,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                                 __e1.Arguments[0],
                                 (global::System.Linq.Expressions.LambdaExpression)(__e1.Arguments[1]) switch {
                                     var __e2 => global::System.Linq.Expressions.Expression.Lambda(
+                                        __e2.Type,
                                         (global::System.Linq.Expressions.NewExpression)(__e2.Body) switch {
                                             var __e3 => global::System.Linq.Expressions.Expression.New(
                                                 __e3.Constructor!,
@@ -781,6 +797,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                                         __e2.Arguments[0],
                                         (global::System.Linq.Expressions.LambdaExpression)(__e2.Arguments[1]) switch {
                                             var __e3 => global::System.Linq.Expressions.Expression.Lambda(
+                                                __e3.Type,
                                                 (global::System.Linq.Expressions.MethodCallExpression)(__e3.Body) switch {
                                                     var __e4 => global::System.Linq.Expressions.Expression.Constant(
                                                         (global::System.Linq.Expressions.ConstantExpression)(__e4.Arguments[0]) switch {
@@ -830,6 +847,7 @@ public partial class InterpolatedSyntaxVisitorTests {
                                 __e1.Arguments[0],
                                 (global::System.Linq.Expressions.LambdaExpression)(__e1.Arguments[1]) switch {
                                     var __e2 => global::System.Linq.Expressions.Expression.Lambda(
+                                        __e2.Type,
                                         (global::System.Linq.Expressions.BinaryExpression)(__e2.Body) switch {
                                             var __e3 => global::System.Linq.Expressions.Expression.MakeBinary(
                                                 __e3.NodeType,

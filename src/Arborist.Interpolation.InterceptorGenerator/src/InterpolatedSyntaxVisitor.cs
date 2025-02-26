@@ -451,6 +451,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
 
         CurrentExpr.SetType(typeof(LambdaExpression));
         return _builder.CreateExpression(nameof(Expression.Lambda), [
+            CurrentExpr.BindValue($"{nameof(LambdaExpression.Type)}"),
             CurrentExpr.Bind($"{nameof(LambdaExpression.Body)}").WithValue(Visit(node.Body)),
             CurrentExpr.BindValue($"{nameof(LambdaExpression.Parameters)}")
         ]);

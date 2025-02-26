@@ -54,34 +54,14 @@ public class InterpolatedTreeBuilder {
         );
 
 
-    public InterpolatedTree CreateDefaultValue(ITypeSymbol type) {
+    public InterpolatedTree CreateDefaultValue(ITypeSymbol type, SyntaxNode? node) {
         if(TryCreateTypeName(type.WithNullableAnnotation(NullableAnnotation.None), out var typeName))
             return type.IsValueType || NullableAnnotation.Annotated == type.NullableAnnotation
             ? InterpolatedTree.Interpolate($"default({typeName})")
             : InterpolatedTree.Interpolate($"default({typeName})!");
 
-        var typeRef = CreateTypeRef(type);
+        var typeRef = CreateTypeRef(type, node);
         return InterpolatedTree.Member(typeRef, InterpolatedTree.Verbatim("Default"));
-    }
-
-    public InterpolatedTree CreateCast(ITypeSymbol type, InterpolatedTree tree) {
-        if(TryCreateTypeName(type, out var typeName))
-            return InterpolatedTree.Interpolate($"({typeName}){tree}");
-
-        var typeRef = CreateTypeRef(type);
-        return InterpolatedTree.Interpolate($"{typeRef}.Cast({tree})");
-    }
-
-    public InterpolatedTree CreateType(ITypeSymbol type) {
-        if(!SymbolHelpers.IsAccessibleFromInterceptor(type))
-            return _diagnostics.InaccessibleSymbol(type, default);
-
-        // If this is a nameable type, then return an inline type reference
-        if(TryCreateTypeName(type.WithNullableAnnotation(NullableAnnotation.None), out var typeName))
-            return InterpolatedTree.Interpolate($"typeof({typeName})");
-
-        var typeRef = CreateTypeRef(type);
-        return InterpolatedTree.Member(typeRef, InterpolatedTree.Verbatim("Type"));
     }
 
     /// <summary>
@@ -144,14 +124,14 @@ public class InterpolatedTreeBuilder {
         }
     }
 
-    public InterpolatedTree CreateTypeRef(ITypeSymbol type) {
+    public InterpolatedTree CreateTypeRef(ITypeSymbol type, SyntaxNode? node) {
         if(!SymbolHelpers.IsAccessibleFromInterceptor(type))
-            return _diagnostics.InaccessibleSymbol(type, default);
+            return _diagnostics.InaccessibleSymbol(type, node);
 
         if(_typeRefs.TryGetValue(type, out var cached)) {
             // This shouldn't be possible, as it would require a self-referential generic type
             if(!cached.IsInitialized)
-                return _diagnostics.UnsupportedType(type, default);
+                return _diagnostics.UnsupportedType(type, node);
 
             return InterpolatedTree.Verbatim(cached.Identifier);
         }
@@ -159,16 +139,16 @@ public class InterpolatedTreeBuilder {
         var definition = _definitionFactory.Create($"__t{_typeRefs.Count}");
         _typeRefs[type] = definition;
 
-        _definitionFactory.Set(definition, CreateTypeRefUncached(type));
+        _definitionFactory.Set(definition, CreateTypeRefUncached(type, node));
         return InterpolatedTree.Verbatim(definition.Identifier);
     }
 
-    private InterpolatedTree CreateTypeRefUncached(ITypeSymbol type) {
+    private InterpolatedTree CreateTypeRefUncached(ITypeSymbol type, SyntaxNode? node) {
         switch(type) {
             case ITypeParameterSymbol:
                 // A type parameter symbol must be from the call site, as declaration site type parameters are
                 // obviously only in scope within the declaration.
-                return _diagnostics.ReferencesCallSiteTypeParameter(type, default);
+                return _diagnostics.ReferencesCallSiteTypeParameter(type, node);
 
             case { IsAnonymousType: true }:
                 return InterpolatedTree.Call(
@@ -177,7 +157,7 @@ public class InterpolatedTreeBuilder {
                         InterpolatedTree.Verbatim("new "),
                         InterpolatedTree.Initializer([..(
                             from property in type.GetMembers().OfType<IPropertySymbol>()
-                            select InterpolatedTree.Interpolate($"{property.Name} = {CreateDefaultValue(property.Type)}")
+                            select InterpolatedTree.Interpolate($"{property.Name} = {CreateDefaultValue(property.Type, node)}")
                         )])
                     )]
                 );
@@ -188,14 +168,14 @@ public class InterpolatedTreeBuilder {
             // If we have a generic type containing an anonymous type, we can generate a static local
             // function to construct the required typeref from other typeref instances
             case INamedTypeSymbol { IsGenericType: true } named:
-                return CreateTypeRefFactory(named);
+                return CreateTypeRefFactory(named, node);
 
             default:
-                return _diagnostics.UnsupportedType(type, default);
+                return _diagnostics.UnsupportedType(type, node);
         }
     }
 
-    private InterpolatedTree CreateTypeRefFactory(INamedTypeSymbol type) {
+    private InterpolatedTree CreateTypeRefFactory(INamedTypeSymbol type, SyntaxNode? node) {
         var constructedFrom = (INamedTypeSymbol)type.ConstructedFrom.WithNullableAnnotation(type.NullableAnnotation);
         if(!_typeRefFactories.TryGetValue(constructedFrom, out var methodName)) {
             methodName = $"TypeRefFactory{_typeRefFactories.Count}";
@@ -218,24 +198,25 @@ public class InterpolatedTreeBuilder {
                     let typeParameter = typeParameters[i]
                     select InterpolatedTree.Verbatim($"global::Arborist.Interpolation.Internal.TypeRef<TR{i}> tr{i}")
                 )],
-                GetReparametrizedTypeConstraints(typeParameters, typeParameterMappings),
+                GetReparametrizedTypeConstraints(typeParameters, typeParameterMappings, node),
                 InterpolatedTree.ArrowBody(InterpolatedTree.Verbatim("default!"))
             ));
         }
 
         return InterpolatedTree.Call(
             InterpolatedTree.Verbatim(methodName),
-            [..SymbolHelpers.GetInheritedTypeArguments(type).Select(CreateTypeRef)]
+            SymbolHelpers.GetInheritedTypeArguments(type).SelectEager(ta => CreateTypeRef(ta, node))
         );
     }
 
     public IReadOnlyList<InterpolatedTree> GetReparametrizedTypeConstraints(
         ImmutableList<ITypeParameterSymbol> typeParameters,
-        IReadOnlyDictionary<ITypeParameterSymbol, string> typeParameterMappings
+        IReadOnlyDictionary<ITypeParameterSymbol, string> typeParameterMappings,
+        SyntaxNode? node
     ) {
         var results = new List<InterpolatedTree>(0);
         foreach(var typeParameter in typeParameters) {
-            var constraints = GetReparametrizedTypeConstraintConstraints(typeParameter, typeParameterMappings);
+            var constraints = GetReparametrizedTypeConstraintConstraints(typeParameter, typeParameterMappings, node);
             if(constraints.Count != 0)
                 results.Add(InterpolatedTree.Interpolate($"{typeParameter.Name} : {InterpolatedTree.Concat(constraints)}"));
         }
@@ -245,12 +226,13 @@ public class InterpolatedTreeBuilder {
 
     private IReadOnlyList<InterpolatedTree> GetReparametrizedTypeConstraintConstraints(
         ITypeParameterSymbol typeParameter,
-        IReadOnlyDictionary<ITypeParameterSymbol, string> typeParameterMappings
+        IReadOnlyDictionary<ITypeParameterSymbol, string> typeParameterMappings,
+        SyntaxNode? node
     ) {
         var constraints = new List<InterpolatedTree>(typeParameter.ConstraintTypes.Length);
 
         for(var i = 0; i < typeParameter.ConstraintTypes.Length; i++)
-            constraints.Add(CreateTypeName(typeParameter.ConstraintTypes[i], null, typeParameterMappings));
+            constraints.Add(CreateTypeName(typeParameter.ConstraintTypes[i], node, typeParameterMappings));
         if(typeParameter.HasNotNullConstraint)
             constraints.Add(InterpolatedTree.Verbatim("notnull"));
         if(typeParameter.HasReferenceTypeConstraint)

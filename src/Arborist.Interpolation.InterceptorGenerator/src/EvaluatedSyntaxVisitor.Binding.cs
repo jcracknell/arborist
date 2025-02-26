@@ -76,7 +76,7 @@ public partial class EvaluatedSyntaxVisitor {
                     true => InterpolatedTree.CastTree(typeName, tree),
                     // Otherwise attempt to create a TypeRef to perform the cast
                     false => InterpolatedTree.Call(
-                        InterpolatedTree.Interpolate($"{builder.CreateTypeRef(type)}.Cast"),
+                        InterpolatedTree.Interpolate($"{builder.CreateTypeRef(type, node)}.Cast"),
                         [tree]
                     )
                 }

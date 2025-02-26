@@ -254,7 +254,7 @@ public partial class InterpolatedSyntaxVisitor {
 
         return method switch {
             { ReducedFrom: { } } => _builder.CreateExpression(nameof(Expression.Call), [
-                _builder.CreateDefaultValue(_context.TypeSymbols.Expression.WithNullableAnnotation(NullableAnnotation.Annotated)),
+                _builder.CreateDefaultValue(_context.TypeSymbols.Expression.WithNullableAnnotation(NullableAnnotation.Annotated), node),
                 CurrentExpr.BindValue($"{nameof(MethodCallExpression.Method)}"),
                 ..args
             ]),

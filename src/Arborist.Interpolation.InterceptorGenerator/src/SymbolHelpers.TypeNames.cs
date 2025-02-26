@@ -64,7 +64,7 @@ internal static partial class SymbolHelpers {
     ) {
         using var writer = PooledStringWriter.Rent();
 
-        var result = TryWriteTypeName(writer, typeSymbol, typeParameterMappings)    ;
+        var result = TryWriteTypeName(writer, typeSymbol, typeParameterMappings);
         typeName = writer.ToString();
 
         return result;

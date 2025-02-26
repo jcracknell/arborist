@@ -112,7 +112,7 @@ public partial class InterpolatedSyntaxVisitor {
 
         // Otherwise we need to provide the target expression type for the lambda
         var expressionType = SymbolHelpers.GetParameterType(method, parameterIndex);
-        var expressionTypeRef = _builder.CreateTypeRef(expressionType);
+        var expressionTypeRef = _builder.CreateTypeRef(expressionType, node);
 
         return InterpolatedTree.Call(
             InterpolatedTree.Interpolate($"{expressionTypeRef}.Coerce"),

@@ -140,7 +140,7 @@ public static class InterpolationAnalyzer {
         if(dataParameter is null)
             return null;
 
-        var typeRef = treeBuilder.CreateTypeRef(dataParameter.Type);
+        var typeRef = treeBuilder.CreateTypeRef(dataParameter.Type, default);
         return InterpolatedTree.Interpolate($"var {treeBuilder.DataIdentifier} = {typeRef}.Cast({dataParameter.Name});");
     }
 
@@ -202,7 +202,7 @@ public static class InterpolationAnalyzer {
                 let parameterTypeName = builder.CreateTypeName(parameter.Type, default, typeParameterMappings)
                 select InterpolatedTree.Interpolate($"{parameterTypeName} {parameter.Name}")
             )],
-            builder.GetReparametrizedTypeConstraints(typeParameters, typeParameterMappings),
+            builder.GetReparametrizedTypeConstraints(typeParameters, typeParameterMappings, default),
             // Use an empty body, as we will emit our own body elsewhere
             InterpolatedTree.Empty
         );

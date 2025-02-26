@@ -281,7 +281,7 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
 
         CurrentExpr.SetType(typeof(ConstantExpression));
-        return _builder.CreateDefaultValue(typeSymbol.WithNullableAnnotation(NullableAnnotation.Annotated));
+        return _builder.CreateDefaultValue(typeSymbol.WithNullableAnnotation(NullableAnnotation.Annotated), node);
     }
 
     public override InterpolatedTree VisitCastExpression(CastExpressionSyntax node) {
@@ -634,6 +634,6 @@ public partial class EvaluatedSyntaxVisitor : CSharpSyntaxVisitor<InterpolatedTr
             return _context.Diagnostics.UnsupportedEvaluatedSyntax(node);
 
         CurrentExpr.SetType(typeof(ConstantExpression));
-        return _builder.CreateDefaultValue(typeSymbol.WithNullableAnnotation(NullableAnnotation.Annotated));
+        return _builder.CreateDefaultValue(typeSymbol.WithNullableAnnotation(NullableAnnotation.Annotated), node);
     }
 }

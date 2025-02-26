@@ -168,45 +168,54 @@ public class InterpolatedTreeBuilder {
             // If we have a generic type containing an anonymous type, we can generate a static local
             // function to construct the required typeref from other typeref instances
             case INamedTypeSymbol { IsGenericType: true } named:
-                return CreateTypeRefFactory(named, node);
+                return CreateTypeRefFactoryCall(named, node);
 
             default:
                 return _diagnostics.UnsupportedType(type, node);
         }
     }
 
-    private InterpolatedTree CreateTypeRefFactory(INamedTypeSymbol type, SyntaxNode? node) {
+    private InterpolatedTree CreateTypeRefFactoryCall(INamedTypeSymbol type, SyntaxNode? node) {
+        var methodName = CreateTypeRefFactory(type, node);
+
+        var typeArguments = SymbolHelpers.GetInheritedTypeArguments(type);
+        var arguments = new InterpolatedTree[typeArguments.Count];
+        for(var i = 0; i < arguments.Length; i++)
+            arguments[i] = CreateTypeRef(typeArguments[i], node);
+
+        return InterpolatedTree.Call(InterpolatedTree.Verbatim(methodName), arguments);
+    }
+
+    private string CreateTypeRefFactory(INamedTypeSymbol type, SyntaxNode? node) {
+        // Get the factory method associated with the unconstructed generic type
         var constructedFrom = (INamedTypeSymbol)type.ConstructedFrom.WithNullableAnnotation(type.NullableAnnotation);
-        if(!_typeRefFactories.TryGetValue(constructedFrom, out var methodName)) {
-            methodName = $"TypeRefFactory{_typeRefFactories.Count}";
-            _typeRefFactories[constructedFrom] = methodName;
+        if(_typeRefFactories.TryGetValue(constructedFrom, out var methodName))
+            return methodName;
 
-            var typeParameters = SymbolHelpers.GetInheritedTypeParameters(constructedFrom);
-            var typeParameterMappings = typeParameters.ZipWithIndex().ToDictionary(
-                tup => (ITypeParameterSymbol)tup.Value.WithNullableAnnotation(NullableAnnotation.None),
-                tup => $"TR{tup.Index}",
-                (IEqualityComparer<ITypeParameterSymbol>)SymbolEqualityComparer.Default
-            );
+        methodName = $"TypeRefFactory{_typeRefFactories.Count}";
 
-            var typeArguments = Enumerable.Range(0, typeParameters.Count).MkString("<", i => $"TR{i}", ", ", ">");
-            var reparametrizedTypeName = CreateTypeName(constructedFrom, default, typeParameterMappings);
-
-            _methodDefinitions.Add(InterpolatedTree.MethodDefinition(
-                InterpolatedTree.Interpolate($"static global::Arborist.Interpolation.Internal.TypeRef<{reparametrizedTypeName}> {methodName}{typeArguments}"),
-                [..(
-                    from i in Enumerable.Range(0, typeParameters.Count)
-                    let typeParameter = typeParameters[i]
-                    select InterpolatedTree.Verbatim($"global::Arborist.Interpolation.Internal.TypeRef<TR{i}> tr{i}")
-                )],
-                GetReparametrizedTypeConstraints(typeParameters, typeParameterMappings, node),
-                InterpolatedTree.ArrowBody(InterpolatedTree.Verbatim("default!"))
-            ));
-        }
-
-        return InterpolatedTree.Call(
-            InterpolatedTree.Verbatim(methodName),
-            SymbolHelpers.GetInheritedTypeArguments(type).SelectEager(ta => CreateTypeRef(ta, node))
+        var typeParameters = SymbolHelpers.GetInheritedTypeParameters(constructedFrom);
+        var typeParameterMappings = typeParameters.ZipWithIndex().ToDictionary(
+            tup => (ITypeParameterSymbol)tup.Value.WithNullableAnnotation(NullableAnnotation.None),
+            tup => $"TR{tup.Index}",
+            (IEqualityComparer<ITypeParameterSymbol>)SymbolEqualityComparer.Default
         );
+
+        var typeArguments = Enumerable.Range(0, typeParameters.Count).MkString("<", i => $"TR{i}", ", ", ">");
+        var reparametrizedTypeName = CreateTypeName(constructedFrom, node, typeParameterMappings);
+
+        _methodDefinitions.Add(InterpolatedTree.MethodDefinition(
+            InterpolatedTree.Interpolate($"static global::Arborist.Interpolation.Internal.TypeRef<{reparametrizedTypeName}> {methodName}{typeArguments}"),
+            [..(
+                from i in Enumerable.Range(0, typeParameters.Count)
+                select InterpolatedTree.Verbatim($"global::Arborist.Interpolation.Internal.TypeRef<TR{i}> tr{i}")
+            )],
+            GetReparametrizedTypeConstraints(typeParameters, typeParameterMappings, node),
+            InterpolatedTree.ArrowBody(InterpolatedTree.Verbatim("default!"))
+        ));
+
+        _typeRefFactories[constructedFrom] = methodName;
+        return methodName;
     }
 
     public IReadOnlyList<InterpolatedTree> GetReparametrizedTypeConstraints(

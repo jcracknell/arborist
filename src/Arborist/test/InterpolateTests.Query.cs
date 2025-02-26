@@ -66,6 +66,43 @@ public partial class InterpolateTests {
     }
 
     [Fact]
+    public void Should_handle_group_by_clause() {
+        var data = new {
+            NameSelector = ExpressionOn<Cat>.Of(c => c.Name),
+            AgeSelector = ExpressionOn<Cat>.Of(c => c.Age)
+        };
+
+        var expected = ExpressionOn<Owner>.Of(
+            o => o.Cats.GroupBy(c => c.Age, c => c.Name)
+        );
+
+        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+            from c in o.Cats
+            group x.SpliceBody(c, x.Data.NameSelector) by x.SpliceBody(c, x.Data.AgeSelector)
+        );
+
+        Assert.Equivalent(expected, interpolated);
+    }
+
+    [Fact]
+    public void Should_handle_group_by_clause_with_identity_element_selector() {
+        var data = new {
+            AgeSelector = ExpressionOn<Cat>.Of(c => c.Age)
+        };
+
+        var expected = ExpressionOn<Owner>.Of(
+            o => o.Cats.GroupBy(c => c.Age)
+        );
+
+        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+            from c in o.Cats
+            group c by x.SpliceBody(c, x.Data.AgeSelector)
+        );
+
+        Assert.Equivalent(expected, interpolated);
+    }
+
+    [Fact]
     public void Should_handle_join_clause() {
         var data = new {
             OwnerCats = ExpressionOn<Owner>.Of(o => o.Cats),

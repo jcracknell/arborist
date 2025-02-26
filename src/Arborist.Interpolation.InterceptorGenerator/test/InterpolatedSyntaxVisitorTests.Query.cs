@@ -463,6 +463,55 @@ public partial class InterpolatedSyntaxVisitorTests {
     }
 
     [Fact]
+    public void Should_handle_group_by_clause_with_identity_element_selector() {
+        var results = InterpolationInterceptorGeneratorTestBuilder.Create()
+        .Generate(@"
+            var data = new {
+                AgeSelector = ExpressionOn<Cat>.Of(c => c.Age)
+            };
+
+            ExpressionOn<Owner>.Interpolate(data, (x, o) =>
+                from c in o.Cats
+                group c by x.SpliceBody(c, x.Data.AgeSelector)
+            );
+        ");
+
+        Assert.Equal(1, results.AnalysisResults.Count);
+        CodeGenAssert.CodeEqual(
+            expected: @"
+                (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
+                    var __e0 => global::System.Linq.Expressions.Expression.Call(
+                        default(global::System.Linq.Expressions.Expression),
+                        __e0.Method,
+                        __e0.Arguments[0],
+                        (global::System.Linq.Expressions.LambdaExpression)(__e0.Arguments[1]) switch {
+                            var __e1 => global::System.Linq.Expressions.Expression.Lambda(
+                                (global::System.Linq.Expressions.MethodCallExpression)(__e1.Body) switch {
+                                    var __e2 => (global::System.Linq.Expressions.MemberExpression)(__e2.Arguments[1]) switch {
+                                        var __e3 => __data.AgeSelector
+                                    } switch {
+                                        var __v0 => global::Arborist.ExpressionHelper.Replace(
+                                            __v0.Body,
+                                            global::Arborist.Internal.Collections.SmallDictionary.Create(
+                                                new global::System.Collections.Generic.KeyValuePair<global::System.Linq.Expressions.Expression, global::System.Linq.Expressions.Expression>(
+                                                    __v0.Parameters[0],
+                                                    __e2.Arguments[0]
+                                                )
+                                            )
+                                        )
+                                    }
+                                },
+                                __e1.Parameters
+                            )
+                        }
+                    )
+                }
+            ",
+            actual: results.AnalysisResults[0].BodyTree.ToString()
+        );
+    }
+
+    [Fact]
     public void Should_handle_let_clause() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"

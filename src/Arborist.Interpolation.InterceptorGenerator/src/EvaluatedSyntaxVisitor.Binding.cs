@@ -126,7 +126,7 @@ public partial class EvaluatedSyntaxVisitor {
         }
 
         protected override InterpolatedTree CreateResult(InterpolatedTree value) =>
-            InterpolatedTree.TupleBind(
+            InterpolatedTree.BindTuple(
                 CapturedValueBindings.SelectEager(b => new KeyValuePair<string, InterpolatedTree>(
                     key: b.Key,
                     value: b.Value.Replace(BindingPlaceholder, parent.Identifier)

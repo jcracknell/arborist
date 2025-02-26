@@ -87,7 +87,7 @@ public partial class InterpolatedSyntaxVisitor {
                 ]
             );
 
-        return InterpolatedTree.TupleBind(
+        return InterpolatedTree.BindTuple(
             bindings,
             method.Parameters.Length switch {
                 // There are no parameters requiring replacement in the case of e.g. an Expression<Func<A>>,

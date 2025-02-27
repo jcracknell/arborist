@@ -55,8 +55,8 @@ public class OrderingTests {
     }
 
     [Fact]
-    public void Reversed_should_work_as_expected() {
-        var actual = Ordering.By(OrderingTerm.Descending("foo"), OrderingTerm.Ascending("bar")).Reversed();
+    public void InvertDirection_should_work_as_expected() {
+        var actual = Ordering.By(OrderingTerm.Descending("foo"), OrderingTerm.Ascending("bar")).InvertDirection();
 
         Assert.Equal(2, actual.Count());
         Assert.Equal(OrderingTerm.Ascending("foo"), actual.ElementAt(0));

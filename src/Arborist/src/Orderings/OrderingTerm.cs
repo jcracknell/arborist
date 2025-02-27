@@ -26,9 +26,9 @@ public static class OrderingTerm {
         Create(selector, OrderingDirection.Descending);
 
     /// <summary>
-    /// Creates an <see cref="OrderingTerm{TSelector}"/> with the same selector and the opposite
-    /// <see cref="OrderingDirection"/>.
+    /// Inverts the direction of the subject <see cref="OrderingTerm{TSelector}"/>, returning a term with the
+    /// same selector and the opposite <see cref="OrderingDirection"/>.
     /// </summary>
-    public static OrderingTerm<TSelector> Reversed<TSelector>(this OrderingTerm<TSelector> term) =>
-        Create(term.Selector, term.Direction.Reversed());
+    public static OrderingTerm<TSelector> InvertDirection<TSelector>(this OrderingTerm<TSelector> term) =>
+        Create(term.Selector, term.Direction.InvertDirection());
 }

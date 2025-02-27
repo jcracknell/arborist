@@ -2,9 +2,9 @@ namespace Arborist.Orderings;
 
 public static class OrderingDirectionExtensions {
     /// <summary>
-    /// Returns the opposite <see cref="OrderingDirection"/> value.
+    /// Inverts the subject <see cref="OrderingDirection"/>, returning the opposite value.
     /// </summary>
-    public static OrderingDirection Reversed(this OrderingDirection direction) =>
+    public static OrderingDirection InvertDirection(this OrderingDirection direction) =>
         direction switch {
             OrderingDirection.Ascending => OrderingDirection.Descending,
             OrderingDirection.Descending => OrderingDirection.Ascending,

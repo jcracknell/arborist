@@ -51,9 +51,9 @@ public static class Ordering {
         Ordering<TSelector>.ByDescending(selector);
 
     /// <summary>
-    /// Reverses the direction of the subject <paramref name="ordering"/>, returning an ordering where the
+    /// Inverts the direction of the subject <paramref name="ordering"/>, returning an ordering where the
     /// terms have the opposite <see cref="OrderingDirection"/>.
     /// </summary>
-    public static Ordering<TSelector> Reversed<TSelector>(this Ordering<TSelector> ordering) =>
-        ordering.Select(OrderingTerm.Reversed);
+    public static Ordering<TSelector> InvertDirection<TSelector>(this Ordering<TSelector> ordering) =>
+        ordering.Select(OrderingTerm.InvertDirection);
 }

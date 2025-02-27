@@ -5,13 +5,21 @@ public class OrderingTests {
     public void CollectionBuilderAttribute_should_work_as_expected() {
         var expected = Ordering.By(OrderingTerm.Create("foo", OrderingDirection.Ascending));
         Ordering<string> actual = [OrderingTerm.Create("foo", OrderingDirection.Ascending)];
-        Assert.Equivalent(expected, actual);
+        Assert.Equivalent(expected, actual, strict: true);
     }
 
     [Fact]
     public void Unordered_should_be_empty() {
         Assert.True(Ordering<string>.Unordered.IsEmpty);
         Assert.False(Ordering<string>.Unordered.Any());
+    }
+
+    [Fact]
+    public void ApplyDirection_should_work_as_expected() {
+        var ordering = Ordering.By(OrderingTerm.Ascending("foo"), OrderingTerm.Descending("bar"));
+
+        Assert.Equivalent(ordering, ordering.ApplyDirection(OrderingDirection.Ascending), strict: true);
+        Assert.Equivalent(ordering.Invert(), ordering.ApplyDirection(OrderingDirection.Descending), strict: true);
     }
 
     [Fact]
@@ -55,8 +63,8 @@ public class OrderingTests {
     }
 
     [Fact]
-    public void InvertDirection_should_work_as_expected() {
-        var actual = Ordering.By(OrderingTerm.Descending("foo"), OrderingTerm.Ascending("bar")).InvertDirection();
+    public void Invert_should_work_as_expected() {
+        var actual = Ordering.By(OrderingTerm.Descending("foo"), OrderingTerm.Ascending("bar")).Invert();
 
         Assert.Equal(2, actual.Count());
         Assert.Equal(OrderingTerm.Ascending("foo"), actual.ElementAt(0));

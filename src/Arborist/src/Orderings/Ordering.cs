@@ -6,6 +6,22 @@ namespace Arborist.Orderings;
 /// <seealso cref="Ordering{TSelector}"/>
 public static class Ordering {
     /// <summary>
+    /// Applies the provided <paramref name="direction"/> to the subject <see cref="Ordering{TSelector}"/>,
+    /// returning the inverse ordering if the <paramref name="direction"/> is <see cref="OrderingDirection.Descending"/>.
+    /// </summary>
+    /// <remarks>
+    /// This method is useful to conditionally invert "default" <see cref="Ordering{TSelector}"/>
+    /// instances or translations of <typeparamref name="TSelector"/> values on the assumption that
+    /// <see cref="OrderingDirection.Ascending"/> is the default <see cref="OrderingDirection"/>.
+    /// </remarks>
+    /// <seealso cref="Invert{TSelector}"/>
+    public static Ordering<TSelector> ApplyDirection<TSelector>(
+        this Ordering<TSelector> ordering,
+        OrderingDirection direction
+    ) =>
+        OrderingDirection.Descending == direction ? ordering.Invert() : ordering;
+
+    /// <summary>
     /// Creates a single-term <see cref="Ordering{TSelector}"/> using the specified <paramref name="selector"/>
     /// and <paramref name="direction"/>.
     /// </summary>
@@ -54,6 +70,6 @@ public static class Ordering {
     /// Inverts the direction of the subject <paramref name="ordering"/>, returning an ordering where the
     /// terms have the opposite <see cref="OrderingDirection"/>.
     /// </summary>
-    public static Ordering<TSelector> InvertDirection<TSelector>(this Ordering<TSelector> ordering) =>
-        ordering.Select(OrderingTerm.InvertDirection);
+    public static Ordering<TSelector> Invert<TSelector>(this Ordering<TSelector> ordering) =>
+        ordering.Select(OrderingTerm.Invert);
 }

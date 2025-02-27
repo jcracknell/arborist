@@ -63,6 +63,22 @@ public class OrderingTests {
     }
 
     [Fact]
+    public void ByAscending_should_work_as_expected() {
+        var actual = Ordering.ByAscending("foo");
+
+        Assert.Equal(1, actual.Count());
+        Assert.Equal(OrderingTerm.Ascending("foo"), actual.ElementAt(0));
+    }
+
+    [Fact]
+    public void ByDescending_should_work_as_expected() {
+        var actual = Ordering.ByDescending("foo");
+
+        Assert.Equal(1, actual.Count());
+        Assert.Equal(OrderingTerm.Descending("foo"), actual.ElementAt(0));
+    }
+
+    [Fact]
     public void Invert_should_work_as_expected() {
         var actual = Ordering.By(OrderingTerm.Descending("foo"), OrderingTerm.Ascending("bar")).Invert();
 

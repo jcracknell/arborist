@@ -74,7 +74,7 @@ public interface Ordering<out TSelector> : IEnumerable<OrderingTerm<TSelector>>,
     /// sorted in the <see cref="OrderingDirection.Descending"/> direction.
     /// </summary>
     public static Ordering<TSelector> ByDescending(TSelector selector) =>
-        By(selector, OrderingDirection.Ascending);
+        By(selector, OrderingDirection.Descending);
 
     /// <summary>
     /// The first <see cref="OrderingTerm{TSelector}"/> in the ordering.

@@ -149,6 +149,22 @@ public class OrderingTests {
     }
 
     [Fact]
+    public void TranslateSelectors_should_work_as_expected() {
+        var actual = Ordering.ByDescending("ab").ThenByAscending("cd").TranslateSelectors(
+            s => s.Select((c, i) => OrderingTerm.Create(c, (i % 2) switch {
+                0 => OrderingDirection.Ascending,
+                _ => OrderingDirection.Descending
+            }))
+        );
+
+        Assert.Equal(4, actual.Count());
+        Assert.Equal(OrderingTerm.Descending('a'), actual.ElementAt(0));
+        Assert.Equal(OrderingTerm.Ascending('b'), actual.ElementAt(1));
+        Assert.Equal(OrderingTerm.Ascending('c'), actual.ElementAt(2));
+        Assert.Equal(OrderingTerm.Descending('d'), actual.ElementAt(3));
+    }
+
+    [Fact]
     public void Where_should_work_as_expected() {
         var actual = Ordering.ByAscending("a").ThenByDescending("aa").ThenByAscending("aaa")
         .Where(term => term.Selector.Length % 2 == 1);

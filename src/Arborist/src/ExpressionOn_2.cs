@@ -54,19 +54,6 @@ public static partial class ExpressionOn<A, B> {
         ExpressionHelper.ConvertCheckedCore<Func<A, B, T>>(typeof(T), expression);
 
     /// <summary>
-    /// Grafts the provided <paramref name="branch"/> expression onto the <paramref name="root"/> expression,
-    /// replacing references to its parameter with the body of the <paramref name="root"/> expression.
-    /// </summary>
-    public static Expression<Func<A, B, RR>> Graft<R, RR>(
-        Expression<Func<A, B, R>> root,
-        Expression<Func<R, RR>> branch
-    ) =>
-        Expression.Lambda<Func<A, B, RR>>(
-            body: ExpressionHelper.Replace(branch.Body, branch.Parameters[0], root.Body),
-            parameters: root.Parameters
-        );
-
-    /// <summary>
     /// Converts the provided <paramref name="expression"/> so that its declared result type is nullable.
     /// </summary>
     public static Expression<Func<A, B, R?>> Nullable<R>(

@@ -73,18 +73,6 @@ public static partial class ExpressionOn<A> {
     public static MethodInfo GetMethodInfo(Expression<Action<A>> expression) =>
         ExpressionHelper.GetMethodInfo(expression);
 
-    /// <summary>
-    /// Grafts the provided <paramref name="branch"/> expression onto the <paramref name="root"/> expression,
-    /// replacing references to its parameter with the body of the <paramref name="root"/> expression.
-    /// </summary>
-    public static Expression<Func<A, RR>> Graft<R, RR>(
-        Expression<Func<A, R>> root,
-        Expression<Func<R, RR>> branch
-    ) =>
-        Expression.Lambda<Func<A, RR>>(
-            body: ExpressionHelper.Replace(branch.Body, branch.Parameters[0], root.Body),
-            parameters: root.Parameters
-        );
 
     /// <summary>
     /// The identity expression: <c>a => a</c>.

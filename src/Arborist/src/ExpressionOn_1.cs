@@ -92,6 +92,29 @@ public static partial class ExpressionOn<A> {
     public static Expression<Func<A, A>> Identity { get; } = Of(a => a);
 
     /// <summary>
+    /// Converts the provided <paramref name="expression"/> so that its declared result type is nullable.
+    /// </summary>
+    public static Expression<Func<A, R?>> Nullable<R>(
+        Expression<Func<A, R>> expression
+    )
+        where R : class =>
+        ExpressionHelper.Nullable(expression);
+
+    /// <summary>
+    /// Wraps the provided <paramref name="expression"/> to produce a <see cref="System.Nullable{T}"/>
+    /// result value.
+    /// </summary>
+    /// <param name="dummy">
+    /// Disambiguates overloads by type parameter constraints.
+    /// </param>
+    public static Expression<Func<A, Nullable<R>>> Nullable<R>(
+        Expression<Func<A, R>> expression,
+        Nullable<R> dummy = default
+    )
+        where R : struct =>
+        ExpressionHelper.Nullable(expression);
+
+    /// <summary>
     /// Attempts to get a constructor identified by the provided <paramref name="expression"/>.
     /// </summary>
     /// <remarks>

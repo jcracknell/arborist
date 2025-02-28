@@ -65,4 +65,27 @@ public static partial class ExpressionOn<A, B, C, D> {
             body: ExpressionHelper.Replace(branch.Body, branch.Parameters[0], root.Body),
             parameters: root.Parameters
         );
+
+    /// <summary>
+    /// Converts the provided <paramref name="expression"/> so that its declared result type is nullable.
+    /// </summary>
+    public static Expression<Func<A, B, C, D, R?>> Nullable<R>(
+        Expression<Func<A, B, C, D, R>> expression
+    )
+        where R : class =>
+        ExpressionHelper.Nullable(expression);
+
+    /// <summary>
+    /// Wraps the provided <paramref name="expression"/> to produce a <see cref="System.Nullable{T}"/>
+    /// result value.
+    /// </summary>
+    /// <param name="dummy">
+    /// Disambiguates overloads by type parameter constraints.
+    /// </param>
+    public static Expression<Func<A, B, C, D, Nullable<R>>> Nullable<R>(
+        Expression<Func<A, B, C, D, R>> expression,
+        Nullable<R> dummy = default
+    )
+        where R : struct =>
+        ExpressionHelper.Nullable(expression);
 }

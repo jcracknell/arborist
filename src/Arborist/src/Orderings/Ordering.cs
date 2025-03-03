@@ -4,7 +4,7 @@ namespace Arborist.Orderings;
 /// Static factory for <see cref="Ordering{TSelector}"/> instances.
 /// </summary>
 /// <seealso cref="Ordering{TSelector}"/>
-public static class Ordering {
+public static partial class Ordering {
     /// <summary>
     /// Applies the provided <paramref name="direction"/> to the subject <see cref="Ordering{TSelector}"/>,
     /// returning the inverse ordering if the <paramref name="direction"/> is <see cref="OrderingDirection.Descending"/>.

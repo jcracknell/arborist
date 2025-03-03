@@ -68,34 +68,6 @@ public static partial class OrderingExtensions {
     }
 
     /// <summary>
-    /// Applies the provided selector translation <paramref name="projection"/> to the selectors of the
-    /// subject ordering, ensuring that the <see cref="OrderingDirection"/> of the input terms is
-    /// correctly applied to the terms of the resulting ordering.
-    /// </summary>
-    /// <param name="projection">
-    /// Projection function translating input <typeparamref name="TSelector"/> values into translated
-    /// orderings for the <see cref="OrderingDirection.Ascending"/> direction.
-    /// </param>
-    public static Ordering<TResult> TranslateSelectors<TSelector, TResult>(
-        this Ordering<TSelector> ordering,
-        Func<TSelector, IEnumerable<OrderingTerm<TResult>>> projection
-    ) {
-        if(ordering.IsEmpty)
-            return OrderingNil<TResult>.Instance;
-
-        var builder = new OrderingBuilder<TResult>();
-        var rest = ordering;
-        do {
-            foreach(var term in projection(rest.Term.Selector))
-                builder.Add(term.ApplyDirection(rest.Term.Direction));
-
-            rest = rest.Rest;
-        } while(!rest.IsEmpty);
-
-        return builder.Build();
-    }
-
-    /// <summary>
     /// Filters the terms of the subject ordering, returning a new <see cref="Ordering{TSelector}"/> containing only the
     /// terms satisfying the provided <paramref name="predicate"/>.
     /// </summary>

@@ -1,4 +1,8 @@
+using Arborist.TestFixtures;
+
 namespace Arborist.Orderings;
+
+using OwnerOrdering = Ordering<Expression<Func<Owner, object?>>>;
 
 public class OrderingTests {
     [Fact]
@@ -78,6 +82,7 @@ public class OrderingTests {
         Assert.Equal(OrderingTerm.Descending("foo"), actual.ElementAt(0));
     }
 
+
     [Fact]
     public void Invert_should_work_as_expected() {
         var actual = Ordering.By(OrderingTerm.Descending("foo"), OrderingTerm.Ascending("bar")).Invert();
@@ -146,22 +151,6 @@ public class OrderingTests {
         Assert.Equal(2, actual.Count());
         Assert.Equal(OrderingTerm.Ascending("a"), actual.ElementAt(0));
         Assert.Equal(OrderingTerm.Descending("b"), actual.ElementAt(1));
-    }
-
-    [Fact]
-    public void TranslateSelectors_should_work_as_expected() {
-        var actual = Ordering.ByDescending("ab").ThenByAscending("cd").TranslateSelectors(
-            s => s.Select((c, i) => OrderingTerm.Create(c, (i % 2) switch {
-                0 => OrderingDirection.Ascending,
-                _ => OrderingDirection.Descending
-            }))
-        );
-
-        Assert.Equal(4, actual.Count());
-        Assert.Equal(OrderingTerm.Descending('a'), actual.ElementAt(0));
-        Assert.Equal(OrderingTerm.Ascending('b'), actual.ElementAt(1));
-        Assert.Equal(OrderingTerm.Ascending('c'), actual.ElementAt(2));
-        Assert.Equal(OrderingTerm.Descending('d'), actual.ElementAt(3));
     }
 
     [Fact]

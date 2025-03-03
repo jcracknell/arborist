@@ -25,7 +25,7 @@ public static partial class ExpressionOn<A, B> {
         Expression<Func<J, R>> branch
     )
         where I : J?
-        where J : class
+        where J : class?
         where R : class? =>
         Expression.Lambda<Func<A, B, R?>>(
             body: Expression.Condition(
@@ -58,7 +58,7 @@ public static partial class ExpressionOn<A, B> {
         Nullable<R> dummy = default
     )
         where I : J?
-        where J : class
+        where J : class?
         where R : struct =>
         Expression.Lambda<Func<A, B, Nullable<R>>>(
             body: Expression.Condition(
@@ -90,7 +90,7 @@ public static partial class ExpressionOn<A, B> {
         Expression<Func<J, Nullable<R>>> branch
     )
         where I : J?
-        where J : class
+        where J : class?
         where R : struct =>
         Expression.Lambda<Func<A, B, Nullable<R>>>(
             body: Expression.Condition(

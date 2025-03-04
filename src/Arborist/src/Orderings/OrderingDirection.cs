@@ -5,6 +5,6 @@ namespace Arborist.Orderings;
 
 [JsonConverter(typeof(OrderingDirectionJsonConverter))]
 public enum OrderingDirection {
-    Ascending = 1,
-    Descending = -1
+    Ascending,
+    Descending
 }

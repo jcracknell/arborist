@@ -184,4 +184,47 @@ public class OrderingExtensionTests {
 
         Assert.Equal(expected, actual);
     }
+
+    [Fact]
+    public void Take_should_return_the_expected_terms() {
+        var ordering = Ordering<CatOrderingSelector>.By(
+            OrderingTerm.Ascending(new CatOrderingSelector.Name()),
+            OrderingTerm.Descending(new CatOrderingSelector.Id()),
+            OrderingTerm.Descending(new CatOrderingSelector.Age())
+        );
+
+        var expected = Ordering<CatOrderingSelector>.By(
+            OrderingTerm.Ascending(new CatOrderingSelector.Name()),
+            OrderingTerm.Descending(new CatOrderingSelector.Id())
+        );
+
+        Assert.Equal(expected, ordering.Take(2));
+    }
+
+    [Fact]
+    public void Take_should_return_the_expected_number_of_terms() {
+        var ordering = Ordering<CatOrderingSelector>.By(
+            OrderingTerm.Ascending(new CatOrderingSelector.Name()),
+            OrderingTerm.Descending(new CatOrderingSelector.Id()),
+            OrderingTerm.Descending(new CatOrderingSelector.Age())
+        );
+
+        Assert.Equal(0, ordering.Take(0).Count());
+        Assert.Equal(1, ordering.Take(1).Count());
+        Assert.Equal(2, ordering.Take(2).Count());
+    }
+
+    [Fact]
+    public void Take_should_return_the_empty_ordering_for_negative_count() {
+        var ordering = Ordering<CatOrderingSelector>.By(
+            OrderingTerm.Ascending(new CatOrderingSelector.Name()),
+            OrderingTerm.Descending(new CatOrderingSelector.Id()),
+            OrderingTerm.Descending(new CatOrderingSelector.Age())
+        );
+
+        Assert.Equal(
+            expected: Ordering<CatOrderingSelector>.Unordered,
+            actual: ordering.Take(-1)
+        );
+    }
 }

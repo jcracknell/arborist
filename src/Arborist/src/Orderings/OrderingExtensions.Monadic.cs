@@ -68,6 +68,29 @@ public static partial class OrderingExtensions {
     }
 
     /// <summary>
+    /// Returns an <see cref="Ordering{TSelector}"/> containing the specified number of contiguous terms
+    /// from the start of the subject ordering.
+    /// </summary>
+    /// <param name="count">
+    /// The number of terms to include in the result ordering.
+    /// </param>
+    public static Ordering<TSelector> Take<TSelector>(this Ordering<TSelector> ordering, int count) {
+        if(ordering.IsEmpty || count <= 0)
+            return Ordering<TSelector>.Unordered;
+
+        var rest = ordering;
+        var remaining = count;
+        var builder = new OrderingBuilder<TSelector>();
+        do {
+            builder.Add(rest.Term);
+            remaining -= 1;
+            rest = rest.Rest;
+        } while(remaining > 0 && !rest.IsEmpty);
+
+        return builder.Build();
+    }
+
+    /// <summary>
     /// Filters the terms of the subject ordering, returning a new <see cref="Ordering{TSelector}"/> containing only the
     /// terms satisfying the provided <paramref name="predicate"/>.
     /// </summary>

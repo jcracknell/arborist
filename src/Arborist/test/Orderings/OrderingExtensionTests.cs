@@ -5,6 +5,35 @@ namespace Arborist.Orderings;
 using OwnerOrdering = Ordering<Expression<Func<Owner, object?>>>;
 
 public class OrderingExtensionTests {
+    private abstract class CatOrderingSelector : IOrderingSelector<CatOrderingSelector> {
+        private CatOrderingSelector() { }
+
+        public abstract bool IsAbsoluteOrdering { get; }
+        public abstract override int GetHashCode();
+        public abstract bool Equals(CatOrderingSelector? other);
+
+        public override bool Equals(object? obj) =>
+            Equals(obj as CatOrderingSelector);
+
+        public sealed class Id : CatOrderingSelector {
+            public override bool IsAbsoluteOrdering => true;
+            public override int GetHashCode() => nameof(Id).GetHashCode();
+            public override bool Equals(CatOrderingSelector? other) => other is Id;
+        }
+
+        public sealed class Name : CatOrderingSelector {
+            public override bool IsAbsoluteOrdering => false;
+            public override int GetHashCode() => nameof(Name).GetHashCode();
+            public override bool Equals(CatOrderingSelector? other) => other is Name;
+        }
+
+        public sealed class Age : CatOrderingSelector {
+            public override bool IsAbsoluteOrdering => false;
+            public override int GetHashCode() => nameof(Age).GetHashCode();
+            public override bool Equals(CatOrderingSelector? other) => other is Age;
+        }
+    }
+
     [Fact]
     public void GraftSelectorExpressionsTo_should_work_as_expected() {
         var actual = OwnerOrdering.ByAscending(o => o.Name).ThenByDescending(o => o.Id)
@@ -118,5 +147,41 @@ public class OrderingExtensionTests {
         Assert.Equal(OrderingTerm.Ascending('b'), actual.ElementAt(1));
         Assert.Equal(OrderingTerm.Ascending('c'), actual.ElementAt(2));
         Assert.Equal(OrderingTerm.Descending('d'), actual.ElementAt(3));
+    }
+
+    [Fact]
+    public void Simplify_should_drop_terms_with_duplicated_selectors() {
+        var expected = Ordering<int>.By([
+            OrderingTerm.Ascending(1),
+            OrderingTerm.Descending(2),
+            OrderingTerm.Descending(3)
+        ]);
+
+        var actual = Ordering<int>.By([
+            OrderingTerm.Ascending(1),
+            OrderingTerm.Descending(2),
+            OrderingTerm.Descending(1),
+            OrderingTerm.Descending(3)
+        ])
+        .Simplify();
+
+        Assert.Equal(expected, actual);
+    }
+
+    [Fact]
+    public void Simplify_should_drop_terms_following_absolute_selector() {
+        var expected = Ordering<CatOrderingSelector>.By(
+            OrderingTerm.Ascending(new CatOrderingSelector.Name()),
+            OrderingTerm.Descending(new CatOrderingSelector.Id())
+        );
+
+        var actual = Ordering<CatOrderingSelector>.By(
+            OrderingTerm.Ascending(new CatOrderingSelector.Name()),
+            OrderingTerm.Descending(new CatOrderingSelector.Id()),
+            OrderingTerm.Descending(new CatOrderingSelector.Age())
+        )
+        .Simplify();
+
+        Assert.Equal(expected, actual);
     }
 }

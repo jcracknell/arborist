@@ -2,6 +2,60 @@ namespace Arborist.Orderings;
 
 public static partial class OrderingExtensions {
     /// <summary>
+    /// Simplifies the subject ordering, omitting terms with previously observed selectors and
+    /// dropping all terms following a term defining an absolute ordering.
+    /// </summary>
+    /// <seealso cref="IOrderingSelector{TSelf}"/>
+    /// <seealso cref="IOrderingSelectorComparer{TSelector}"/>
+    public static Ordering<TSelector> Simplify<TSelector>(this Ordering<TSelector> ordering) =>
+        ordering.Simplify(OrderingSelectorComparer<TSelector>.Default);
+
+    /// <summary>
+    /// Simplifies the subject ordering, omitting terms with previously observed selectors and
+    /// dropping all terms following a term defining an absolute ordering.
+    /// </summary>
+    /// <seealso cref="IOrderingSelector{TSelf}"/>
+    /// <seealso cref="IOrderingSelectorComparer{TSelector}"/>
+    public static Ordering<TSelector> Simplify<TSelector>(
+        this Ordering<TSelector> ordering,
+        IEqualityComparer<TSelector> equalityComparer
+    ) =>
+        ordering.Simplify(new DefaultOrderingSelectorComparer<TSelector>(equalityComparer));
+
+    /// <summary>
+    /// Simplifies the subject ordering, omitting terms with previously observed selectors and
+    /// dropping all terms following a term defining an absolute ordering.
+    /// </summary>
+    public static Ordering<TSelector> Simplify<TSelector>(
+        this Ordering<TSelector> ordering,
+        IOrderingSelectorComparer<TSelector> selectorComparer
+    ) {
+        if(ordering.IsEmpty)
+            return ordering;
+
+        var observed = default(HashSet<TSelector>);
+        var builder = new OrderingBuilder<TSelector>();
+        var rest = ordering;
+        do {
+            var selector = rest.Term.Selector;
+
+            // Drop previously observed selectors
+            if(observed?.Contains(selector) is not true) {
+                builder.Add(rest.Term);
+
+                // Drop all terms following a term whose selector represents an absolute ordering
+                if(selector is not null && selectorComparer.IsAbsoluteOrdering(selector))
+                    break;
+            }
+
+            (observed ??= new(selectorComparer)).Add(selector);
+            rest = rest.Rest;
+        } while(!rest.IsEmpty);
+
+        return builder.Build();
+    }
+
+    /// <summary>
     /// Adds a term specified by the provided <paramref name="selector"/> and <paramref name="direction"/> to
     /// the subject ordering, returning a new instance.
     /// </summary>

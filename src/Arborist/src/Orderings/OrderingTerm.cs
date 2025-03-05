@@ -23,21 +23,21 @@ public static class OrderingTerm {
     /// and <paramref name="direction"/>.
     /// </summary>
     public static OrderingTerm<TSelector> Create<TSelector>(TSelector selector, OrderingDirection direction) =>
-        new OrderingTermImpl<TSelector>(selector, direction);
+        OrderingTerm<TSelector>.Create(selector, direction);
 
     /// <summary>
     /// Constructs an <see cref="OrderingTerm{TSelector}"/> from the provided <paramref name="selector"/>
     /// sorted in the <see cref="OrderingDirection.Ascending"/> direction.
     /// </summary>
     public static OrderingTerm<TSelector> Ascending<TSelector>(TSelector selector) =>
-        Create(selector, OrderingDirection.Ascending);
+        OrderingTerm<TSelector>.Ascending(selector);
 
     /// <summary>
     /// Constructs an <see cref="OrderingTerm{TSelector}"/> from the provided <paramref name="selector"/>
     /// sorted in the <see cref="OrderingDirection.Descending"/> direction.
     /// </summary>
     public static OrderingTerm<TSelector> Descending<TSelector>(TSelector selector) =>
-        Create(selector, OrderingDirection.Descending);
+        OrderingTerm<TSelector>.Descending(selector);
 
     /// <summary>
     /// Inverts the direction of the subject <see cref="OrderingTerm{TSelector}"/>, returning a term with the

@@ -298,31 +298,320 @@ OrderingTerm&lt;TSelector&gt; instances. An OrderingTerm&lt;TSelector&gt; is def
 of a selector value identifying a sort of some kind, and an OrderingDirection - one of Ascending or Descending.
 
 At a glance this might seem like a departure from the expression tooling goals of this library, however in practice
-generating IQueryable&lt;T&gt; orderings is a common pain point. As such, extension methods are provided which enable
-the application of an Ordering&lt;Expression&lt;Func&lt;E, V&gt;&gt;&gt; to an IQueryable&lt;E&gt; instance.
+composing expression-based IQueryable&lt;T&gt; orderings is a common pain point. As such, extension methods are
+provided which make it easy to apply an Ordering&lt;Expression&lt;Func&lt;E, A&gt;&gt;&gt; to an
+IQueryable&lt;E&gt; instance.
 
-Generating such an ordering would typically be accomplished by using the monadic extensions (Select or SelectMany) to
-map a domain model selector type to the appropriate expression-based ordering, likely using expression
-helpers to recursively splice in orderings defined on other related entities.
+**An Ordering&lt;TSelector&gt; is an immutable singly-linked list.** All operations performed on an
+ordering return a new instance reflecting the changes resulting from the operation, providing a natural "fluent"
+API aligned with the IEnumerable&lt;T&gt; based extension methods.
+
+The ThenBy family of extension methods make it easy to combine an ordering with additional terms or even
+other orderings:
+
+```csharp
+public static Ordering<TSelector> ThenBy<TSelector>(
+    this Ordering<TSelector> ordering,
+    TSelector selector,
+    OrderingDirection direction
+);
+
+public static Ordering<TSelector> ThenBy<TSelector>(
+    this Ordering<TSelector> ordering,
+    OrderingTerm<TSelector> term
+);
+
+public static Ordering<TSelector> ThenBy<TSelector>(
+    this Ordering<TSelector> ordering,
+    IEnumerable<OrderingTerm<TSelector>> terms
+);
+```
+
+### Composable orderings for EntityFramework
+
+The sorting API associated with the IQueryable&lt;E&gt; interface relies entirely on the OrderBy and ThenBy
+extension methods which translate a selector Expression&lt;Func&lt;E,&nbsp;A&gt;&gt; on the sorted entity
+into an SQL order by clause (or whatever equivalent syntactic structure applies to your backing storage).
+
+```csharp
+public static IOrderedQueryable<E> OrderBy<E, A>(
+    this IQueryable<E> queryable,
+    Expression<Func<E, A>> expression
+);
+
+public static IOrderedQueryable<E> ThenBy<E, A>(
+    this IOrderedQueryable<E> queryable,
+    Expression<Func<E, A>> expression
+);
+```
+
+The main barrier to implementing a composable ordering model using this API is the need for a common
+type for ordering selector expressions applying to a given entity type. Conveniently EntityFramework
+ignores top-level conversions to System.Object occurring at the top level of such expressions (presumably
+for exactly this reason), and as such our general objective is to generate an
+Ordering&lt;Expression&lt;Func&lt;E,&nbsp;object?&gt;&gt;&gt; which can be applied to an IQueryable&lt;E&gt;.
+This approach should also work for any other IQueryable-based ORM provided it similarly ignores top-level
+object conversion.
+
+If you are dynamically generating orderings based on client input, you will most likely need a domain-adjacent
+model for your ordering *selectors* - the aspects of your subject entities according to which they can be
+sorted. Otherwise feel free to skip this and generate an expression-based ordering directly.
+
+The design of your selector model is entirely up to you, however generally you want something akin to a union
+type, i.e. an enum-like type supporting nested values which will permit you to define nested/composite
+selectors (which we will cover shortly).
+
+```csharp
+public abstract class OwnerOrderingSelector {
+    private OwnerOrderingSelector() { }
+
+    public sealed class Id : OwnerOrderingSelector { }
+    public sealed class Name : OwnerOrderingSelector { }
+}
+```
+
+Now we need to write a function to translate our selector model into an expression-based ordering consumable
+by EntityFramework. You almost certainly want to define a [type alias][4] for your translated ordering type
+so that you don't run out of angle brackets. Note that the type alias should appear *within* your namespace
+declaration to avoid having to fully-qualify the required type references.
+
+```csharp
+using OwnerOrdering = Ordering<Expression<Func<Owner, object?>>>;
+```
+
+With our type alias the selector type of our result ordering is known to be an expression - they can
+therefore be specified inline, and we can now write a simple function to translate an OwnerOrderingSelector
+into an Ordering&lt;Expression&lt;Func&lt;Owner,&nbsp;object?&gt;&gt;&gt;:
+
+```csharp
+private OwnerOrdering TranslateOwnerOrderingSelector(
+    VetDbContext dbContext,
+    OwnerOrderingSelector selector
+) =>
+    selector switch {
+        OwnerOrderingSelector.Id => OwnerOrdering.ByAscending(o => o.Id),
+        OwnerOrderingSelector.Name => OwnerOrdering.ByAscending(o => o.Name),
+        _ => throw new NotImplementedException()
+    };
+```
+
+We will use a pair of extension methods with the following signatures to convert and apply an
+Ordering&lt;OwnerOrderingSelector&gt; to an IQueryable&lt;Owner&gt; instance:
+
+```csharp
+public static Ordering<R> TranslateSelectors<S, D, R>(
+    this Ordering<S> ordering,
+    D data,
+    Func<D, S, IEnumerable<OrderingTerm<R>>> translation
+);
+
+public static IQueryable<E> OrderBy<E, A>(
+    this IQueryable<E> queryable,
+    Ordering<Expression<Func<E, A>>> ordering
+);
+```
+
+The TranslateSelectors extension method applies your translation function to the selectors of an input
+ordering to produce the desired expression-based ordering. TranslateSelectors differs from SelectMany
+in that (a) it operates on selectors instead of terms, thus simplifying the implementation of your
+translation function; and (b) it automatically applies the OrderingDirection associated with the input
+term to the associated translation results.
+
+If provided, the optional data parameter is passed as the initial argument to your translation function.
+Typically when writing selector translations for EntityFramework, you should always pass your DbContext
+into the translation function to support manual joins and subqueries in your selector expressions.
+
+The provided OrderBy extension method is then used to automatically apply the resulting
+Ordering&lt;Expression&lt;Func&lt;Owner,&nbsp;object?&gt;&gt;&gt; to an IQueryable&lt;Owner&gt; instance:
+
+```csharp
+var ordering = Ordering<OwnerOrderingSelector>
+.ByDescending(new OwnerOrderingSelector.Id())
+.ThenByAscending(new OwnerOrderingSelector.Name());
+
+Ordering<Expression<Func<Owner, object?>>> expressionOrdering =
+    ordering.TranslateSelectors(dbContext, TranslateOwnerOrderingSelector);
+
+IQueryable<Owner> orderedQuery =
+    dbContext.Owner.AsQueryable().OrderBy(expressionOrdering);
+```
+
+You may note that the OrderBy extension method returns an IQueryable&lt;E&gt; instead of an
+IOrderedQueryable&lt;E&gt; - this is because an ordering may be empty, in which case no
+actual ordering occurs. Under ideal circumstances all applicable orderings for a given
+query should be merged into and applied via a single ordering.
+
+It is also worth noting that our input ordering is explicitly typed as an
+Ordering&lt;OwnerOrderingSelector&gt; - this is a workaround for the C# type system's lack of
+support for least upper bound calculations. An alternative approach would be to define factories
+for your selector types which explicitly return the base type.
+
+To compose selectors for an entity with those of a related entity, you can define a selector
+which carries a selector for the related entity:
+
+```csharp
+public abstract class CatOrderingSelector {
+    private CatOrderingSelector() { }
+    
+    public sealed class Id : CatOrderingSelector { }
+
+    public sealed class Owner(OwnerOrderingSelector selector)
+        : CatOrderingSelector
+    {
+        public OwnerOrderingSelector Selector { get; } = selector;
+    }
+}
+```
+
+And the requisite type alias:
+
+
+```csharp
+using CatOrdering = Ordering<Expression<Func<Cat, object?>>>;
+```
+
+Your translation function should then invoke the translation process for the related selector,
+and graft the resulting Expression&lt;Func&lt;Owner,&nbsp;object?&gt;&gt; selectors onto a
+projection expression identifying the related entity to which the composite selector applies.
+Extension methods GraftSelectorExpressionsTo and GraftSelectorExpressionsToNullable are provided
+to assist with this process:
+
+```csharp
+private CatOrdering TranslateCatOrderingSelector(
+    VetDbContext dbContext,
+    CatOrderingSelector selector
+) =>
+    selector switch {
+        CatOrderingSelector.Id => CatOrdering.ByAscending(c => c.Id),
+
+        CatOrderingSelector.Owner ownerSelector =>
+            TranslateOwnerOrderingSelector(dbContext, ownerSelector.Selector)
+            .GraftSelectorExpressionsTo(ExpressionOn<Cat>.Of(c => c.Owner)),
+
+        _ => throw new NotImplementedException()
+    };
+```
+
+Here note that the projection used can be arbitrarily complex (provided your ORM is capable of translating
+it), however you are relying on the query analyzer's ability to cache the results of the projection in
+the event that it appears in multiple order by clauses.
+
+The GraftSelectorExpressionsToNullable extension method is intended to be used in the event that the
+relationship between the two entities is optional (in which case the result of the projection and by
+extension the grafted selectors can be null). You can control the handling of null values by prepending
+an appropriate term to the result ordering:
+
+```csharp
+CatOrdering.ByAscending(c => c.Owner == null).ThenBy(
+    TranslateOwnerOrderingSelector(dbContext, ownerSelector.Selector)
+    .GraftSelectorExpressionsToNullable(ExpressionOn<Cat>.Of(c => c.Owner))
+)
+```
+
+The GraftSelectorExpressionsTo family of extension methods are provided as a syntactic convenience covering
+the most common usage scenarios - you can always implement arbitrarily complex ordering transformations
+yourself:
+
+```csharp
+TranslateOwnerOrderingSelector(dbContext, ownerSelector.Selector)
+.Select(term => OrderingTerm.Create(
+    selector: ExpressionOn<Cat>.Interpolate(
+        term,
+        (x, c) => x.SpliceBody(c.Owner, x.Data.Selector)
+    ),
+    direction: term.Direction
+))
+```
+
+### Ordering simplification
+
+In the event that you are using the ordering model to derive query orderings from user input (as
+is often the case), you should always impose reasonable limits on the number of ordering clauses
+which can be supplied to a query by the user. Generally this looks like applying the Simplify
+extension method to eliminate superfluous ordering terms, followed by the Take extension to
+ultimately cap the number of ordering terms:
+
+```csharp
+ordering.Simplify().Take(MaxOrderingTerms)
+```
+
+By default the simplification process drops terms referencing selectors which have already been
+observed in the subject ordering per the default C# notion of equality. Further simplification
+is possible by implementing the IOrderingSelector&lt;TSelf&gt; or
+IOrderingSelectorComparer&lt;TSelector&gt; interfaces, which extend the well-known
+IEquatable&lt;T&gt; or IEqualityComparer&lt;T&gt; interfaces with a single additional method
+signaling whether or not a selector represents an absolute ordering:
+
+```csharp
+public interface IOrderingSelector<TSelf>
+    : IEquatable<TSelf>
+{
+    public bool IsAbsoluteOrdering { get; }
+}
+
+public interface IOrderingSelectorComparer<in TSelector>
+    : IEqualityComparer<TSelector>
+{
+    public bool IsAbsoluteOrdering([DisallowNull] TSelector selector);
+}
+```
+
+An *absolute ordering* is an ordering such that the order of the set of entities resulting from the
+application of the ordering is always the same, regardless of the order in which they appeared in the
+input. In most scenarios you want an ordering applied to a query to end with such a selector to
+stabilize the order of results.
+
+This is relevant to the simplification process because ordering effectively stops after processing
+a selector representing an absolute ordering, as any further terms in the ordering cannot alter the
+order of the results. A typical example of such selectors are those that map to a database column
+with a unique constraint, as every value in the column is known to be unique and should have a
+strict order with respect to all other values in the column.
+
+The easiest and most reliable way to implement IOrderingSelector&lt;TSelf&gt; will always be using
+the automatically derived equality implementations provided by record types.
+RecordOrderingSelector&lt;TSelf&gt; is provided as an abstract base class which takes care of
+most of the boilerplate required for a record-based implementation:
+
+```csharp
+public abstract record CatOrderingSelector
+    : RecordOrderingSelector<CatOrderingSelector>
+{
+    private CatOrderingSelector() { }
+
+    public sealed record Id : CatOrderingSelector {
+        // Override to mark the selector as absolute
+        public override bool IsAbsoluteOrdering => true;
+    }
+
+    public sealed record Name : CatOrderingSelector;
+    
+    // Composite orderings are rarely absolute unless the relationship is 1:1
+    public sealed record Owner(OwnerOrderingSelector Selector)
+        : CatOrderingSelector;
+}
+```
+
+### Ordering JSON serialization
 
 System.Text.Json converters are provided for orderings and related types per the following simple grammar (recall
-an ordering is a list of terms):
+an ordering is a collection of terms), with the JSON representation of selectors being dependent on the selector
+type:
 
 ```
          Ordering ::= [ OrderingTerm* ]
 
      OrderingTerm ::= [ TSelector, OrderingDirection ]
 
-OrderingDirection ::= "a[scending]"
-                    | "d[escending]"
+OrderingDirection ::= "a[scending]"  // canonically "asc"
+                    | "d[escending]" // canonically "desc"
 ```
 
 As such the following ordering:
 
 ```csharp
 Ordering.By(
-  OrderingTerm.Ascending(0),
-  OrderingTerm.Descending(1)
+    OrderingTerm.Ascending(0),
+    OrderingTerm.Descending(1)
 )
 ```
 
@@ -336,3 +625,4 @@ has the following JSON representation:
 [1]: https://learn.microsoft.com/en-us/dotnet/api/system.linq.expressions.expression.quote
 [2]: https://github.com/scottksmith95/LINQKit
 [3]: https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-12#interceptors
+[4]: https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/using-directive#the-using-alias

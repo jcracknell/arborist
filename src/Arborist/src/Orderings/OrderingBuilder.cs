@@ -5,6 +5,10 @@ internal struct OrderingBuilder<TSelector> {
     private OrderingCons<TSelector>? _cons;
     private bool _referenced;
 
+    public OrderingBuilder(Ordering<TSelector> ordering) {
+        AddRangeOrdering(ordering);
+    }
+
     public Ordering<TSelector> Build() {
         if(_ordering is null)
             return OrderingNil<TSelector>.Instance;
@@ -28,6 +32,25 @@ internal struct OrderingBuilder<TSelector> {
             _cons = cons;
             rest = rest.Rest;
         }
+    }
+
+    /// <summary>
+    /// Attempts to copy the provided ordering into the builder as the referenced builder value.
+    /// Returns false if there is already an ordering in the builder, the ordering is empty, or
+    /// the ordering cannot be copied.
+    /// </summary>
+    private bool TryInstallOrdering(Ordering<TSelector> ordering) {
+        if(_ordering is not null)
+            return false;
+        if(ordering.IsEmpty)
+            return false;
+
+        // Note that we can set cons to null, as it will be populated by CopyReferenced by the next Add
+        _ordering = ordering;
+        _cons = default;
+        _referenced = true;
+
+        return true;
     }
 
     public void Add(OrderingTerm<TSelector> term) {
@@ -66,6 +89,8 @@ internal struct OrderingBuilder<TSelector> {
     private void AddRangeOrdering(Ordering<TSelector> terms) {
         if(terms.IsEmpty)
             return;
+        if(TryInstallOrdering(terms))
+            return;
 
         var rest = terms;
         do {
@@ -73,7 +98,6 @@ internal struct OrderingBuilder<TSelector> {
             rest = rest.Rest;
         } while(!rest.IsEmpty);
     }
-
 
     private void AddRangeEnumerated(IEnumerable<OrderingTerm<TSelector>> terms) {
         using var enumerator = terms.GetEnumerator();

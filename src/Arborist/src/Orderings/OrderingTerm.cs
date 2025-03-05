@@ -1,3 +1,5 @@
+using System.Diagnostics.Contracts;
+
 namespace Arborist.Orderings;
 
 /// <summary>
@@ -9,6 +11,7 @@ public static class OrderingTerm {
     /// returning the inversed term if the <paramref name="direction"/> is <see cref="OrderingDirection.Descending"/>.
     /// </summary>
     /// <seealso cref="Invert{TSelector}"/>
+    [Pure]
     public static OrderingTerm<TSelector> ApplyDirection<TSelector>(
         this OrderingTerm<TSelector> term,
         OrderingDirection direction
@@ -40,6 +43,7 @@ public static class OrderingTerm {
     /// Inverts the direction of the subject <see cref="OrderingTerm{TSelector}"/>, returning a term with the
     /// same selector and the opposite <see cref="OrderingDirection"/>.
     /// </summary>
+    [Pure]
     public static OrderingTerm<TSelector> Invert<TSelector>(this OrderingTerm<TSelector> term) =>
         Create(term.Selector, term.Direction.Invert());
 }

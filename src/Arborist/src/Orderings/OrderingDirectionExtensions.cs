@@ -1,3 +1,5 @@
+using System.Diagnostics.Contracts;
+
 namespace Arborist.Orderings;
 
 public static class OrderingDirectionExtensions {
@@ -7,6 +9,7 @@ public static class OrderingDirectionExtensions {
     /// <see cref="OrderingDirection.Descending"/>.
     /// </summary>
     /// <seealso cref="Invert"/>
+    [Pure]
     public static OrderingDirection ApplyDirection(
         this OrderingDirection subject,
         OrderingDirection direction
@@ -16,6 +19,7 @@ public static class OrderingDirectionExtensions {
     /// <summary>
     /// Inverts the subject <see cref="OrderingDirection"/>, returning the opposite value.
     /// </summary>
+    [Pure]
     public static OrderingDirection Invert(this OrderingDirection direction) =>
         direction switch {
             OrderingDirection.Ascending => OrderingDirection.Descending,

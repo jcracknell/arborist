@@ -1,3 +1,5 @@
+using System.Diagnostics.Contracts;
+
 namespace Arborist.Orderings;
 
 public static partial class OrderingExtensions {
@@ -8,6 +10,7 @@ public static partial class OrderingExtensions {
     /// <param name="expression">
     /// The root expression onto which the selector expressions will be grafted.
     /// </param>
+    [Pure]
     public static Ordering<Expression<Func<A, R>>> GraftSelectorExpressionsTo<A, I, R>(
         this Ordering<Expression<Func<I, R>>> ordering,
         Expression<Func<A, I>> expression
@@ -25,6 +28,7 @@ public static partial class OrderingExtensions {
     /// <param name="expression">
     /// The root expression onto which the selector expressions will be grafted.
     /// </param>
+    [Pure]
     public static Ordering<Expression<Func<A, R?>>> GraftSelectorExpressionsToNullable<A, I, J, R>(
         this Ordering<Expression<Func<J, R>>> ordering,
         Expression<Func<A, I>> expression
@@ -48,6 +52,7 @@ public static partial class OrderingExtensions {
     /// <param name="dummy">
     /// Disambiguates overloads by type parameter constraints.
     /// </param>
+    [Pure]
     public static Ordering<Expression<Func<A, Nullable<R>>>> GraftSelectorExpressionsToNullable<A, I, J, R>(
         this Ordering<Expression<Func<J, R>>> ordering,
         Expression<Func<A, I>> expression,
@@ -69,6 +74,7 @@ public static partial class OrderingExtensions {
     /// <param name="expression">
     /// The root expression onto which the selector expressions will be grafted.
     /// </param>
+    [Pure]
     public static Ordering<Expression<Func<A, Nullable<R>>>> GraftSelectorExpressionsToNullable<A, I, J, R>(
         this Ordering<Expression<Func<J, Nullable<R>>>> ordering,
         Expression<Func<A, I>> expression
@@ -89,6 +95,7 @@ public static partial class OrderingExtensions {
     /// <param name="expression">
     /// The root expression onto which the selector expressions will be grafted.
     /// </param>
+    [Pure]
     public static Ordering<Expression<Func<A, R?>>> GraftSelectorExpressionsToNullable<A, I, R>(
         this Ordering<Expression<Func<I, R>>> ordering,
         Expression<Func<A, Nullable<I>>> expression
@@ -111,6 +118,7 @@ public static partial class OrderingExtensions {
     /// <param name="dummy">
     /// Disambiguates overloads by type parameter constraints.
     /// </param>
+    [Pure]
     public static Ordering<Expression<Func<A, Nullable<R>>>> GraftSelectorExpressionsToNullable<A, I, R>(
         this Ordering<Expression<Func<I, R>>> ordering,
         Expression<Func<A, Nullable<I>>> expression,
@@ -131,6 +139,7 @@ public static partial class OrderingExtensions {
     /// <param name="expression">
     /// The root expression onto which the selector expressions will be grafted.
     /// </param>
+    [Pure]
     public static Ordering<Expression<Func<A, Nullable<R>>>> GraftSelectorExpressionsToNullable<A, I, R>(
         this Ordering<Expression<Func<I, Nullable<R>>>> ordering,
         Expression<Func<A, Nullable<I>>> expression
@@ -174,6 +183,7 @@ public static partial class OrderingExtensions {
     /// Translation function converting <typeparamref name="TSelector"/> values into translated
     /// orderings for the <see cref="OrderingDirection.Ascending"/> direction.
     /// </param>
+    [Pure]
     public static Ordering<TResult> TranslateSelectors<TSelector, TResult>(
         this Ordering<TSelector> ordering,
         Func<TSelector, IEnumerable<OrderingTerm<TResult>>> translation
@@ -193,6 +203,7 @@ public static partial class OrderingExtensions {
     /// Translation function converting <typeparamref name="TSelector"/> values into translated
     /// orderings for the <see cref="OrderingDirection.Ascending"/> direction.
     /// </param>
+    [Pure]
     public static Ordering<TResult> TranslateSelectors<TSelector, D, TResult>(
         this Ordering<TSelector> ordering,
         D data,

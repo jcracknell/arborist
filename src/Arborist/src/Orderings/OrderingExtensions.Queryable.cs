@@ -1,3 +1,5 @@
+using System.Diagnostics.Contracts;
+
 namespace Arborist.Orderings;
 
 public static partial class OrderingExtensions {
@@ -5,6 +7,7 @@ public static partial class OrderingExtensions {
     /// Applies the provided <paramref name="ordering"/> to the subject <see cref="IQueryable{T}"/>,
     /// overriding any existing ordering of results.
     /// </summary>
+    [Pure]
     public static IQueryable<A> OrderBy<A, B>(
         this IQueryable<A> queryable,
         Ordering<Expression<Func<A, B>>> ordering
@@ -22,6 +25,7 @@ public static partial class OrderingExtensions {
     /// Applies the provided <paramref name="ordering"/> to the subject <see cref="IQueryable{T}"/>
     /// as an extension to the currently defined ordering of results.
     /// </summary>
+    [Pure]
     public static IOrderedQueryable<A> ThenBy<A, B>(
         this IOrderedQueryable<A> queryable,
         Ordering<Expression<Func<A, B>>> ordering

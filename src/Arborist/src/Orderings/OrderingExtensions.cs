@@ -1,3 +1,5 @@
+using System.Diagnostics.Contracts;
+
 namespace Arborist.Orderings;
 
 public static partial class OrderingExtensions {
@@ -7,6 +9,7 @@ public static partial class OrderingExtensions {
     /// </summary>
     /// <seealso cref="IOrderingSelector{TSelf}"/>
     /// <seealso cref="IOrderingSelectorComparer{TSelector}"/>
+    [Pure]
     public static Ordering<TSelector> Simplify<TSelector>(this Ordering<TSelector> ordering) =>
         ordering.Simplify(OrderingSelectorComparer<TSelector>.Default);
 
@@ -16,6 +19,7 @@ public static partial class OrderingExtensions {
     /// </summary>
     /// <seealso cref="IOrderingSelector{TSelf}"/>
     /// <seealso cref="IOrderingSelectorComparer{TSelector}"/>
+    [Pure]
     public static Ordering<TSelector> Simplify<TSelector>(
         this Ordering<TSelector> ordering,
         IEqualityComparer<TSelector> equalityComparer
@@ -26,6 +30,7 @@ public static partial class OrderingExtensions {
     /// Simplifies the subject ordering, omitting terms with previously observed selectors and
     /// dropping all terms following a term defining an absolute ordering.
     /// </summary>
+    [Pure]
     public static Ordering<TSelector> Simplify<TSelector>(
         this Ordering<TSelector> ordering,
         IOrderingSelectorComparer<TSelector> selectorComparer
@@ -59,6 +64,7 @@ public static partial class OrderingExtensions {
     /// Adds a term specified by the provided <paramref name="selector"/> and <paramref name="direction"/> to
     /// the subject ordering, returning a new instance.
     /// </summary>
+    [Pure]
     public static Ordering<TSelector> ThenBy<TSelector>(
         this Ordering<TSelector> ordering,
         TSelector selector,
@@ -69,6 +75,7 @@ public static partial class OrderingExtensions {
     /// <summary>
     /// Adds the provided <paramref name="term"/> to the subject ordering, returning a new instance.
     /// </summary>
+    [Pure]
     public static Ordering<TSelector> ThenBy<TSelector>(
         this Ordering<TSelector> ordering,
         OrderingTerm<TSelector> term
@@ -82,6 +89,7 @@ public static partial class OrderingExtensions {
     /// <summary>
     /// Adds the provided <paramref name="terms"/> to the subject ordering, returning a new instance.
     /// </summary>
+    [Pure]
     public static Ordering<TSelector> ThenBy<TSelector>(
         this Ordering<TSelector> ordering,
         IEnumerable<OrderingTerm<TSelector>> terms
@@ -95,6 +103,7 @@ public static partial class OrderingExtensions {
     /// <summary>
     /// Adds the provided <paramref name="terms"/> to the subject ordering, returning a new instance.
     /// </summary>
+    [Pure]
     public static Ordering<TSelector> ThenBy<TSelector>(
         this Ordering<TSelector> ordering,
         params OrderingTerm<TSelector>[] terms
@@ -104,6 +113,7 @@ public static partial class OrderingExtensions {
     /// <summary>
     /// Adds the provided <paramref name="terms"/> to the subject ordering, returning a new instance.
     /// </summary>
+    [Pure]
     public static Ordering<TSelector> ThenBy<TSelector>(
         this Ordering<TSelector> ordering,
         ReadOnlySpan<OrderingTerm<TSelector>> terms
@@ -118,6 +128,7 @@ public static partial class OrderingExtensions {
     /// Adds a term sorting the provided <paramref name="selector"/> in the <see cref="OrderingDirection.Ascending"/>
     /// direction to the subject ordering, returning a new instance.
     /// </summary>
+    [Pure]
     public static Ordering<TSelector> ThenByAscending<TSelector>(
         this Ordering<TSelector> ordering,
         TSelector selector
@@ -128,6 +139,7 @@ public static partial class OrderingExtensions {
     /// Adds a term sorting the provided <paramref name="selector"/> in the <see cref="OrderingDirection.Descending"/>
     /// direction to the subject ordering, returning a new instance.
     /// </summary>
+    [Pure]
     public static Ordering<TSelector> ThenByDescending<TSelector>(
         this Ordering<TSelector> ordering,
         TSelector selector

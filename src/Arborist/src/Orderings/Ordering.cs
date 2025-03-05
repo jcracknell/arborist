@@ -1,3 +1,5 @@
+using System.Diagnostics.Contracts;
+
 namespace Arborist.Orderings;
 
 /// <summary>
@@ -15,6 +17,7 @@ public static partial class Ordering {
     /// <see cref="OrderingDirection.Ascending"/> is the default <see cref="OrderingDirection"/>.
     /// </remarks>
     /// <seealso cref="Invert{TSelector}"/>
+    [Pure]
     public static Ordering<TSelector> ApplyDirection<TSelector>(
         this Ordering<TSelector> ordering,
         OrderingDirection direction
@@ -70,6 +73,7 @@ public static partial class Ordering {
     /// Inverts the direction of the subject <paramref name="ordering"/>, returning an ordering where the
     /// terms have the opposite <see cref="OrderingDirection"/>.
     /// </summary>
+    [Pure]
     public static Ordering<TSelector> Invert<TSelector>(this Ordering<TSelector> ordering) =>
         ordering.Select(OrderingTerm.Invert);
 }

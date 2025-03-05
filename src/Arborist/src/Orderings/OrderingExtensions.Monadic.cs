@@ -1,3 +1,5 @@
+using System.Diagnostics.Contracts;
+
 namespace Arborist.Orderings;
 
 public static partial class OrderingExtensions {
@@ -5,6 +7,7 @@ public static partial class OrderingExtensions {
     /// Applies the provided <paramref name="projection"/> to the terms of the subject ordering,
     /// returning a new <see cref="Ordering{TSelector}"/> containing the results.
     /// </summary>
+    [Pure]
     public static Ordering<TProjected> Select<TSelector, TProjected>(
         this Ordering<TSelector> ordering,
         Func<OrderingTerm<TSelector>, OrderingTerm<TProjected>> projection
@@ -26,6 +29,7 @@ public static partial class OrderingExtensions {
     /// Applies the provided <paramref name="projection"/> to the terms of the subject ordering,
     /// returning a new <see cref="Ordering{TSelector}"/> containing the results.
     /// </summary>
+    [Pure]
     public static Ordering<TProjected> SelectMany<TSelector, TProjected>(
         this Ordering<TSelector> ordering,
         Func<OrderingTerm<TSelector>, IEnumerable<OrderingTerm<TProjected>>> projection
@@ -47,6 +51,7 @@ public static partial class OrderingExtensions {
     /// Applies the provided <paramref name="projection"/> to the terms of the subject ordering,
     /// returning a new <see cref="Ordering{TSelector}"/> containing the results.
     /// </summary>
+    [Pure]
     public static Ordering<TResult> SelectMany<TSelector, TProjected, TResult>(
         this Ordering<TSelector> ordering,
         Func<OrderingTerm<TSelector>, IEnumerable<OrderingTerm<TProjected>>> projection,
@@ -74,6 +79,7 @@ public static partial class OrderingExtensions {
     /// <param name="count">
     /// The number of terms to include in the result ordering.
     /// </param>
+    [Pure]
     public static Ordering<TSelector> Take<TSelector>(this Ordering<TSelector> ordering, int count) {
         if(ordering.IsEmpty || count <= 0)
             return Ordering<TSelector>.Unordered;
@@ -94,6 +100,7 @@ public static partial class OrderingExtensions {
     /// Filters the terms of the subject ordering, returning a new <see cref="Ordering{TSelector}"/> containing only the
     /// terms satisfying the provided <paramref name="predicate"/>.
     /// </summary>
+    [Pure]
     public static Ordering<TSelector> Where<TSelector>(
         this Ordering<TSelector> ordering,
         Func<OrderingTerm<TSelector>, bool> predicate

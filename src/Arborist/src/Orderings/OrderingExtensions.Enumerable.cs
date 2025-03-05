@@ -1,3 +1,5 @@
+using System.Diagnostics.Contracts;
+
 namespace Arborist.Orderings;
 
 public static partial class OrderingExtensions {
@@ -5,6 +7,7 @@ public static partial class OrderingExtensions {
     /// Applies the provided <paramref name="ordering"/> to the subject <see cref="IEnumerable{T}"/>,
     /// overriding any existing ordering of results.
     /// </summary>
+    [Pure]
     public static IEnumerable<A> OrderBy<A, B>(
         this IEnumerable<A> enumerable,
         Ordering<Func<A, B>> ordering
@@ -22,6 +25,7 @@ public static partial class OrderingExtensions {
     /// Applies the provided <paramref name="ordering"/> to the subject <see cref="IEnumerable{T}"/>
     /// as an extension to the currently defined ordering of results.
     /// </summary>
+    [Pure]
     public static IOrderedEnumerable<A> ThenBy<A, B>(
         this IOrderedEnumerable<A> enumerable,
         Ordering<Func<A, B>> ordering

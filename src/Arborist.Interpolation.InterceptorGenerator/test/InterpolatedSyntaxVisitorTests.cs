@@ -53,7 +53,7 @@ public partial class InterpolatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Call(
-                        __e0.Object,
+                        __e0.Object!,
                         __e0.Method,
                         new global::System.Linq.Expressions.Expression[] {
                             (global::System.Linq.Expressions.NewExpression)(__e0.Arguments[0]) switch {
@@ -219,7 +219,7 @@ public partial class InterpolatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Call(
-                        __e0.Object,
+                        __e0.Object!,
                         __e0.Method,
                         new global::System.Linq.Expressions.Expression[] {
                             (global::System.Linq.Expressions.MethodCallExpression)(__e0.Arguments[0]) switch {
@@ -573,7 +573,7 @@ public partial class InterpolatedSyntaxVisitorTests {
             expected: @"
                 (global::System.Linq.Expressions.MethodCallExpression)(expression.Body) switch {
                     var __e0 => global::System.Linq.Expressions.Expression.Call(
-                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Object) switch {
+                        (global::System.Linq.Expressions.MethodCallExpression)(__e0.Object!) switch {
                             var __e1 => global::System.Linq.Expressions.Expression.Constant(
                                 (global::System.Linq.Expressions.MemberExpression)(__e1.Arguments[0]) switch {
                                     var __e2 => __data

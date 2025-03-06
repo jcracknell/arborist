@@ -78,7 +78,7 @@ public abstract class ExpressionBinding(
         if(methodSymbol is { ReducedFrom: { } } or { IsStatic: true })
             return Bind(expressionType, $"{nameof(MethodCallExpression.Arguments)}[{index}]");
         if(index == 0)
-            return Bind(expressionType, $"{nameof(MethodCallExpression.Object)}");
+            return Bind(expressionType, $"{nameof(MethodCallExpression.Object)}!");
 
         return Bind(expressionType, $"{nameof(MethodCallExpression.Arguments)}[{index - 1}]");
     }

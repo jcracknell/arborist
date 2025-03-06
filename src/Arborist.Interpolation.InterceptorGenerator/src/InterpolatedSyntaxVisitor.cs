@@ -219,7 +219,7 @@ public sealed partial class InterpolatedSyntaxVisitor : CSharpSyntaxVisitor<Inte
             case IMethodSymbol:
                 CurrentExpr.SetType(typeof(MethodCallExpression));
                 return _builder.CreateExpression(nameof(Expression.Call),
-                    CurrentExpr.Bind($"{nameof(MethodCallExpression.Object)}").WithValue(Visit(node.Expression)),
+                    CurrentExpr.Bind($"{nameof(MethodCallExpression.Object)}!").WithValue(Visit(node.Expression)),
                     CurrentExpr.BindValue($"{nameof(MethodCallExpression.Method)}"),
                     _builder.CreateExpressionArray(node.ArgumentList.Arguments.SelectEager(
                         (arg, i) => CurrentExpr.Bind($"{nameof(MethodCallExpression.Arguments)}[{i}]").WithValue(Visit(arg))

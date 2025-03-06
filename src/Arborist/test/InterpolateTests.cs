@@ -29,4 +29,36 @@ public partial class InterpolateTests {
         Assert.Equivalent(expected, interpolated);
     }
 
+    [Fact]
+    public void Should_handle_instance_call() {
+        var interpolated = InterpolationTestOnNone.Interpolate(
+            x => x.SpliceConstant(42).Equals(x.SpliceConstant(42))
+        );
+
+        var expected = ExpressionOnNone.Of(() => 42.Equals(42));
+
+        Assert.Equivalent(expected, interpolated);
+    }
+
+    [Fact]
+    public void Should_handle_static_call() {
+        var interpolated = InterpolationTestOnNone.Interpolate(
+            x => ImmutableList.Create(x.SpliceConstant(42))
+        );
+
+        var expected = ExpressionOnNone.Of(() => ImmutableList.Create(42));
+
+        Assert.Equivalent(expected, interpolated);
+    }
+
+    [Fact]
+    public void Should_handle_postfix_extension_method_call() {
+        var interpolated = InterpolationTestOnNone.Interpolate(
+            x => x.SpliceConstant("foo").Any(c => c.Equals(x.SpliceConstant('o')))
+        );
+
+        var expected = ExpressionOnNone.Of(() => "foo".Any(c => c.Equals('o')));
+
+        Assert.Equivalent(expected, interpolated);
+    }
 }

@@ -1,5 +1,7 @@
 using Arborist.Internal.Collections;
+using Arborist.Interpolation;
 using Arborist.Interpolation.Internal;
+using System.Reflection;
 
 namespace Arborist;
 
@@ -11,9 +13,9 @@ public static partial class ExpressionHelper {
         analyzer.Apply(expression.Body);
 
         var interpolator = new SplicingInterpolationVisitor(
-            evaluatedSpliceParameters: EvaluateInterpolatedExpressions(
+            evaluatedSpliceParameters: EvaluateSplicedExpressions(
                 data: data,
-                evaluatedExpressions: analyzer.EvaluatedExpressions,
+                expressions: analyzer.EvaluatedExpressions,
                 dataReferences: analyzer.DataReferences
             )
         );
@@ -24,64 +26,160 @@ public static partial class ExpressionHelper {
         );
     }
 
-    private static IReadOnlyList<object?> EvaluateInterpolatedExpressions<TData>(
+    private static IReadOnlyList<object?> EvaluateSplicedExpressions<TData>(
         TData data,
-        IReadOnlyList<Expression> evaluatedExpressions,
+        IReadOnlyList<Expression> expressions,
         IReadOnlySet<MemberExpression> dataReferences
     ) {
-        if(evaluatedExpressions.Count == 0)
+        var expressionCount = expressions.Count;
+        if(expressionCount == 0)
             return Array.Empty<object?>();
 
-        var unevaluatedExpressions = default(List<(int Index, Expression Expression)>);
-        var values = new object?[evaluatedExpressions.Count];
-        for(var i = 0; i < evaluatedExpressions.Count; i++) {
-            switch(evaluatedExpressions[i]) {
-                // These are constant values, so removing them from the evaluation process has no
-                // side effects.
-                case ConstantExpression { Value: var value }:
-                    values[i] = value;
-                    break;
-                case UnaryExpression { NodeType: ExpressionType.Convert, Operand: ConstantExpression { Value: var value } }:
-                    values[i] = value;
-                    break;
-                case var unevaluated:
-                    unevaluatedExpressions ??= new(evaluatedExpressions.Count - i);
-                    unevaluatedExpressions.Add((i, unevaluated));
-                    break;
-            }
+        var values = new object?[expressionCount];
+
+        // First we attempt to evaluate expressions via reflection, as this is actually significantly
+        // faster than compiling an Expression to a Func to achieve the same thing.
+        var evaluatedCount = 0;
+        while(evaluatedCount < expressionCount) {
+            // In the event of a failure, we have to give up to ensure that the expressions are evaluated
+            // in the expected order.
+            if(!TryReflectSplicedValue(data, expressions[evaluatedCount], out var value))
+                break;
+
+            values[evaluatedCount] = value;
+            evaluatedCount += 1;
         }
 
-        // If there are no expressions requiring evaluation, then we can skip costly evaluation
-        if(unevaluatedExpressions is not { Count: not 0 })
+        if(evaluatedCount == expressionCount)
             return values;
 
-        var dataParameter = Expression.Parameter(typeof(TData));
-
-        // Build a dictionary mapping references to IInterpolationContext.Data to the data parameter.
-        // We know each reference is unique because this is a set of expressions.
-        var dataReferenceReplacements = SmallDictionary.CreateRange(
-            from dataReference in dataReferences
-            select new KeyValuePair<Expression, Expression>(dataReference, dataParameter)
+        var compiledValues = EvaluateSplicedValuesCompiled(
+            data: data,
+            expressions: expressions.Skip(evaluatedCount),
+            dataReferences: dataReferences
         );
 
+        Array.Copy(compiledValues, 0, values, evaluatedCount, compiledValues.Length);
+
+        return values;
+    }
+
+    private static object?[] EvaluateSplicedValuesCompiled<TData>(
+        TData data,
+        IEnumerable<Expression> expressions,
+        IReadOnlySet<MemberExpression> dataReferences
+    ) {
+        var dataParameter = Expression.Parameter(typeof(TData));
+
         // Create an expression to evaluate the unevaluated expression values into an array
-        var evaluatedValues = Expression.Lambda<Func<TData, object?[]>>(
-            Expression.NewArrayInit(typeof(object),
-                from tup in unevaluatedExpressions select Expression.Convert(
-                    ExpressionHelper.Replace(tup.Expression, dataReferenceReplacements),
-                    typeof(object)
+        return Expression.Lambda<Func<TData, object?[]>>(
+            ExpressionHelper.Replace(
+                Expression.NewArrayInit(typeof(object),
+                    from expr in expressions
+                    select Expression.Convert(expr, typeof(object))
+                ),
+                // Replace references to IInterpolationContext.Data with the data parameter
+                SmallDictionary.CreateRange(
+                    from dataReference in dataReferences
+                    select new KeyValuePair<Expression, Expression>(dataReference, dataParameter)
                 )
             ),
             dataParameter
         )
         .Compile()
         .Invoke(data);
+    }
 
-        // Fill the holes in the result array by mapping each evaluated value to the index of the
-        // corresponding unevaluated expression
-        for(var i = 0; i < evaluatedValues.Length; i++)
-            values[unevaluatedExpressions[i].Index] = evaluatedValues[i];
+    private static bool TryReflectSplicedValue<TData>(TData data, Expression expression, out object? value) {
+        switch(expression) {
+            case ConstantExpression constant:
+                value = constant.Value;
+                return true;
 
-        return values;
+            // Interpolation data access
+            case MemberExpression { Member: PropertyInfo { Name: nameof(IInterpolationContext<TData>.Data) } } dataAccess
+                when dataAccess.Expression?.Type == typeof(IInterpolationContext<TData>)
+                && dataAccess.Member == typeof(IInterpolationContext<TData>).GetProperty(nameof(IInterpolationContext<TData>.Data)):
+                value = data;
+                return true;
+
+            // Instance field access
+            case MemberExpression { Expression: {} baseExpr, Member: FieldInfo field }
+                when TryReflectSplicedValue(data, baseExpr, out var baseValue):
+                value = field.GetValue(baseValue);
+                return true;
+
+            // Instance property access
+            case MemberExpression { Expression: {} baseExpr, Member: PropertyInfo property }
+                when TryReflectSplicedValue(data, baseExpr, out var baseValue):
+                value = property.GetValue(baseValue);
+                return true;
+
+            // Instance call
+            case MethodCallExpression { Object: not null } methodCall
+                when TryReflectSplicedValue(data, methodCall.Object, out var objectValue)
+                && TryReflectSplicedArgValues(data, methodCall.Arguments, out var argValues):
+                value = methodCall.Method.Invoke(objectValue, argValues);
+                return true;
+
+            // Static field access
+            case MemberExpression { Expression: null, Member: FieldInfo field }:
+                value = field.GetValue(null);
+                return true;
+
+            // Static property access
+            case MemberExpression { Expression: null, Member: PropertyInfo property }:
+                value = property.GetValue(null);
+                return true;
+
+            // Static call
+            case MethodCallExpression { Object: null } methodCall
+                when TryReflectSplicedArgValues(data, methodCall.Arguments, out var argValues):
+                value = methodCall.Method.Invoke(null, argValues);
+                return true;
+
+            // Type conversion
+            case UnaryExpression { NodeType: ExpressionType.Convert } convert
+                when TryReflectSplicedValue(data, convert.Operand, out var baseValue):
+                if(convert.Method is not null) {
+                    value = convert.Method.Invoke(null, [baseValue]);
+                    return true;
+                }
+
+                try {
+                    value = Convert.ChangeType(baseValue, convert.Type);
+                    return true;
+                } catch {
+                    value = default;
+                    return false;
+                }
+
+            default:
+                value = default;
+                return false;
+        }
+    }
+
+    private static bool TryReflectSplicedArgValues<TData>(
+        TData data,
+        IReadOnlyCollection<Expression> expressions,
+        [NotNullWhen(true)] out object?[]? values
+    ) {
+        values = default;
+        var count = expressions.Count;
+        if(count != 0) {
+            var expressionIndex = 0;
+            foreach(var expression in expressions) {
+                if(!TryReflectSplicedValue(data, expression, out var value))
+                    return false;
+
+                values ??= new object?[count];
+                values[expressionIndex] = value;
+                expressionIndex += 1;
+            }
+        }
+
+        values ??= Array.Empty<object?>();
+        return true;
     }
 }

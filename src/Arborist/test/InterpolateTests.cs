@@ -9,7 +9,7 @@ public partial class InterpolateTests {
     public void Should_handle_an_unquoted_lambda() {
         var interpolated = InterpolationTestOn<Owner>.Interpolate(
             default(object),
-            (x, o) => o.CatsEnumerable.Any(c => c.Name == x.SpliceValue("Garfield"))
+            (x, o) => o.CatsEnumerable.Any(c => c.Name == x.SpliceConstant("Garfield"))
         );
 
         var expected = ExpressionOn<Owner>.Of(o => o.CatsEnumerable.Any(c => c.Name == "Garfield"));
@@ -21,7 +21,7 @@ public partial class InterpolateTests {
     public void Should_handle_a_quoted_lambda() {
         var interpolated = InterpolationTestOn<Owner>.Interpolate(
             default(object),
-            (x, o) => o.CatsQueryable.Any(c => c.Name == x.SpliceValue("Garfield"))
+            (x, o) => o.CatsQueryable.Any(c => c.Name == x.SpliceConstant("Garfield"))
         );
 
         var expected = ExpressionOn<Owner>.Of(o => o.CatsQueryable.Any(c => c.Name == "Garfield"));

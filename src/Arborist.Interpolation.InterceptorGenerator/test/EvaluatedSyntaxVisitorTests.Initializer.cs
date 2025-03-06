@@ -7,7 +7,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         .Generate(@"
             ExpressionOnNone.Interpolate(
                 default(object),
-                x => x.SpliceValue(new[] { ""foo"", ""bar"" })
+                x => x.SpliceConstant(new[] { ""foo"", ""bar"" })
             );
         ");
 
@@ -33,7 +33,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         .Generate(@"
             ExpressionOnNone.Interpolate(
                 default(object),
-                x => x.SpliceValue(new string[2] { ""foo"", ""bar"" })
+                x => x.SpliceConstant(new string[2] { ""foo"", ""bar"" })
             );
         ");
 
@@ -59,7 +59,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         .Generate(@"
             ExpressionOnNone.Interpolate(
                 default(object),
-                x => x.SpliceValue(new string[3, 42])
+                x => x.SpliceConstant(new string[3, 42])
             );
         ");
 
@@ -85,7 +85,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         .Generate(@"
             ExpressionOnNone.Interpolate(
                 default(object),
-                x => x.SpliceValue(new string[2, 42][])
+                x => x.SpliceConstant(new string[2, 42][])
             );
         ");
 
@@ -109,7 +109,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_object_initializer() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(new Cat { Name = ""Garfield"" }));
+            ExpressionOnNone.Interpolate(x => x.SpliceConstant(new Cat { Name = ""Garfield"" }));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -132,7 +132,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_collection_initializer() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(new List<string> { ""foo"", ""bar"" }));
+            ExpressionOnNone.Interpolate(x => x.SpliceConstant(new List<string> { ""foo"", ""bar"" }));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -158,7 +158,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_dictionary_initializer() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(new Dictionary<string, int> {
+            ExpressionOnNone.Interpolate(x => x.SpliceConstant(new Dictionary<string, int> {
                 { ""foo"", 1 },
                 { ""bar"", 2 }
             }));
@@ -188,7 +188,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             ExpressionOnNone.Interpolate(x =>
-                x.SpliceValue(new Cat { Owner = { Name = ""Jon"" } })
+                x.SpliceConstant(new Cat { Owner = { Name = ""Jon"" } })
             );
         ");
 
@@ -213,7 +213,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             ExpressionOnNone.Interpolate(x =>
-                x.SpliceValue(new NestedCollectionInitializerFixture<string> {
+                x.SpliceConstant(new NestedCollectionInitializerFixture<string> {
                     List = { ""foo"" },
                     Dictionary = { { ""bar"", ""baz"" } }
                 })

@@ -7,7 +7,7 @@ public partial class InterpolateTests {
     public void Should_handle_implicit_boxing_conversion() {
         var interpolated = ExpressionOn<Owner>.Interpolate<Cat, object>(
             new Cat { Id = 42 },
-            (x, o) => x.SpliceValue(x.Data.Id)
+            (x, o) => x.SpliceConstant(x.Data.Id)
         );
 
         Assert.Equivalent(
@@ -24,7 +24,7 @@ public partial class InterpolateTests {
 
     [Fact]
     public void Should_handle_implicit_numeric_conversion() {
-        var expr = ExpressionOn<Owner>.Interpolate<Cat, decimal>(new Cat { Id = 42 }, (x, o) => x.SpliceValue(x.Data.Id));
+        var expr = ExpressionOn<Owner>.Interpolate<Cat, decimal>(new Cat { Id = 42 }, (x, o) => x.SpliceConstant(x.Data.Id));
 
         var parameter = Expression.Parameter(typeof(Owner), "o");
 
@@ -44,7 +44,7 @@ public partial class InterpolateTests {
     public void Should_handle_implicit_user_defined_conversion() {
         var interpolated = ExpressionOn<Owner>.Interpolate<Cat, ImplicitlyConvertible<string>>(
             new Cat { Name = "Garfield" },
-            (x, o) => x.SpliceValue(x.Data.Name)
+            (x, o) => x.SpliceConstant(x.Data.Name)
         );
 
         Assert.Equivalent(

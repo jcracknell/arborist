@@ -5,7 +5,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_select_clause() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceValue(
+            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceConstant(
                 from c in x.Data.Cats
                 select c.Name
             ));
@@ -34,7 +34,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_from_clause_with_cast() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceValue(
+            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceConstant(
                 from object c in x.Data.Cats
                 select c.GetHashCode()
             ));
@@ -65,7 +65,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_subsequent_from_clause_with_cast() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceValue(
+            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceConstant(
                 from c in x.Data.Cats
                 from object o in c.Owner.Cats
                 select o.GetHashCode()
@@ -98,7 +98,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_group_clause() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceValue(
+            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceConstant(
                 from c in x.Data.Cats
                 group c by c.Age
             ));
@@ -127,7 +127,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_group_into() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceValue(
+            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceConstant(
                 from c in x.Data.Cats
                 group c by c.Age
                 into ageGroup
@@ -161,7 +161,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_join_clause() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceValue(
+            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceConstant(
                 from c in x.Data.Cats
                 join c1 in x.Data.Cats on c.Id equals c1.Id
                 select c1.Name
@@ -194,7 +194,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_join_clause_with_cast() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(
+            ExpressionOnNone.Interpolate(x => x.SpliceConstant(
                 from c in Array.Empty<Cat>()
                 join object c1 in Array.Empty<Cat>() on c.Id equals c1.GetHashCode()
                 select c.GetHashCode()
@@ -229,7 +229,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_non_final_join_clause() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceValue(
+            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceConstant(
                 from c in x.Data.Cats
                 join c1 in x.Data.Cats on c.Id equals c1.Id
                 where c.Age == 8
@@ -269,7 +269,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_join_into_clause() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceValue(
+            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceConstant(
                 from c in x.Data.Cats
                 join c1 in x.Data.Cats on c.Id equals c1.Id into cs
                 from cc in cs
@@ -307,7 +307,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_let_clause() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceValue(
+            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceConstant(
                 from c in x.Data.Cats
                 let name = c.Name
                 select name
@@ -340,7 +340,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_where_clause() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceValue(
+            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceConstant(
                 from c in x.Data.Cats
                 where c.Age == 8
                 select c.Name
@@ -372,7 +372,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_transparent_identifier_in_from_clause() {
         var builder = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceValue(
+            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceConstant(
                 from a in x.Data.Cats
                 from b in x.Data.Cats
                 from c in x.Data.Cats
@@ -413,7 +413,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_transparent_identifier_in_join_clause() {
         var builder = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceValue(
+            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceConstant(
                 from a in x.Data.Cats
                 join b in x.Data.Cats on a.Id equals b.Id
                 join c in x.Data.Cats on a.Id equals c.Id
@@ -460,7 +460,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_handle_transparent_identifier_in_let_clause() {
         var builder = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceValue(
+            ExpressionOnNone.Interpolate(default(Owner)!, x => x.SpliceConstant(
                 from c in x.Data.Cats
                 let n = c.Name
                 let i = c.Id

@@ -6,7 +6,7 @@ public partial class InterpolateTests {
     [Fact]
     public void Should_handle_array_initializer() {
         var interpolated = InterpolationTestOnNone.Interpolate(default(object),
-            x => new[] { x.SpliceValue("foo"), "bar", x.SpliceValue("baz") }
+            x => new[] { x.SpliceConstant("foo"), "bar", x.SpliceConstant("baz") }
         );
 
         var expected = ExpressionOnNone.Of(() => new[] { "foo", "bar", "baz" });
@@ -21,7 +21,7 @@ public partial class InterpolateTests {
 
         var interpolated = InterpolationTestOnNone.Interpolate(
             default(object),
-            x => new string[2] { x.SpliceValue("foo"), "bar" }
+            x => new string[2] { x.SpliceConstant("foo"), "bar" }
         );
 
         Assert.Equivalent(expected, interpolated);
@@ -35,7 +35,7 @@ public partial class InterpolateTests {
         // initializers are forbidden and a uni-dimensional initializer implies the length)
         var interpolated = InterpolationTestOnNone.Interpolate(
             default(object),
-            x => new string[x.SpliceValue(3), 42]
+            x => new string[x.SpliceConstant(3), 42]
         );
 
         var expected = ExpressionOnNone.Of(() => new string[3, 42]);
@@ -48,7 +48,7 @@ public partial class InterpolateTests {
     public void Should_handle_nested_array_with_explicit_dimensions() {
         var interpolated = InterpolationTestOnNone.Interpolate(
             default(object),
-            x => new string[x.SpliceValue(3), 42][]
+            x => new string[x.SpliceConstant(3), 42][]
         );
 
         var expected = ExpressionOnNone.Of(() => new string[3, 42][]);
@@ -60,7 +60,7 @@ public partial class InterpolateTests {
     [Fact]
     public void Should_handle_object_initializer() {
         var interpolated = InterpolationTestOnNone.Interpolate(default(object), x =>
-            new Cat { Id = x.SpliceValue(42), Name = x.SpliceValue("Garfield") }
+            new Cat { Id = x.SpliceConstant(42), Name = x.SpliceConstant("Garfield") }
         );
 
         var expected = ExpressionOnNone.Of(() => new Cat { Id = 42, Name = "Garfield" });
@@ -71,7 +71,7 @@ public partial class InterpolateTests {
     [Fact]
     public void Should_handle_collection_initializer() {
         var interpolated = InterpolationTestOnNone.Interpolate(default(object), x =>
-            new List<int> { x.SpliceValue(42) }
+            new List<int> { x.SpliceConstant(42) }
         );
 
         var expected = ExpressionOnNone.Of(() => new List<int> { 42 });
@@ -82,7 +82,7 @@ public partial class InterpolateTests {
     [Fact]
     public void Should_handle_object_initializer_in_collection_initializer() {
         var interpolated = InterpolationTestOnNone.Interpolate(default(object), x =>
-            new List<Cat> { new Cat { Name = x.SpliceValue("Garfield") } }
+            new List<Cat> { new Cat { Name = x.SpliceConstant("Garfield") } }
         );
 
         var expected = ExpressionOnNone.Of(() => new List<Cat> { new Cat { Name = "Garfield" } });
@@ -93,7 +93,7 @@ public partial class InterpolateTests {
     [Fact]
     public void Should_handle_nested_object_initializer() {
         var interpolated = InterpolationTestOnNone.Interpolate(default(object), x =>
-            new Cat { Owner = { Name = x.SpliceValue("Jon") } }
+            new Cat { Owner = { Name = x.SpliceConstant("Jon") } }
         );
 
         var expected = ExpressionOnNone.Of(() => new Cat { Owner = { Name = "Jon" } });
@@ -105,8 +105,8 @@ public partial class InterpolateTests {
     public void Should_handle_nested_collection_initializer() {
         var interpolated = InterpolationTestOnNone.Interpolate(default(object), x =>
             new NestedCollectionInitializerFixture<string> {
-                List = { x.SpliceValue("foo") },
-                Dictionary = { { x.SpliceValue("bar"), x.SpliceValue("baz") } }
+                List = { x.SpliceConstant("foo") },
+                Dictionary = { { x.SpliceConstant("bar"), x.SpliceConstant("baz") } }
             }
         );
 

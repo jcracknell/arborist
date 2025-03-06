@@ -65,25 +65,45 @@ public class ReadmeTests {
     public void SpliceQuoted_example_should_work() {
         var interpolated = ExpressionOn<IQueryable<Cat>>.Interpolate(
             new { Predicate = ExpressionOn<Cat>.Of(c => c.Age == 8) },
-            static (x, q) => q.Any(x.SpliceQuoted(x.Data.Predicate))
+            static (x, q) =>
+                q.Any(x.SpliceQuoted(x.Data.Predicate))
+                && q.Any(x.Splice(x.Data.Predicate))
         );
 
         Assert.Equivalent(
-            expected: ExpressionOn<IQueryable<Cat>>.Of(q => q.Any(c => c.Age == 8)),
+            expected: ExpressionOn<IQueryable<Cat>>.Of(
+                q => Queryable.Any(q, c => c.Age == 8) && Enumerable.Any(q, c => c.Age == 8)
+            ),
             actual: interpolated
         );
     }
 
     [Fact]
-    public void SpliceValue_example_should_work() {
-        var interpolated = ExpressionOnNone.Interpolate(
+    public void SpliceConstant_example_should_work() {
+        var interpolated0 = ExpressionOnNone.Interpolate(
             new { Value = 42 },
-            static x => x.SpliceValue(x.Data.Value)
+            static x => x.SpliceConstant(x.Data.Value)
         );
 
         Assert.Equivalent(
             expected: ExpressionOnNone.Of(() => 42),
-            actual: interpolated
+            actual: interpolated0
+        );
+
+        var data1 = new { Value = 42 };
+        var interpolated1 = ExpressionOnNone.Interpolate(
+            data1,
+            x => x.SpliceConstant(x.Data).Value
+        );
+
+        Assert.Equivalent(
+            expected: Expression.Lambda<Func<int>>(
+                Expression.Property(
+                    Expression.Constant(data1),
+                    data1.GetType().GetProperty(nameof(data1.Value))!
+                )
+            ),
+            actual: interpolated1
         );
     }
 

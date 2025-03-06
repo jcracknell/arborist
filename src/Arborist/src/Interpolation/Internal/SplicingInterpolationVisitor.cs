@@ -28,7 +28,7 @@ public class SplicingInterpolationVisitor : InterpolationVisitor {
         return node.Method.Name switch {
             nameof(IInterpolationContext.Splice) => VisitSplice(node),
             nameof(IInterpolationContext.SpliceBody) => VisitSpliceBody(node),
-            nameof(IInterpolationContext.SpliceValue) => VisitSpliceValue(node),
+            nameof(IInterpolationContext.SpliceConstant) => VisitSpliceConstant(node),
             nameof(IInterpolationContext.SpliceQuoted) => VisitSpliceQuoted(node),
             _ => throw new Exception($"Unhandled {typeof(IInterpolationContext)} method: {node.Method}.")
         };
@@ -59,7 +59,7 @@ public class SplicingInterpolationVisitor : InterpolationVisitor {
         return Coerce(declaredType, ExpressionHelper.Replace(interpolatedLambda.Body, argumentReplacements));
     }
 
-    protected Expression VisitSpliceValue(MethodCallExpression node) {
+    protected Expression VisitSpliceConstant(MethodCallExpression node) {
         var declaredType = node.Method.GetGenericArguments()[0];
         var expressionReference = node.Arguments[0];
         var interpolatedValue = GetEvaluatedSpliceParameter<object?>();

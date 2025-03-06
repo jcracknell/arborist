@@ -104,6 +104,43 @@ ExpressionOn<Cat>.Interpolate(
 // c => c.Owner.Name == "Jon"
 ```
 
+#### SpliceConstant
+
+Splices the value of the provided argument into the expression tree as a constant value using
+[Expression.Constant][0]. This is partially related to the `const` keyword as it represents
+a value that is constant *in the context of the expression*, however it can also be used to
+capture constant references to non-primitive types.
+
+```csharp
+ExpressionOnNone.Interpolate(
+    new { Value = 42 },
+    static x => x.SpliceConstant(x.Data.Value)
+);
+// () => 42
+```
+
+> **⚠️ Caution:** A value spliced as a constant within an expression is typically translated by
+> EntityFramework into a literal SQL value instead of a query parameter. This could prevent your
+> database server from caching and reusing an execution plan for your query in the event that the
+> value changes.
+
+To avoid embedding a value as a constant in a scenario where the value is passed in via the data
+parameter, you should wrap the value in a containing type, and then access it via a spliced constant
+reference to the container. This approach emulates a captured local variable, which is represented
+in an expression tree as a field with the same name accessed via a constant reference to the 
+compiler-generated "display class" representing the captured scope variables.
+
+```csharp
+ExpressionOnNone.Interpolate(
+    new { Value = 42 },
+    static x => x.SpliceConstant(x.Data).Value
+)
+// () => { Value = 42 }.Value
+```
+
+EntityFramework 9.0+ also offers the [EF.Parameter][5] helper, which forces SQL parametrization
+of its argument value.
+
 #### SpliceQuoted
 
 Splices the argument expression into the resulting expression tree as a quoted (literal)
@@ -115,25 +152,14 @@ DbSets).
 
 ```csharp
 ExpressionOn<IQueryable<Cat>>.Interpolate(
-  new { Predicate = ExpressionOn<Cat>.Of(c => c.Age == 8) },
-  static (x, q) => q.Any(x.SpliceQuoted(x.Data.Predicate))
+    new { Predicate = ExpressionOn<Cat>.Of(c => c.Age == 8) },
+    static (x, q) =>
+        q.Any(x.SpliceQuoted(x.Data.Predicate))
+        && q.Any(x.Splice(x.Data.Predicate))
 );
-// q => q.Any(c => c.Age == 8)
+// q => Queryable.Any(q, c => c.Age == 8) && Enumerable.Any(q, c => c.Age == 8)
 ```
 
-#### SpliceValue
-
-Splices the value of the provided argument into the expression tree as a constant value using
-[Expression.Constant][0], which is somewhat unfortunately named as it is easily confused with 
-the concept of `const` in C#, but is also used to represent "constant references".
-
-```csharp
-ExpressionOnNone.Interpolate(
-    new { Value = 42 },
-    static x => x.SpliceValue(x.Data.Value)
-);
-// () => 42
-```
 
 ### Compile-time interpolator interception
 
@@ -626,3 +652,4 @@ has the following JSON representation:
 [2]: https://github.com/scottksmith95/LINQKit
 [3]: https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-12#interceptors
 [4]: https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/using-directive#the-using-alias
+[5]: https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.ef.parameter

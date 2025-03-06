@@ -78,7 +78,7 @@ public partial class InterpolatedSyntaxVisitorTests {
         .Generate(@"
             ExpressionOnNone.Interpolate(x =>
                 from c in Array.Empty<Cat>().AsQueryable()
-                select x.SpliceValue(""foo"")
+                select x.SpliceConstant(""foo"")
             );
         ");
 
@@ -263,7 +263,7 @@ public partial class InterpolatedSyntaxVisitorTests {
 
             ExpressionOn<Owner>.Interpolate(data, (x, o) =>
                 from c in o.Cats
-                join c1 in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceValue(42)
+                join c1 in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceConstant(42)
                 select c1.Name
             );
         ");
@@ -351,7 +351,7 @@ public partial class InterpolatedSyntaxVisitorTests {
 
             ExpressionOn<Owner>.Interpolate(data, (x, o) =>
                 from c in o.CatsQueryable
-                join c1 in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceValue(42)
+                join c1 in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceConstant(42)
                 select c1.Name
             );
         ");
@@ -447,7 +447,7 @@ public partial class InterpolatedSyntaxVisitorTests {
 
             ExpressionOn<Owner>.Interpolate(data, (x, o) =>
                 from c in o.Cats
-                join object c1 in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceValue(42)
+                join object c1 in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceConstant(42)
                 select c1
             );
         ");
@@ -541,7 +541,7 @@ public partial class InterpolatedSyntaxVisitorTests {
 
             ExpressionOn<Owner>.Interpolate(data, (x, o) =>
                 from c in o.Cats
-                join c1 in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceValue(42)
+                join c1 in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceConstant(42)
                 into cs
                 from cc in cs
                 select cc.Age
@@ -765,7 +765,7 @@ public partial class InterpolatedSyntaxVisitorTests {
         .Generate(@"
             ExpressionOn<Owner>.Interpolate(""Garfield"", (x, o) =>
                 from c in o.Cats
-                let n = x.SpliceValue(x.Data)
+                let n = x.SpliceConstant(x.Data)
                 select c.Name + n
             );
         ");
@@ -821,7 +821,7 @@ public partial class InterpolatedSyntaxVisitorTests {
         .Generate(@"
             ExpressionOn<Owner>.Interpolate((x, o) =>
                 from c in o.Cats
-                orderby x.SpliceValue(42) ascending, c.Age descending
+                orderby x.SpliceConstant(42) ascending, c.Age descending
                 select c.Name
             );
         ");
@@ -875,7 +875,7 @@ public partial class InterpolatedSyntaxVisitorTests {
         .Generate(@"
             ExpressionOn<Owner>.Interpolate(ExpressionOn<string>.Identity, (x, o) =>
                 from c in o.Cats
-                where c.Name == x.SpliceValue(""foo"")
+                where c.Name == x.SpliceConstant(""foo"")
                 select c.Name
             );
         ");
@@ -929,7 +929,7 @@ public partial class InterpolatedSyntaxVisitorTests {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             ExpressionOn<Owner>.Interpolate(Array.Empty<Cat>(), (x, o) =>
-                from c in x.SpliceValue(x.Data)
+                from c in x.SpliceConstant(x.Data)
                 select c.Name
                 into n
                 select n.Length

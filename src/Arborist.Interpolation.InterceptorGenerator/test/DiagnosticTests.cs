@@ -7,7 +7,7 @@ public class DiagnosticTests {
     public void Should_produce_ARB001_for_context_reference_in_interpolated() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(x => x == x.SpliceValue(default(object)));
+            ExpressionOnNone.Interpolate(x => x == x.SpliceConstant(default(object)));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -22,7 +22,7 @@ public class DiagnosticTests {
     public void Should_produce_ARB001_for_data_reference_in_interpolated() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(object), x => x.Data == x.SpliceValue(default(object)));
+            ExpressionOnNone.Interpolate(default(object), x => x.Data == x.SpliceConstant(default(object)));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -38,7 +38,7 @@ public class DiagnosticTests {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             ExpressionOnNone.Interpolate(default(object),
-                x => Array.Empty<string>().SingleOrDefault(x => x == null) == x.SpliceValue(""foo"")
+                x => Array.Empty<string>().SingleOrDefault(x => x == null) == x.SpliceConstant(""foo"")
             );
         ");
 
@@ -53,7 +53,7 @@ public class DiagnosticTests {
     public void Should_produce_ARB003_for_evaluating_interpolated_identifier() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOn<Cat>.Interpolate((x, c) => c.Owner.Id == x.SpliceValue(c.Id));
+            ExpressionOn<Cat>.Interpolate((x, c) => c.Owner.Id == x.SpliceConstant(c.Id));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -68,7 +68,7 @@ public class DiagnosticTests {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             ExpressionOn<Owner>.Interpolate((x, o) =>
-                o.Cats.Any(c => c.Name == x.SpliceValue(c.Name))
+                o.Cats.Any(c => c.Name == x.SpliceConstant(c.Name))
             );
         ");
 
@@ -104,7 +104,7 @@ public class DiagnosticTests {
                 private int _privateField;
 
                 public void Main() {
-                    ExpressionOnNone.Interpolate(x => x.SpliceValue(_privateField));
+                    ExpressionOnNone.Interpolate(x => x.SpliceConstant(_privateField));
                 }
             }
         ");
@@ -126,7 +126,7 @@ public class DiagnosticTests {
                 private int PrivateMethod() => throw new NotImplementedException();
 
                 public void Main() {
-                    ExpressionOnNone.Interpolate(x => x.SpliceValue(PrivateMethod()));
+                    ExpressionOnNone.Interpolate(x => x.SpliceConstant(PrivateMethod()));
                 }
             }
         ");
@@ -148,7 +148,7 @@ public class DiagnosticTests {
                 private static int PrivateMethod() => throw new NotImplementedException();
 
                 public void Main() {
-                    ExpressionOnNone.Interpolate(x => x.SpliceValue(PrivateMethod()));
+                    ExpressionOnNone.Interpolate(x => x.SpliceConstant(PrivateMethod()));
                 }
             }
         ");
@@ -170,7 +170,7 @@ public class DiagnosticTests {
                 private int PrivateProperty => throw new NotImplementedException();
 
                 public void Main() {
-                    ExpressionOnNone.Interpolate(x => x.SpliceValue(PrivateProperty));
+                    ExpressionOnNone.Interpolate(x => x.SpliceConstant(PrivateProperty));
                 }
             }
         ");
@@ -190,7 +190,7 @@ public class DiagnosticTests {
         .Generate(@"
             public class Foo {
                 public void Bar<A>() {
-                    ExpressionOnNone.Interpolate(default(object), x => Array.Empty<A>().Contains(x.SpliceValue((A)x.Data)));
+                    ExpressionOnNone.Interpolate(default(object), x => Array.Empty<A>().Contains(x.SpliceConstant((A)x.Data)));
                 }
             }
         ");
@@ -209,7 +209,7 @@ public class DiagnosticTests {
         .Generate(@"
             public class Foo<A> {
                 public void Bar() {
-                    ExpressionOnNone.Interpolate(default(object), x => Array.Empty<A>().Contains(x.SpliceValue((A)x.Data)));
+                    ExpressionOnNone.Interpolate(default(object), x => Array.Empty<A>().Contains(x.SpliceConstant((A)x.Data)));
                 }
             }
         ");

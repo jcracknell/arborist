@@ -27,7 +27,7 @@ public partial class InterpolateTests {
     public void Should_handle_quoted_select_clause() {
         var interpolated = InterpolationTestOnNone.Interpolate(x =>
             from c in Array.Empty<Cat>().AsQueryable()
-            select x.SpliceValue("foo")
+            select x.SpliceConstant("foo")
         );
 
         var expected = ExpressionOnNone.Of(
@@ -148,7 +148,7 @@ public partial class InterpolateTests {
 
         var interpolated = InterpolationTestOn<Owner>.Interpolate(data, (x, o) =>
             from c in o.Cats
-            join c1 in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceValue(42)
+            join c1 in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceConstant(42)
             select c1.Name
         );
 
@@ -170,7 +170,7 @@ public partial class InterpolateTests {
 
         var interpolated = InterpolationTestOn<Owner>.Interpolate(data, (x, o) =>
             from c in o.CatsQueryable
-            join c1 in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceValue(42)
+            join c1 in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceConstant(42)
             select c1.Name
         );
 
@@ -195,7 +195,7 @@ public partial class InterpolateTests {
 
         var interpolated = InterpolationTestOn<Owner>.Interpolate(data, (x, o) =>
             from c in o.Cats
-            join object c1 in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceValue(42)
+            join object c1 in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceConstant(42)
             select c1.GetHashCode()
         );
 
@@ -352,7 +352,7 @@ public partial class InterpolateTests {
             from c in x.SpliceBody(o, x.Data.OwnerCats)
             let n = x.SpliceBody(o, x.Data.OwnerName)
             let m = x.SpliceBody(o, x.Data.OwnerId)
-            select c.Name + n + m + x.SpliceValue("foo")
+            select c.Name + n + m + x.SpliceConstant("foo")
         );
 
         var expected = ExpressionOn<Owner>.Of(o =>
@@ -375,7 +375,7 @@ public partial class InterpolateTests {
         var interpolated = InterpolationTestOn<Owner>.Interpolate(data, (x, o) =>
             from a in x.SpliceBody(o, x.Data.OwnerCats)
             join b in o.Cats on a.Id equals b.Id
-            join c in o.Cats on a.Id equals x.SpliceValue(42)
+            join c in o.Cats on a.Id equals x.SpliceConstant(42)
             join d in x.SpliceBody(o, x.Data.OwnerCats) on x.SpliceBody(c, x.Data.CatId) equals x.SpliceBody(d, x.Data.CatId)
             select a
         );
@@ -403,7 +403,7 @@ public partial class InterpolateTests {
             from a in x.SpliceBody(o, x.Data.OwnerCats)
             from b in o.Cats
             from c in o.Cats
-            orderby x.SpliceBody(a, x.Data.CatName), x.SpliceValue(42)
+            orderby x.SpliceBody(a, x.Data.CatName), x.SpliceConstant(42)
             select a
         );
 
@@ -429,7 +429,7 @@ public partial class InterpolateTests {
             from a in x.SpliceBody(o, x.Data.OwnerCats)
             from b in o.Cats
             from c in o.Cats
-            where x.SpliceBody(a, x.Data.CatId) % 2 == x.SpliceValue(0)
+            where x.SpliceBody(a, x.Data.CatId) % 2 == x.SpliceConstant(0)
             select a
         );
 

@@ -5,7 +5,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_work_for_as() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(Cat)!, x => x.SpliceValue(x.Data as IFormattable));
+            ExpressionOnNone.Interpolate(default(Cat)!, x => x.SpliceConstant(x.Data as IFormattable));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -28,7 +28,7 @@ public partial class EvaluatedSyntaxVisitorTests {
     public void Should_work_for_is() {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
-            ExpressionOnNone.Interpolate(default(Cat)!, x => x.SpliceValue(x.Data is IFormattable));
+            ExpressionOnNone.Interpolate(default(Cat)!, x => x.SpliceConstant(x.Data is IFormattable));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);

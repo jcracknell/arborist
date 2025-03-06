@@ -7,33 +7,33 @@ public class InterpolateRuntimeFallbackTests {
     [Fact]
     public void Should_throw_InterpolatedParameterEvaluationException() {
         Assert.Throws<InterpolatedParameterEvaluationException>(() => {
-            ExpressionOn<Owner>.InterpolateRuntimeFallback(default(object), (x, o) => x.SpliceValue(o.Name));
+            ExpressionOn<Owner>.InterpolateRuntimeFallback(default(object), (x, o) => x.SpliceConstant(o.Name));
         });
     }
 
     [Fact]
     public void Should_throw_InterpolatedParameterEvaluationException_for_evaluated_context_reference() {
         Assert.Throws<InterpolatedParameterEvaluationException>(() => {
-            ExpressionOn<Owner>.InterpolateRuntimeFallback(default(object), (x, o) => x.SpliceValue(x));
+            ExpressionOn<Owner>.InterpolateRuntimeFallback(default(object), (x, o) => x.SpliceConstant(x));
         });
     }
 
     [Fact]
     public void Should_not_throw_InterpolatedParameterEvaluationException_for_spliced_data() {
-        ExpressionOn<Owner>.InterpolateRuntimeFallback(default(object), (x, o) => x.SpliceValue(x.Data));
+        ExpressionOn<Owner>.InterpolateRuntimeFallback(default(object), (x, o) => x.SpliceConstant(x.Data));
     }
 
     [Fact]
     public void Should_throw_InterpolatedParameterEvaluationException_for_evaluated_splice() {
         Assert.Throws<InterpolatedParameterEvaluationException>(() => {
-            ExpressionOn<Owner>.InterpolateRuntimeFallback(default(object), (x, o) => x.SpliceValue(x.SpliceValue(32)));
+            ExpressionOn<Owner>.InterpolateRuntimeFallback(default(object), (x, o) => x.SpliceConstant(x.SpliceConstant(32)));
         });
     }
 
     [Fact]
     public void Should_throw_InterpolationContextReferenceException() {
         Assert.Throws<InterpolationContextReferenceException>(() => {
-            ExpressionOnNone.InterpolateRuntimeFallback(default(object), x => x.Data == x.SpliceValue(x.Data));
+            ExpressionOnNone.InterpolateRuntimeFallback(default(object), x => x.Data == x.SpliceConstant(x.Data));
         });
     }
 
@@ -96,10 +96,10 @@ public class InterpolateRuntimeFallbackTests {
     }
 
     [Fact]
-    public void SpliceValue_should_work_as_expected() {
+    public void SpliceConstant_should_work_as_expected() {
         var interpolated = ExpressionOnNone.InterpolateRuntimeFallback(
             default(object),
-            x => x.SpliceValue("foo")
+            x => x.SpliceConstant("foo")
         );
 
         var expected = ExpressionOnNone.Of(() => "foo");

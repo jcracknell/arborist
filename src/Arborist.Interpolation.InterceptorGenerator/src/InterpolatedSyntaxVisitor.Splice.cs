@@ -25,7 +25,7 @@ public partial class InterpolatedSyntaxVisitor {
         return method.Name switch {
             "Splice" => VisitSplice(node, method),
             "SpliceBody" => VisitSpliceBody(node, method),
-            "SpliceValue" => VisitSpliceValue(node, method),
+            "SpliceConstant" => VisitSpliceConstant(node, method),
             "SpliceQuoted" => VisitSpliceQuoted(node, method),
             _ => _context.Diagnostics.UnsupportedInterpolatedSyntax(node)
         };
@@ -120,7 +120,7 @@ public partial class InterpolatedSyntaxVisitor {
         );
     }
 
-    private InterpolatedTree VisitSpliceValue(InvocationExpressionSyntax node, IMethodSymbol method) {
+    private InterpolatedTree VisitSpliceConstant(InvocationExpressionSyntax node, IMethodSymbol method) {
         var valueNode = node.ArgumentList.Arguments[0].Expression;
 
         return _builder.CreateExpression(nameof(Expression.Constant),

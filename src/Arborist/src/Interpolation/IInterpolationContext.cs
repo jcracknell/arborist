@@ -157,12 +157,12 @@ public interface IInterpolationContext {
         throw new NotImplementedException(nameof(SpliceBody));
 
     /// <summary>
-    /// Splices a constant reference to the result of the provided <paramref name="value"/>
+    /// Splices a constant value or constant reference to the result of the provided <paramref name="value"/>
     /// expression into the parent expression tree.
     /// </summary>
     /// <exception cref="NotImplementedException">
     /// This method should only be used in an interpolated expression.
     /// </exception>
-    public A SpliceValue<A>([EvaluatedSpliceParameter] A value) =>
-        throw new NotImplementedException(nameof(SpliceValue));
+    public A SpliceConstant<A>([EvaluatedSpliceParameter] A value) =>
+        throw new NotImplementedException(nameof(SpliceConstant));
 }

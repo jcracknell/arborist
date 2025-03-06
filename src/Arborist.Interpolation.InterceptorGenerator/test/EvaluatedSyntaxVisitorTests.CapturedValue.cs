@@ -10,7 +10,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             var value = ""foo"";
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(value));
+            ExpressionOnNone.Interpolate(x => x.SpliceConstant(value));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -44,7 +44,7 @@ public partial class EvaluatedSyntaxVisitorTests {
                 public string Value = ""foo"";
 
                 public void Main() {
-                    ExpressionOnNone.Interpolate(x => x.SpliceValue(this.Value));
+                    ExpressionOnNone.Interpolate(x => x.SpliceConstant(this.Value));
                 }
             }
         ");
@@ -80,7 +80,7 @@ public partial class EvaluatedSyntaxVisitorTests {
                 public string Value = ""foo"";
 
                 public void Main() {
-                    ExpressionOnNone.Interpolate(x => x.SpliceValue(Value));
+                    ExpressionOnNone.Interpolate(x => x.SpliceConstant(Value));
                 }
             }
         ");
@@ -112,7 +112,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             var value = new { Foo = ""foo"" };
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(value.Foo));
+            ExpressionOnNone.Interpolate(x => x.SpliceConstant(value.Foo));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -144,7 +144,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             var value = ""foo"";
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(value + ""bar""));
+            ExpressionOnNone.Interpolate(x => x.SpliceConstant(value + ""bar""));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -176,7 +176,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             var value = 42;
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(-value));
+            ExpressionOnNone.Interpolate(x => x.SpliceConstant(-value));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -208,7 +208,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             var value = ""foo"";
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(string.Concat(""bar"", value));
+            ExpressionOnNone.Interpolate(x => x.SpliceConstant(string.Concat(""bar"", value));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -244,7 +244,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         .Generate(@"
             var c = '0';
             var count = 42;
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(new string(c, count));
+            ExpressionOnNone.Interpolate(x => x.SpliceConstant(new string(c, count));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -285,7 +285,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             var value = ""Garfield"";
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(new Cat { Name = value }));
+            ExpressionOnNone.Interpolate(x => x.SpliceConstant(new Cat { Name = value }));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -322,7 +322,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         .Generate(@"
             var count = 1;
             var value = ""Garfield"";
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(new List<string>(count) { value }));
+            ExpressionOnNone.Interpolate(x => x.SpliceConstant(new List<string>(count) { value }));
         ");
 
         Assert.Equal(1, results.AnalysisResults.Count);
@@ -371,7 +371,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             var value = ""foo"";
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(
+            ExpressionOnNone.Interpolate(x => x.SpliceConstant(
                 default(Owner)!.Cats.Any(c => c.Name == value)
             ));
         ");
@@ -412,7 +412,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             var value = ""foo"";
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(
+            ExpressionOnNone.Interpolate(x => x.SpliceConstant(
                 default(Owner)!.CatsQueryable.Any(c => c.Name == value)
             ));
         ");
@@ -455,7 +455,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             var value = ""foo"";
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(
+            ExpressionOnNone.Interpolate(x => x.SpliceConstant(
                 default(Owner)!.CatsQueryable.Any(c => Array.Empty<Cat>().AsQueryable().Any(c0 => c0.Name == value))
             ));
         ");
@@ -509,7 +509,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             var cats = new[] { new Cat() };
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(
+            ExpressionOnNone.Interpolate(x => x.SpliceConstant(
                 from c in cats
                 select c.Name
             ));
@@ -548,7 +548,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         .Generate(@"
             var i = 42;
             var s = ""foo"";
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(
+            ExpressionOnNone.Interpolate(x => x.SpliceConstant(
                 from o in Array.Empty<Owner>()
                 group o.Id + i by o.Name + s
             ));
@@ -605,7 +605,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         .Generate(@"
             var owners = Array.Empty<Owner>();
             var value = 42;
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(
+            ExpressionOnNone.Interpolate(x => x.SpliceConstant(
                 from o in Array.Empty<Owner>()
                 join o1 in owners on o.Id + value equals value + o1.Id
                 select o.Id + value
@@ -682,7 +682,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             var value = ""foo"";
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(
+            ExpressionOnNone.Interpolate(x => x.SpliceConstant(
                 from o in Array.Empty<Owner>()
                 let n = o.Name + value
                 select n
@@ -736,7 +736,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         .Generate(@"
             var s = ""foo"";
             var i = 42;
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(
+            ExpressionOnNone.Interpolate(x => x.SpliceConstant(
                 from o in Array.Empty<Owner>()
                 orderby o.Name + s, o.Id + i
                 select o
@@ -797,7 +797,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             var value = ""foo"";
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(
+            ExpressionOnNone.Interpolate(x => x.SpliceConstant(
                 from c in Array.Empty<Cat>().AsQueryable()
                 select c.Name + value
             ));
@@ -843,7 +843,7 @@ public partial class EvaluatedSyntaxVisitorTests {
         var results = InterpolationInterceptorGeneratorTestBuilder.Create()
         .Generate(@"
             var value = ""foo"";
-            ExpressionOnNone.Interpolate(x => x.SpliceValue(
+            ExpressionOnNone.Interpolate(x => x.SpliceConstant(
                 from o in Array.Empty<Owner>()
                 where o.Name == value
                 select o

@@ -36,10 +36,32 @@ public class InterpolateBenchmarks(ITestOutputHelper outputHelper) {
         var data = new { SpliceExpression, SpliceBodyExpression, SplicedValue };
 
         Benchmark(nameof(Runtime), data, static data => {
-            ExpressionOn<Owner>.InterpolateRuntimeFallback(data, (x, o) =>
+            ExpressionOn<Owner>.InterpolateRuntimeFallback(data, static (x, o) =>
                 o.Name == x.SpliceConstant(x.Data.SplicedValue)
                 && o.Cats.Any(c => x.SpliceBody(c.Name, x.Data.SpliceBodyExpression))
                 && o.Dogs.Any(x.Splice(x.Data.SpliceExpression))
+            );
+        });
+    }
+
+    [Fact]
+    public void CompileTime_requiring_runtime_expression_compilation() {
+        var data = new { Value = 42 };
+
+        Benchmark(nameof(CompileTime_requiring_runtime_expression_compilation), data, static data => {
+            ExpressionOn<Owner>.Interpolate(data, static (x, o) =>
+                o.Id + x.SpliceConstant(x.Data.Value + 1)
+            );
+        });
+    }
+
+    [Fact]
+    public void Runtime_requiring_runtime_expression_compilation() {
+        var data = new { Value = 42 };
+
+        Benchmark(nameof(Runtime_requiring_runtime_expression_compilation), data, static data => {
+            ExpressionOn<Owner>.InterpolateRuntimeFallback(data, static (x, o) =>
+                o.Id + x.SpliceConstant(x.Data.Value + 1)
             );
         });
     }

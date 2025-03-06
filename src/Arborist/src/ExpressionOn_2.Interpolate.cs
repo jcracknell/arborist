@@ -16,7 +16,7 @@ public static partial class ExpressionOn<A, B> {
     public static Expression<Func<A, B, R>> Interpolate<R>(
         Expression<Func<IInterpolationContext, A, B, R>> expression
     ) =>
-        ExpressionHelper.InterpolateCore<object?, Func<A, B, R>>(default, expression);
+        ExpressionInterpolator.Interpolate<object?, Func<A, B, R>>(default, expression);
 
     /// <summary>
     /// Applies the interpolation process to the provided <paramref name="expression"/>, replacing
@@ -27,7 +27,7 @@ public static partial class ExpressionOn<A, B> {
     public static Expression<Action<A, B>> Interpolate(
         Expression<Action<IInterpolationContext, A, B>> expression
     ) =>
-        ExpressionHelper.InterpolateCore<object?, Action<A, B>>(default, expression);
+        ExpressionInterpolator.Interpolate<object?, Action<A, B>>(default, expression);
 
     /// <summary>
     /// Applies the interpolation process to the provided <paramref name="expression"/>, replacing
@@ -49,7 +49,7 @@ public static partial class ExpressionOn<A, B> {
         TData data,
         Expression<Func<IInterpolationContext<TData>, A, B, R>> expression
     ) =>
-        ExpressionHelper.InterpolateCore<TData, Func<A, B, R>>(data, expression);
+        ExpressionInterpolator.Interpolate<TData, Func<A, B, R>>(data, expression);
 
     /// <summary>
     /// Applies the interpolation process to the provided <paramref name="expression"/>, replacing
@@ -68,7 +68,7 @@ public static partial class ExpressionOn<A, B> {
         TData data,
         Expression<Action<IInterpolationContext<TData>, A, B>> expression
     ) =>
-        ExpressionHelper.InterpolateCore<TData, Action<A, B>>(data, expression);
+        ExpressionInterpolator.Interpolate<TData, Action<A, B>>(data, expression);
 
     /// <summary>
     /// Applies the interpolation process to the provided <paramref name="expression"/>, replacing
@@ -87,7 +87,7 @@ public static partial class ExpressionOn<A, B> {
     public static Expression<Func<A, B, R>> InterpolateRuntimeFallback<R>(
         Expression<Func<IInterpolationContext, A, B, R>> expression
     ) =>
-        ExpressionHelper.InterpolateCore<object?, Func<A, B, R>>(default, expression);
+        ExpressionInterpolator.Interpolate<object?, Func<A, B, R>>(default, expression);
 
     /// <summary>
     /// Applies the interpolation process to the provided <paramref name="expression"/>, replacing
@@ -103,7 +103,7 @@ public static partial class ExpressionOn<A, B> {
     public static Expression<Action<A, B>> InterpolateRuntimeFallback(
         Expression<Action<IInterpolationContext, A, B>> expression
     ) =>
-        ExpressionHelper.InterpolateCore<object?, Action<A, B>>(default, expression);
+        ExpressionInterpolator.Interpolate<object?, Action<A, B>>(default, expression);
 
     /// <summary>
     /// Applies the interpolation process to the provided <paramref name="expression"/>, replacing
@@ -130,7 +130,7 @@ public static partial class ExpressionOn<A, B> {
         TData data,
         Expression<Func<IInterpolationContext<TData>, A, B, R>> expression
     ) =>
-        ExpressionHelper.InterpolateCore<TData, Func<A, B, R>>(data, expression);
+        ExpressionInterpolator.Interpolate<TData, Func<A, B, R>>(data, expression);
 
     /// <summary>
     /// Applies the interpolation process to the provided <paramref name="expression"/>, replacing
@@ -154,5 +154,5 @@ public static partial class ExpressionOn<A, B> {
         TData data,
         Expression<Action<IInterpolationContext<TData>, A, B>> expression
     ) =>
-        ExpressionHelper.InterpolateCore<TData, Action<A, B>>(data, expression);
+        ExpressionInterpolator.Interpolate<TData, Action<A, B>>(data, expression);
 }

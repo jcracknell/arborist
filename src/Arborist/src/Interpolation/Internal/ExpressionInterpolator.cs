@@ -1,12 +1,10 @@
 using Arborist.Internal.Collections;
-using Arborist.Interpolation;
-using Arborist.Interpolation.Internal;
 using System.Reflection;
 
-namespace Arborist;
+namespace Arborist.Interpolation.Internal;
 
-public static partial class ExpressionHelper {
-    internal static Expression<TDelegate> InterpolateCore<TData, TDelegate>(TData data, LambdaExpression expression)
+internal static class ExpressionInterpolator {
+    public static Expression<TDelegate> Interpolate<TData, TDelegate>(TData data, LambdaExpression expression)
         where TDelegate : Delegate
     {
         var analyzer = new AnalyzingInterpolationVisitor(expression);
@@ -43,7 +41,7 @@ public static partial class ExpressionHelper {
         while(evaluatedCount < expressionCount) {
             // In the event of a failure, we have to give up to ensure that the expressions are evaluated
             // in the expected order.
-            if(!TryReflectSplicedValue(data, expressions[evaluatedCount], out var value))
+            if(!TryReflectSplicedExpression(data, expressions[evaluatedCount], out var value))
                 break;
 
             values[evaluatedCount] = value;
@@ -53,7 +51,7 @@ public static partial class ExpressionHelper {
         if(evaluatedCount == expressionCount)
             return values;
 
-        var compiledValues = EvaluateSplicedValuesCompiled(
+        var compiledValues = CompileSplicedExpressions(
             data: data,
             expressions: expressions.Skip(evaluatedCount),
             dataReferences: dataReferences
@@ -64,7 +62,7 @@ public static partial class ExpressionHelper {
         return values;
     }
 
-    private static object?[] EvaluateSplicedValuesCompiled<TData>(
+    private static object?[] CompileSplicedExpressions<TData>(
         TData data,
         IEnumerable<Expression> expressions,
         IReadOnlySet<MemberExpression> dataReferences
@@ -90,7 +88,7 @@ public static partial class ExpressionHelper {
         .Invoke(data);
     }
 
-    private static bool TryReflectSplicedValue<TData>(TData data, Expression expression, out object? value) {
+    private static bool TryReflectSplicedExpression<TData>(TData data, Expression expression, out object? value) {
         switch(expression) {
             case ConstantExpression constant:
                 value = constant.Value;
@@ -105,20 +103,20 @@ public static partial class ExpressionHelper {
 
             // Instance field access
             case MemberExpression { Expression: {} baseExpr, Member: FieldInfo field }
-                when TryReflectSplicedValue(data, baseExpr, out var baseValue):
+                when TryReflectSplicedExpression(data, baseExpr, out var baseValue):
                 value = field.GetValue(baseValue);
                 return true;
 
             // Instance property access
             case MemberExpression { Expression: {} baseExpr, Member: PropertyInfo property }
-                when TryReflectSplicedValue(data, baseExpr, out var baseValue):
+                when TryReflectSplicedExpression(data, baseExpr, out var baseValue):
                 value = property.GetValue(baseValue);
                 return true;
 
             // Instance call
             case MethodCallExpression { Object: not null } methodCall
-                when TryReflectSplicedValue(data, methodCall.Object, out var objectValue)
-                && TryReflectSplicedArgValues(data, methodCall.Arguments, out var argValues):
+                when TryReflectSplicedExpression(data, methodCall.Object, out var objectValue)
+                && TryReflectSplicedArgExpressions(data, methodCall.Arguments, out var argValues):
                 value = methodCall.Method.Invoke(objectValue, argValues);
                 return true;
 
@@ -134,13 +132,13 @@ public static partial class ExpressionHelper {
 
             // Static call
             case MethodCallExpression { Object: null } methodCall
-                when TryReflectSplicedArgValues(data, methodCall.Arguments, out var argValues):
+                when TryReflectSplicedArgExpressions(data, methodCall.Arguments, out var argValues):
                 value = methodCall.Method.Invoke(null, argValues);
                 return true;
 
             // Type conversion
             case UnaryExpression { NodeType: ExpressionType.Convert } convert
-                when TryReflectSplicedValue(data, convert.Operand, out var baseValue):
+                when TryReflectSplicedExpression(data, convert.Operand, out var baseValue):
                 if(convert.Method is not null) {
                     value = convert.Method.Invoke(null, [baseValue]);
                     return true;
@@ -160,7 +158,7 @@ public static partial class ExpressionHelper {
         }
     }
 
-    private static bool TryReflectSplicedArgValues<TData>(
+    private static bool TryReflectSplicedArgExpressions<TData>(
         TData data,
         IReadOnlyCollection<Expression> expressions,
         [NotNullWhen(true)] out object?[]? values
@@ -170,7 +168,7 @@ public static partial class ExpressionHelper {
         if(count != 0) {
             var expressionIndex = 0;
             foreach(var expression in expressions) {
-                if(!TryReflectSplicedValue(data, expression, out var value))
+                if(!TryReflectSplicedExpression(data, expression, out var value))
                     return false;
 
                 values ??= new object?[count];

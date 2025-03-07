@@ -4,7 +4,7 @@ namespace Arborist.Interpolation;
 /// Thrown in the event that the <see cref="IInterpolationContext{TData}"/> parameter provided to an
 /// interpolated expression tree is referenced outside of a splicing call.
 /// </summary>
-public sealed class InterpolationContextReferenceException : Exception {
+public sealed class InterpolationContextReferenceException : InterpolationException {
     private InterpolationContextReferenceException(string message) : base(message) { }
 
     public InterpolationContextReferenceException(ParameterExpression parameter)

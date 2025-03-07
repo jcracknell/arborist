@@ -8,7 +8,7 @@ namespace Arborist.Interpolation;
 /// defined on <see cref="IInterpolationContext"/> captures a parameter of the interpolated
 /// expression.
 /// </summary>
-public sealed class InterpolatedParameterEvaluationException : Exception {
+public sealed class InterpolatedParameterEvaluationException : InterpolationException {
     public InterpolatedParameterEvaluationException(ParameterExpression parameter, Expression evaluated)
         : base($"Interpolated parameter {parameter} is captured by evaluated expression {evaluated}.")
     { }

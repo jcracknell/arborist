@@ -70,7 +70,7 @@ internal static class ExpressionInterpolator {
         var dataParameter = Expression.Parameter(typeof(TData));
 
         // Create an expression to evaluate the unevaluated expression values into an array
-        return Expression.Lambda<Func<TData, object?[]>>(
+        var compiledDelegate = Expression.Lambda<Func<TData, object?[]>>(
             ExpressionHelper.Replace(
                 Expression.NewArrayInit(typeof(object),
                     from expr in expressions
@@ -84,11 +84,26 @@ internal static class ExpressionInterpolator {
             ),
             dataParameter
         )
-        .Compile()
-        .Invoke(data);
+        .Compile();
+
+        // Only wrap exceptions occurring as a result of the invocation, as those are (probably) the
+        // caller's fault.
+        try {
+            return compiledDelegate.Invoke(data);
+        } catch(Exception ex) {
+            throw new SpliceArgumentEvaluationException(ex);
+        }
     }
 
     private static bool TryReflectSplicedExpression<TData>(TData data, Expression expression, out object? value) {
+        try {
+            return TryReflectSplicedExpressionCore(data, expression, out value);
+        } catch(Exception ex) {
+            throw new SpliceArgumentEvaluationException(expression, ex);
+        }
+    }
+
+    private static bool TryReflectSplicedExpressionCore<TData>(TData data, Expression expression, out object? value) {
         switch(expression) {
             case ConstantExpression constant:
                 value = constant.Value;
@@ -103,19 +118,19 @@ internal static class ExpressionInterpolator {
 
             // Instance field access
             case MemberExpression { Expression: {} baseExpr, Member: FieldInfo field }
-                when TryReflectSplicedExpression(data, baseExpr, out var baseValue):
+                when TryReflectSplicedExpressionCore(data, baseExpr, out var baseValue):
                 value = field.GetValue(baseValue);
                 return true;
 
             // Instance property access
             case MemberExpression { Expression: {} baseExpr, Member: PropertyInfo property }
-                when TryReflectSplicedExpression(data, baseExpr, out var baseValue):
+                when TryReflectSplicedExpressionCore(data, baseExpr, out var baseValue):
                 value = property.GetValue(baseValue);
                 return true;
 
             // Instance call
             case MethodCallExpression { Object: not null } methodCall
-                when TryReflectSplicedExpression(data, methodCall.Object, out var objectValue)
+                when TryReflectSplicedExpressionCore(data, methodCall.Object, out var objectValue)
                 && TryReflectSplicedArgExpressions(data, methodCall.Arguments, out var argValues):
                 value = methodCall.Method.Invoke(objectValue, argValues);
                 return true;
@@ -138,7 +153,7 @@ internal static class ExpressionInterpolator {
 
             // Type conversion
             case UnaryExpression { NodeType: ExpressionType.Convert } convert
-                when TryReflectSplicedExpression(data, convert.Operand, out var baseValue):
+                when TryReflectSplicedExpressionCore(data, convert.Operand, out var baseValue):
                 if(convert.Method is not null) {
                     value = convert.Method.Invoke(null, [baseValue]);
                     return true;
@@ -168,7 +183,7 @@ internal static class ExpressionInterpolator {
         if(count != 0) {
             var expressionIndex = 0;
             foreach(var expression in expressions) {
-                if(!TryReflectSplicedExpression(data, expression, out var value))
+                if(!TryReflectSplicedExpressionCore(data, expression, out var value))
                     return false;
 
                 values ??= new object?[count];

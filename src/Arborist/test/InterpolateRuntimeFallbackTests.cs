@@ -43,6 +43,17 @@ public class InterpolateRuntimeFallbackTests {
     }
 
     [Fact]
+    public void Should_throw_SpliceArgumentEvaluationException_wrapping_inner_exception() {
+        Func<int> notImplemented = () => throw new NotImplementedException();
+
+        var thrown = Assert.Throws<SpliceArgumentEvaluationException>(() => {
+            return ExpressionOn<Owner>.InterpolateRuntimeFallback((x, o) => x.SpliceConstant(notImplemented()));
+        });
+
+        Assert.IsType<NotImplementedException>(thrown.InnerException);
+    }
+
+    [Fact]
     public void Splice_should_work_as_expected() {
         var interpolated = ExpressionOn<Owner>.InterpolateRuntimeFallback(
             new { Predicate = ExpressionOn<Cat>.Of(c => c.Age == 8) },

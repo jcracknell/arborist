@@ -54,4 +54,18 @@ public partial class InterpolateTests {
 
         Assert.Equivalent(expected, interpolated);
     }
+
+    [Fact]
+    public void SpliceBody_should_handle_splices_in_interpolated_arguments() {
+        // The order in which the splicing visitor handles the subtrees of the invocation matters, as
+        // they are evaluated in order.
+        var interpolated = ExpressionOnNone.Interpolate(
+            new { HashCode = ExpressionOn<int>.Of(i => i.GetHashCode()) },
+            x => x.SpliceBody(x.SpliceConstant(42), x.Data.HashCode)
+        );
+
+        var expected = ExpressionOnNone.Of(() => 42.GetHashCode());
+
+        Assert.Equivalent(expected, interpolated);
+    }
 }

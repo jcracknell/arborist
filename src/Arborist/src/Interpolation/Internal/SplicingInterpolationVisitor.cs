@@ -1,3 +1,6 @@
+using Arborist.Internal.Collections;
+using System.Buffers;
+
 namespace Arborist.Interpolation.Internal;
 
 public class SplicingInterpolationVisitor : InterpolationVisitor {
@@ -43,21 +46,36 @@ public class SplicingInterpolationVisitor : InterpolationVisitor {
 
     private Expression VisitSpliceBody(MethodCallExpression node) {
         var declaredType = node.Method.GetGenericArguments()[^1];
-        var interpolatedLambda = GetEvaluatedSpliceParameter<LambdaExpression>();
 
-        // Apply interpolation to the argument replacement expressions
-        // N.B. Visit has NotNullIfNotNullAttribute
-        var interpolatedArguments = node.Arguments.SkipLast(1).Select(Visit);
+        // The leading arguments of the method call supply the replacement expressions for the parameters
+        // in the body of the final LambdaExpression, however we don't have access to lambda yet as the
+        // expressions are evaluated in order. To avoid allocating a second collection we'll build a
+        // replacements array with null target expressions, and then patch it up.
+        var argumentReplacementCount = node.Arguments.Count - 1;
+        var argumentReplacements = new KeyValuePair<Expression, Expression>[argumentReplacementCount];
+        for(var i = 0; i < argumentReplacementCount; i++)
+            argumentReplacements[i] = new KeyValuePair<Expression, Expression>(
+                default!,
+                Visit(node.Arguments[i])
+            );
 
-        var argumentReplacements = interpolatedLambda.Parameters.Zip(interpolatedArguments).ToDictionary(
-            tup => (Expression)tup.First,
-            tup => tup.Second!
-        );
+        // Get the lambda now we've processed any splices occurring in the replacement expressions
+        var lambdaExpression = GetEvaluatedSpliceParameter<LambdaExpression>();
+
+        // Patch up the replacements with the parameter expressions
+        for(var i = 0; i < argumentReplacementCount; i++)
+            argumentReplacements[i] = new KeyValuePair<Expression, Expression>(
+                lambdaExpression.Parameters[i],
+                argumentReplacements[i].Value
+            );
 
         // Type coercion is necessary here to handle the implicit conversion which can occur between
         // a LambdaExpression and its body expression; e.g. an expression producing a System.Object may
         // have a body with type System.String.
-        return Coerce(declaredType, ExpressionHelper.Replace(interpolatedLambda.Body, argumentReplacements));
+        return Coerce(declaredType, ExpressionHelper.Replace(
+            lambdaExpression.Body,
+            SmallDictionary.Create(argumentReplacements)
+        ));
     }
 
     private Expression VisitSpliceConstant(MethodCallExpression node) {

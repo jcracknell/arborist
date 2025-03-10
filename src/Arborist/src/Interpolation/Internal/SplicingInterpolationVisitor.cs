@@ -34,17 +34,15 @@ public class SplicingInterpolationVisitor : InterpolationVisitor {
         };
     }
 
-    protected Expression VisitSplice(MethodCallExpression node) {
+    private Expression VisitSplice(MethodCallExpression node) {
         var resultType = node.Method.GetGenericArguments()[0];
-        var expressionReference = node.Arguments[0];
         var interpolatedValue = GetEvaluatedSpliceParameter<Expression>();
 
         return Coerce(resultType, interpolatedValue);
     }
 
-    protected Expression VisitSpliceBody(MethodCallExpression node) {
+    private Expression VisitSpliceBody(MethodCallExpression node) {
         var declaredType = node.Method.GetGenericArguments()[^1];
-        var expressionReference = node.Arguments[^1];
         var interpolatedLambda = GetEvaluatedSpliceParameter<LambdaExpression>();
 
         // Apply interpolation to the argument replacement expressions
@@ -56,19 +54,22 @@ public class SplicingInterpolationVisitor : InterpolationVisitor {
             tup => tup.Second!
         );
 
+        // Type coercion is necessary here to handle the implicit conversion which can occur between
+        // a LambdaExpression and its body expression; e.g. an expression producing a System.Object may
+        // have a body with type System.String.
         return Coerce(declaredType, ExpressionHelper.Replace(interpolatedLambda.Body, argumentReplacements));
     }
 
-    protected Expression VisitSpliceConstant(MethodCallExpression node) {
+    private Expression VisitSpliceConstant(MethodCallExpression node) {
         var declaredType = node.Method.GetGenericArguments()[0];
-        var expressionReference = node.Arguments[0];
         var interpolatedValue = GetEvaluatedSpliceParameter<object?>();
 
-        return Coerce(declaredType, Expression.Constant(interpolatedValue));
+        // No coercion of the expression type is necessary, as any required conversion is reflected
+        // in the evaluated argument expression
+        return Expression.Constant(interpolatedValue, declaredType);
     }
 
-    protected Expression VisitSpliceQuoted(MethodCallExpression node) {
-        var expressionReference = node.Arguments[0];
+    private Expression VisitSpliceQuoted(MethodCallExpression node) {
         var tree = GetEvaluatedSpliceParameter<Expression>();
 
         return Expression.Quote(tree);

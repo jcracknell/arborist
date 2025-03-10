@@ -5,7 +5,7 @@ namespace Arborist;
 public partial class InterpolateTests {
     [Fact]
     public void SpliceBody_should_work_for_Func1_provided_via_data() {
-        var interpolated = InterpolationTestOnNone.Interpolate(
+        var interpolated = ExpressionOnNone.Interpolate(
             new { Thunk = ExpressionOnNone.Of(() => 41) },
             x => x.SpliceBody(x.Data.Thunk) + 1
         );
@@ -33,7 +33,7 @@ public partial class InterpolateTests {
 
     [Fact]
     public void SpliceBody_should_work_for_Func2_provided_via_data() {
-        var interpolated = InterpolationTestOn<Cat>.Interpolate(
+        var interpolated = ExpressionOn<Cat>.Interpolate(
             new { OwnerPredicate = ExpressionOn<Owner>.Of(o => o.Name == "Jon") },
             (x, c) => x.SpliceBody(c.Owner, x.Data.OwnerPredicate)
         );

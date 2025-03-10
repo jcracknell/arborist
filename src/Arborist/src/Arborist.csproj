@@ -4,11 +4,6 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
-  <Import Project="$(AssemblyName).props"/>
-  <PropertyGroup>
-    <InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);Arborist.Interpolation.Interceptors</InterceptorsPreviewNamespaces>
-  </PropertyGroup>
-
   <PropertyGroup>
     <IsPackable>true</IsPackable>
     <PackageId>Arborist</PackageId>
@@ -20,13 +15,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="$(AssemblyName).props" Pack="true" PackagePath="build"/>
-    <None Include="$(OutputPath)/Arborist.Interpolation.InterceptorGenerator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
-    <PackageReference Include="Microsoft.Bcl.HashCode" OutputItemType="Analyzer" PrivateAssets="all" GeneratePathProperty="true" />
-    <None Include="$(PkgMicrosoft_Bcl_HashCode)/lib/netstandard2.0/*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
+    <None Include="$(OutputPath)/Arborist.Analyzers.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(SlnRoot)/Arborist.Interpolation.InterceptorGenerator/src/Arborist.Interpolation.InterceptorGenerator.csproj" OutputItemType="Analyzer" PrivateAssets="all" />
+    <ProjectReference Include="$(SlnRoot)/Arborist.Analyzers/src/Arborist.Analyzers.csproj" OutputItemType="Analyzer" PrivateAssets="all" />
   </ItemGroup>
 </Project>

@@ -12,7 +12,7 @@ public static partial class ExpressionOn<A, B> {
     /// <typeparam name="R">
     /// The expression result type.
     /// </typeparam>
-    [InterceptedExpressionInterpolator]
+    [ExpressionInterpolator]
     public static Expression<Func<A, B, R>> Interpolate<R>(
         Expression<Func<IInterpolationContext, A, B, R>> expression
     ) =>
@@ -23,7 +23,7 @@ public static partial class ExpressionOn<A, B> {
     /// calls to splicing methods defined on the provided <see cref="IInterpolationContext"/>
     /// argument with the corresponding subexpressions.
     /// </summary>
-    [InterceptedExpressionInterpolator]
+    [ExpressionInterpolator]
     public static Expression<Action<A, B>> Interpolate(
         Expression<Action<IInterpolationContext, A, B>> expression
     ) =>
@@ -44,7 +44,7 @@ public static partial class ExpressionOn<A, B> {
     /// <typeparam name="R">
     /// The expression result type.
     /// </typeparam>
-    [InterceptedExpressionInterpolator]
+    [ExpressionInterpolator]
     public static Expression<Func<A, B, R>> Interpolate<TData, R>(
         TData data,
         Expression<Func<IInterpolationContext<TData>, A, B, R>> expression
@@ -63,7 +63,7 @@ public static partial class ExpressionOn<A, B> {
     /// <typeparam name="TData">
     /// The type of the data provided to the interpolation process.
     /// </typeparam>
-    [InterceptedExpressionInterpolator]
+    [ExpressionInterpolator]
     public static Expression<Action<A, B>> Interpolate<TData>(
         TData data,
         Expression<Action<IInterpolationContext<TData>, A, B>> expression
@@ -83,7 +83,7 @@ public static partial class ExpressionOn<A, B> {
     /// <typeparam name="R">
     /// The expression result type.
     /// </typeparam>
-    [RuntimeExpressionInterpolator]
+    [ExpressionInterpolator]
     public static Expression<Func<A, B, R>> InterpolateRuntimeFallback<R>(
         Expression<Func<IInterpolationContext, A, B, R>> expression
     ) =>
@@ -99,7 +99,7 @@ public static partial class ExpressionOn<A, B> {
     /// implementation, and can be used as a workaround for potential bugs or deficiencies in
     /// the compile time interpolator.
     /// </remarks>
-    [RuntimeExpressionInterpolator]
+    [ExpressionInterpolator]
     public static Expression<Action<A, B>> InterpolateRuntimeFallback(
         Expression<Action<IInterpolationContext, A, B>> expression
     ) =>
@@ -125,7 +125,7 @@ public static partial class ExpressionOn<A, B> {
     /// <typeparam name="R">
     /// The expression result type.
     /// </typeparam>
-    [RuntimeExpressionInterpolator]
+    [ExpressionInterpolator]
     public static Expression<Func<A, B, R>> InterpolateRuntimeFallback<TData, R>(
         TData data,
         Expression<Func<IInterpolationContext<TData>, A, B, R>> expression
@@ -149,7 +149,7 @@ public static partial class ExpressionOn<A, B> {
     /// <typeparam name="TData">
     /// The type of the data provided to the interpolation process.
     /// </typeparam>
-    [RuntimeExpressionInterpolator]
+    [ExpressionInterpolator]
     public static Expression<Action<A, B>> InterpolateRuntimeFallback<TData>(
         TData data,
         Expression<Action<IInterpolationContext<TData>, A, B>> expression

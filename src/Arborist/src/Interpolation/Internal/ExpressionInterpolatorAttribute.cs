@@ -1,6 +1,6 @@
 namespace Arborist.Interpolation.Internal;
 
 [AttributeUsage(AttributeTargets.Method)]
-public abstract class ExpressionInterpolatorAttribute : Attribute {
+public sealed class ExpressionInterpolatorAttribute : Attribute {
     internal ExpressionInterpolatorAttribute() { }
 }

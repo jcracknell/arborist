@@ -3,7 +3,7 @@ namespace Arborist;
 public partial class InterpolateTests {
     [Fact]
     public void SpliceConstant_should_work_as_expected() {
-        var interpolated = InterpolationTestOnNone.Interpolate(
+        var interpolated = ExpressionOnNone.Interpolate(
             default(object),
             x => x.SpliceConstant("foo")
         );

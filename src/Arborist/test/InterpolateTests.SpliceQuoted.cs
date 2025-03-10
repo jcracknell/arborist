@@ -9,7 +9,7 @@ public partial class InterpolateTests {
             Quoted = ExpressionOn<Cat>.Of(c => true)
         };
 
-        var interpolated = InterpolationTestOn<Owner>.Interpolate(data, (x, o) =>
+        var interpolated = ExpressionOn<Owner>.Interpolate(data, (x, o) =>
             o.CatsQueryable.Any(x.SpliceQuoted(x.Data.Quoted))
         );
 

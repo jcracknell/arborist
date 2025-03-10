@@ -9,7 +9,7 @@ public partial class InterpolateTests {
             Addition = Expression.Add(Expression.Constant(1), Expression.Constant(2))
         };
 
-        var interpolated = InterpolationTestOnNone.Interpolate(
+        var interpolated = ExpressionOnNone.Interpolate(
             data,
             x => 2 * x.Splice<int>(x.Data.Addition)
         );

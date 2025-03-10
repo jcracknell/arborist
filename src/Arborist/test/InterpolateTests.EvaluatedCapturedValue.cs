@@ -8,7 +8,7 @@ public partial class InterpolateTests {
         var value = "foo";
 
         var expected = ExpressionOnNone.Of(() => "foo");
-        var interpolated = InterpolationTestOnNone.Interpolate(x => x.SpliceConstant(value));
+        var interpolated = ExpressionOnNone.Interpolate(x => x.SpliceConstant(value));
 
         Assert.Equivalent(expected, interpolated);
     }
@@ -18,7 +18,7 @@ public partial class InterpolateTests {
         var value = new { Foo = "foo" };
 
         var expected = ExpressionOnNone.Of(() => "foo");
-        var interpolated = InterpolationTestOnNone.Interpolate(x => x.SpliceConstant(value.Foo));
+        var interpolated = ExpressionOnNone.Interpolate(x => x.SpliceConstant(value.Foo));
 
         Assert.Equivalent(expected, interpolated);
     }
@@ -28,7 +28,7 @@ public partial class InterpolateTests {
         var value = "foo";
 
         var expected = ExpressionOnNone.Of(() => "foobar");
-        var interpolated = InterpolationTestOnNone.Interpolate(x => x.SpliceConstant(value + "bar"));
+        var interpolated = ExpressionOnNone.Interpolate(x => x.SpliceConstant(value + "bar"));
 
         Assert.Equivalent(expected, interpolated);
     }
@@ -38,7 +38,7 @@ public partial class InterpolateTests {
         var value = 42;
 
         var expected = ExpressionOnNone.Of(() => -42);
-        var interpolated = InterpolationTestOnNone.Interpolate(x => x.SpliceConstant(-value));
+        var interpolated = ExpressionOnNone.Interpolate(x => x.SpliceConstant(-value));
 
         Assert.Equivalent(expected, interpolated);
     }
@@ -48,7 +48,7 @@ public partial class InterpolateTests {
         var value = "foo";
 
         var expected = ExpressionOnNone.Of(() => "barfoo");
-        var interpolated = InterpolationTestOnNone.Interpolate(x => x.SpliceConstant(string.Concat("bar", value)));
+        var interpolated = ExpressionOnNone.Interpolate(x => x.SpliceConstant(string.Concat("bar", value)));
 
         Assert.Equivalent(expected, interpolated);
     }
@@ -59,7 +59,7 @@ public partial class InterpolateTests {
         var count = 3;
 
         var expected = ExpressionOnNone.Of(() => "000");
-        var interpolated = InterpolationTestOnNone.Interpolate(x => x.SpliceConstant(new string(c, count)));
+        var interpolated = ExpressionOnNone.Interpolate(x => x.SpliceConstant(new string(c, count)));
 
         Assert.Equivalent(expected, interpolated);
     }
@@ -69,7 +69,7 @@ public partial class InterpolateTests {
         var value = "Garfield";
 
         var expected = Expression.Lambda<Func<Cat>>(Expression.Constant(new Cat { Name = value }));
-        var interpolated = InterpolationTestOnNone.Interpolate(x => x.SpliceConstant(new Cat { Name = value }));
+        var interpolated = ExpressionOnNone.Interpolate(x => x.SpliceConstant(new Cat { Name = value }));
 
         Assert.Equivalent(expected, interpolated);
     }
@@ -80,7 +80,7 @@ public partial class InterpolateTests {
         var value = "Garfield";
 
         var expected = Expression.Lambda<Func<List<string>>>(Expression.Constant(new List<string>(count) { value }));
-        var interpolated = InterpolationTestOnNone.Interpolate(x => x.SpliceConstant(new List<string>(count) { value }));
+        var interpolated = ExpressionOnNone.Interpolate(x => x.SpliceConstant(new List<string>(count) { value }));
 
         Assert.Equivalent(expected, interpolated);
     }
@@ -145,7 +145,7 @@ public partial class InterpolateTests {
             select c.Name
         );
 
-        var interpolated = InterpolationTestOnNone.Interpolate(x => x.SpliceConstant(
+        var interpolated = ExpressionOnNone.Interpolate(x => x.SpliceConstant(
             from c in cats
             select c.Name
         ));
@@ -163,7 +163,7 @@ public partial class InterpolateTests {
             group o.Id + i by o.Name + s
         );
 
-        var interpolated = InterpolationTestOnNone.Interpolate(x => x.SpliceConstant(
+        var interpolated = ExpressionOnNone.Interpolate(x => x.SpliceConstant(
             from o in new[] { new Owner() }
             group o.Id + i by o.Name + s
         ));
@@ -182,7 +182,7 @@ public partial class InterpolateTests {
             select o.Id + value
         );
 
-        var interpolated = InterpolationTestOnNone.Interpolate(x => x.SpliceConstant(
+        var interpolated = ExpressionOnNone.Interpolate(x => x.SpliceConstant(
             from o in owners
             join o1 in owners on o.Id + value equals value + o1.Id
             select o.Id + value
@@ -201,7 +201,7 @@ public partial class InterpolateTests {
             select n
         );
 
-        var interpolated = InterpolationTestOnNone.Interpolate(x => x.SpliceConstant(
+        var interpolated = ExpressionOnNone.Interpolate(x => x.SpliceConstant(
             from o in new[] { new Owner() }
             let n = o.Name + value
             select n
@@ -221,7 +221,7 @@ public partial class InterpolateTests {
             select o
         );
 
-        var interpolated = InterpolationTestOnNone.Interpolate(x => x.SpliceConstant(
+        var interpolated = ExpressionOnNone.Interpolate(x => x.SpliceConstant(
             from o in new[] { new Owner() }
             orderby o.Name + s, o.Id + i
             select o
@@ -241,7 +241,7 @@ public partial class InterpolateTests {
             select o
         );
 
-        var interpolated = InterpolationTestOnNone.Interpolate(x => x.SpliceConstant(
+        var interpolated = ExpressionOnNone.Interpolate(x => x.SpliceConstant(
             from o in new[] { new Owner() }
             where o.Name == value
             select o

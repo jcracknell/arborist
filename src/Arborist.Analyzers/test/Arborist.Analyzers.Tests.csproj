@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <RootNamespace>Arborist.Interpolation.InterceptorGenerator</RootNamespace>
+    <RootNamespace>Arborist.Analyzers</RootNamespace>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
 
@@ -10,13 +10,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../src/Arborist.Interpolation.InterceptorGenerator.csproj" OutputItemType="Analyzer" PrivateAssets="all" />
+    <ProjectReference Include="../src/Arborist.Analyzers.csproj" OutputItemType="Analyzer" PrivateAssets="all" />
     <ProjectReference Include="$(SlnRoot)/Arborist/src/Arborist.csproj" />
     <ProjectReference Include="$(SlnRoot)/Arborist.TestFixtures/src/Arborist.TestFixtures.csproj" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing"/>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces"/>
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers"/>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp"/>
     <PackageReference Include="Microsoft.NET.Test.Sdk"/>
-    <PackageReference Include="NSubstitute"/>
     <PackageReference Include="xunit"/>
     <PackageReference Include="xunit.runner.visualstudio"/>
   </ItemGroup>

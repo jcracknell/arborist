@@ -16,5 +16,8 @@ public static partial class ExpressionHelper {
     /// in the subject <paramref name="expression"/>.
     /// </summary>
     public static Expression Replace(Expression expression, IReadOnlyDictionary<Expression, Expression> replacements) =>
-        new ReplacingExpressionVisitor(replacements).Visit(expression);
+        replacements.Count switch {
+            0 => expression,
+            _ => new ReplacingExpressionVisitor(replacements).Visit(expression)
+        };
 }

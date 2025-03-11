@@ -169,15 +169,23 @@ internal static class ExpressionInterpolator {
                 if(convert.Method is not null) {
                     value = convert.Method.Invoke(null, [baseValue]);
                     return true;
+                } else if(baseValue is null && (!convert.Type.IsValueType || Nullable.GetUnderlyingType(convert.Type) is not null)) {
+                    value = baseValue;
+                    return true;
+                } else if(baseValue?.GetType().IsAssignableTo(convert.Type) is true) {
+                    value = baseValue;
+                    return true;
+                } else if(baseValue is IConvertible) {
+                    try {
+                        value = Convert.ChangeType(baseValue, convert.Type);
+                        return true;
+                    } catch {
+                        // Swallow any exception
+                    }
                 }
 
-                try {
-                    value = Convert.ChangeType(baseValue, convert.Type);
-                    return true;
-                } catch {
-                    value = default;
-                    return false;
-                }
+                value = default;
+                return false;
 
             default:
                 value = default;

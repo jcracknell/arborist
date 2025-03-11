@@ -105,7 +105,14 @@ public static class SmallDictionary {
     /// </summary>
     public static SmallDictionary<K, V> Create<K, V>(params KeyValuePair<K, V>[] entries)
         where K : notnull =>
-        CreateRange(EqualityComparer<K>.Default, entries);
+        Create<K, V>(EqualityComparer<K>.Default, entries.AsSpan());
+
+    /// <summary>
+    /// Creates a <see cref="SmallDictionary{K,V}"/> instance from the provided <paramref name="entries"/>.
+    /// </summary>
+    public static SmallDictionary<K, V> Create<K, V>(ReadOnlySpan<KeyValuePair<K, V>> entries)
+        where K : notnull =>
+        Create(EqualityComparer<K>.Default, entries);
 
     /// <summary>
     /// Creates a <see cref="SmallDictionary{K,V}"/> instance using the provided <paramref name="keyComparer"/>
@@ -115,7 +122,30 @@ public static class SmallDictionary {
         IEqualityComparer<K> keyComparer,
         params KeyValuePair<K, V>[] entries
     ) where K : notnull =>
-        CreateRange(keyComparer, entries);
+        Create<K, V>(keyComparer, entries.AsSpan());
+
+    /// <summary>
+    /// Creates a <see cref="SmallDictionary{K,V}"/> instance using the provided <paramref name="keyComparer"/>
+    /// and <paramref name="entries"/>.
+    /// </summary>
+    public static SmallDictionary<K, V> Create<K, V>(
+        IEqualityComparer<K> keyComparer,
+        ReadOnlySpan<KeyValuePair<K, V>> entries
+    ) where K : notnull {
+        switch(entries.Length) {
+             case 0: return Create<K, V>(keyComparer);
+             case 1: return Create(keyComparer, entries[0]);
+             case 2: return Create(keyComparer, entries[0], entries[1]);
+             case 3: return Create(keyComparer, entries[0], entries[1], entries[2]);
+             case 4: return Create(keyComparer, entries[0], entries[1], entries[2], entries[3]);
+        }
+
+        var builder = ImmutableDictionary.CreateBuilder<K, V>(keyComparer);
+        foreach(var entry in entries)
+            builder.Add(entry);
+
+        return new SmallDictionaryN<K, V>(builder.ToImmutable());
+    }
 
     /// <summary>
     /// Creates a <see cref="SmallDictionary{K,V}"/> instance from the provided <paramref name="entries"/>.

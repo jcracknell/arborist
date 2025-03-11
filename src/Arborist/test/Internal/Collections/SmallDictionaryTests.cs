@@ -114,6 +114,80 @@ public class SmallDictionaryTests {
     }
 
     [Fact]
+    public void Create_with_keyComparer_and_ReadOnlySpan_should_create_SmallDictionary0() {
+        var entries = new KeyValuePair<string, string>[0];
+
+        var instance = SmallDictionary.Create<string, string>(EqualityComparer<string>.Default, entries.AsSpan());
+
+        Assert.IsType<SmallDictionary0<string, string>>(instance);
+    }
+
+    [Fact]
+    public void Create_with_keyComparer_and_ReadOnlySpan_should_create_SmallDictionary1() {
+        var entries = new[] {
+            KeyValuePair.Create("a", "a")
+        };
+
+        var instance = SmallDictionary.Create<string, string>(EqualityComparer<string>.Default, entries.AsSpan());
+
+        Assert.IsType<SmallDictionary1<string, string>>(instance);
+    }
+
+    [Fact]
+    public void Create_with_keyComparer_and_ReadOnlySpan_should_create_SmallDictionary2() {
+        var entries = new[] {
+            KeyValuePair.Create("a", "a"),
+            KeyValuePair.Create("b", "b")
+        };
+
+        var instance = SmallDictionary.Create<string, string>(EqualityComparer<string>.Default, entries.AsSpan());
+
+        Assert.IsType<SmallDictionary2<string, string>>(instance);
+    }
+
+    [Fact]
+    public void Create_with_keyComparer_and_ReadOnlySpan_should_create_SmallDictionary3() {
+        var entries = new[] {
+            KeyValuePair.Create("a", "a"),
+            KeyValuePair.Create("b", "b"),
+            KeyValuePair.Create("c", "c"),
+        };
+
+        var instance = SmallDictionary.Create<string, string>(EqualityComparer<string>.Default, entries.AsSpan());
+
+        Assert.IsType<SmallDictionary3<string, string>>(instance);
+    }
+
+    [Fact]
+    public void Create_with_keyComparer_and_ReadOnlySpan_should_create_SmallDictionary4() {
+        var entries = new[] {
+            KeyValuePair.Create("a", "a"),
+            KeyValuePair.Create("b", "b"),
+            KeyValuePair.Create("c", "c"),
+            KeyValuePair.Create("d", "d"),
+        };
+
+        var instance = SmallDictionary.Create<string, string>(EqualityComparer<string>.Default, entries.AsSpan());
+
+        Assert.IsType<SmallDictionary4<string, string>>(instance);
+    }
+
+    [Fact]
+    public void Create_with_keyComparer_and_ReadOnlySpan_should_create_SmallDictionary5() {
+        var entries = new[] {
+            KeyValuePair.Create("a", "a"),
+            KeyValuePair.Create("b", "b"),
+            KeyValuePair.Create("c", "c"),
+            KeyValuePair.Create("d", "d"),
+            KeyValuePair.Create("e", "e"),
+        };
+
+        var instance = SmallDictionary.Create<string, string>(EqualityComparer<string>.Default, entries.AsSpan());
+
+        Assert.IsType<SmallDictionaryN<string, string>>(instance);
+    }
+
+    [Fact]
     public void SmallDictionary0_TryGetValue_should_work_as_expected() {
         var instance = new SmallDictionary0<string, string>(
             EqualityComparer<string>.Default

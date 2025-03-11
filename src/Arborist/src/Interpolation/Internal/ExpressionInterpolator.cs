@@ -10,6 +10,13 @@ internal static class ExpressionInterpolator {
         var analyzer = new AnalyzingInterpolationVisitor(expression);
         analyzer.Apply(expression.Body);
 
+        // If there are no expressions requiring evaluation, then there are no splices
+        if(analyzer.EvaluatedExpressions.Count == 0)
+            return Expression.Lambda<TDelegate>(
+                body: expression.Body,
+                parameters: expression.Parameters.Skip(1)
+            );
+
         var interpolator = new SplicingInterpolationVisitor(
             evaluatedSpliceParameters: EvaluateSplicedExpressions(
                 data: data,

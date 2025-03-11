@@ -1,5 +1,4 @@
 using Arborist.Internal.Collections;
-using System.Reflection;
 
 namespace Arborist.Interpolation.Internal;
 
@@ -104,115 +103,9 @@ internal static class ExpressionInterpolator {
 
     private static bool TryReflectSplicedExpression<TData>(TData data, Expression expression, out object? value) {
         try {
-            return TryReflectSplicedExpressionCore(data, expression, out value);
+            return ReflectiveSplicedExpressionEvaluator.Instance.TryEvaluate(data, expression, out value);
         } catch(Exception ex) {
             throw new SpliceArgumentEvaluationException(expression, ex);
         }
-    }
-
-    private static bool TryReflectSplicedExpressionCore<TData>(TData data, Expression expression, out object? value) {
-        switch(expression) {
-            case ConstantExpression constant:
-                value = constant.Value;
-                return true;
-
-            // Interpolation data access
-            case MemberExpression { Member: PropertyInfo { Name: nameof(IInterpolationContext<TData>.Data) } } dataAccess
-                when dataAccess.Expression?.Type == typeof(IInterpolationContext<TData>)
-                && dataAccess.Member == typeof(IInterpolationContext<TData>).GetProperty(nameof(IInterpolationContext<TData>.Data)):
-                value = data;
-                return true;
-
-            // Instance field access
-            case MemberExpression { Expression: {} baseExpr, Member: FieldInfo field }
-                when TryReflectSplicedExpressionCore(data, baseExpr, out var baseValue):
-                value = field.GetValue(baseValue);
-                return true;
-
-            // Instance property access
-            case MemberExpression { Expression: {} baseExpr, Member: PropertyInfo property }
-                when TryReflectSplicedExpressionCore(data, baseExpr, out var baseValue):
-                value = property.GetValue(baseValue);
-                return true;
-
-            // Instance call
-            case MethodCallExpression { Object: not null } methodCall
-                when TryReflectSplicedExpressionCore(data, methodCall.Object, out var objectValue)
-                && TryReflectSplicedArgExpressions(data, methodCall.Arguments, out var argValues):
-                value = methodCall.Method.Invoke(objectValue, argValues);
-                return true;
-
-            // Static field access
-            case MemberExpression { Expression: null, Member: FieldInfo field }:
-                value = field.GetValue(null);
-                return true;
-
-            // Static property access
-            case MemberExpression { Expression: null, Member: PropertyInfo property }:
-                value = property.GetValue(null);
-                return true;
-
-            // Static call
-            case MethodCallExpression { Object: null } methodCall
-                when TryReflectSplicedArgExpressions(data, methodCall.Arguments, out var argValues):
-                value = methodCall.Method.Invoke(null, argValues);
-                return true;
-
-            // Quoted lambda
-            case UnaryExpression { NodeType: ExpressionType.Quote } quoted:
-                value = quoted.Operand;
-                return true;
-
-            // Type conversion
-            case UnaryExpression { NodeType: ExpressionType.Convert } convert
-                when TryReflectSplicedExpressionCore(data, convert.Operand, out var baseValue):
-                if(convert.Method is not null) {
-                    value = convert.Method.Invoke(null, [baseValue]);
-                    return true;
-                } else if(baseValue is null && (!convert.Type.IsValueType || Nullable.GetUnderlyingType(convert.Type) is not null)) {
-                    value = baseValue;
-                    return true;
-                } else if(baseValue?.GetType().IsAssignableTo(convert.Type) is true) {
-                    value = baseValue;
-                    return true;
-                } else if(baseValue is IConvertible) {
-                    try {
-                        value = Convert.ChangeType(baseValue, convert.Type);
-                        return true;
-                    } catch {
-                        // Swallow any exception
-                    }
-                }
-
-                value = default;
-                return false;
-
-            default:
-                value = default;
-                return false;
-        }
-    }
-
-    private static bool TryReflectSplicedArgExpressions<TData>(
-        TData data,
-        IReadOnlyCollection<Expression> expressions,
-        [NotNullWhen(true)] out object?[]? values
-    ) {
-        values = default;
-        var count = expressions.Count;
-        if(count != 0) {
-            var expressionIndex = 0;
-            foreach(var expression in expressions) {
-                if(!TryReflectSplicedExpressionCore(data, expression, out var value))
-                    return false;
-
-                values ??= new object?[count];
-                values[expressionIndex] = value;
-                expressionIndex += 1;
-            }
-        }
-
-        values ??= Array.Empty<object?>();
-        return true;
     }
 }

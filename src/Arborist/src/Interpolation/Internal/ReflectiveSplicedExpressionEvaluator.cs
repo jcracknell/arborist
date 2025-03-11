@@ -17,6 +17,9 @@ internal sealed class ReflectiveSplicedExpressionEvaluator {
             case MethodCallExpression:
                 return TryEvaluateMethodCall(data, (MethodCallExpression)expression, out value);
 
+            case NewExpression:
+                return TryEvaluateNew(data, (NewExpression)expression, out value);
+
             case UnaryExpression:
                 return TryEvaluateUnary(data, (UnaryExpression)expression, out value);
 
@@ -92,6 +95,19 @@ internal sealed class ReflectiveSplicedExpressionEvaluator {
             case { Object: null }
                 when TryEvaluateMany(data, expression.Arguments, out var argValues):
                 value = expression.Method.Invoke(null, argValues);
+                return true;
+
+            default:
+                value = default;
+                return false;
+        }
+    }
+
+    private bool TryEvaluateNew<TData>(TData data, NewExpression expression, out object? value) {
+        switch(expression) {
+            case { Constructor: not null }
+                when TryEvaluateMany(data, expression.Arguments, out var argValues):
+                value = expression.Constructor.Invoke(argValues);
                 return true;
 
             default:

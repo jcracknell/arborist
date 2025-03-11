@@ -127,4 +127,16 @@ public class ReflectiveSplicedExpressionEvaluatorTests {
         Assert.True(ReflectiveSplicedExpressionEvaluator.Instance.TryEvaluate(default(object), convert, out var value));
         Assert.Equal("foo", value);
     }
+
+    [Fact]
+    public void Should_evaluate_new() {
+        var newExpr = Expression.New(
+            typeof(string).GetConstructor(new[] { typeof(char), typeof(int) })!,
+            Expression.Constant('a'),
+            Expression.Constant(3)
+        );
+
+        Assert.True(ReflectiveSplicedExpressionEvaluator.Instance.TryEvaluate(default(object), newExpr, out var value));
+        Assert.Equal("aaa", value);
+    }
 }

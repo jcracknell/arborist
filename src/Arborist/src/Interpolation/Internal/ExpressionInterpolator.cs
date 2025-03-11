@@ -151,6 +151,11 @@ internal static class ExpressionInterpolator {
                 value = methodCall.Method.Invoke(null, argValues);
                 return true;
 
+            // Quoted lambda
+            case UnaryExpression { NodeType: ExpressionType.Quote } quoted:
+                value = quoted.Operand;
+                return true;
+
             // Type conversion
             case UnaryExpression { NodeType: ExpressionType.Convert } convert
                 when TryReflectSplicedExpressionCore(data, convert.Operand, out var baseValue):

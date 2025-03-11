@@ -11,6 +11,9 @@ internal sealed class ReflectiveSplicedExpressionEvaluator {
                 value = ((ConstantExpression)expression).Value;
                 return true;
 
+            case ListInitExpression:
+                return TryEvaluateListInit(data, (ListInitExpression)expression, out value);
+
             case MemberExpression:
                 return TryEvaluateMember(data, (MemberExpression)expression, out value);
 
@@ -50,6 +53,25 @@ internal sealed class ReflectiveSplicedExpressionEvaluator {
 
         values ??= Array.Empty<object?>();
         return true;
+    }
+
+    private bool TryEvaluateListInit<TData>(TData data, ListInitExpression expression, out object? value) {
+        if(TryEvaluate(data, expression.NewExpression, out var baseValue)) {
+            foreach(var elementInit in expression.Initializers) {
+                if(!TryEvaluateMany(data, elementInit.Arguments, out var argValues)) {
+                    value = default;
+                    return false;
+                }
+
+                elementInit.AddMethod.Invoke(baseValue, argValues);
+            }
+
+            value = baseValue;
+            return true;
+        }
+
+        value = default;
+        return false;
     }
 
     private bool TryEvaluateMember<TData>(TData data, MemberExpression expression, out object? value) {

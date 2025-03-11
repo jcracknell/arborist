@@ -139,4 +139,12 @@ public class ReflectiveSplicedExpressionEvaluatorTests {
         Assert.True(ReflectiveSplicedExpressionEvaluator.Instance.TryEvaluate(default(object), newExpr, out var value));
         Assert.Equal("aaa", value);
     }
+
+    [Fact]
+    public void Should_evaluate_collection_initializer() {
+        var expr = ExpressionOnNone.Of(() => new List<string> { "foo" });
+
+        Assert.True(ReflectiveSplicedExpressionEvaluator.Instance.TryEvaluate(default(object), expr.Body, out var value));
+        Assert.Equivalent(new List<string> { "foo" }, value);
+    }
 }

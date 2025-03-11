@@ -1,5 +1,4 @@
 using Arborist.Internal.Collections;
-using System.Buffers;
 
 namespace Arborist.Interpolation.Internal;
 
@@ -29,10 +28,10 @@ public class SplicingInterpolationVisitor : InterpolationVisitor {
 
     protected override Expression VisitSplicingMethodCall(MethodCallExpression node) {
         return node.Method.Name switch {
-            nameof(IInterpolationContext.Splice) => VisitSplice(node),
-            nameof(IInterpolationContext.SpliceBody) => VisitSpliceBody(node),
-            nameof(IInterpolationContext.SpliceConstant) => VisitSpliceConstant(node),
-            nameof(IInterpolationContext.SpliceQuoted) => VisitSpliceQuoted(node),
+            nameof(InterpolationSpliceOperations.Splice) => VisitSplice(node),
+            nameof(InterpolationSpliceOperations.SpliceBody) => VisitSpliceBody(node),
+            nameof(InterpolationSpliceOperations.SpliceConstant) => VisitSpliceConstant(node),
+            nameof(InterpolationSpliceOperations.SpliceQuoted) => VisitSpliceQuoted(node),
             _ => throw new Exception($"Unhandled {typeof(IInterpolationContext)} method: {node.Method}.")
         };
     }
@@ -51,12 +50,12 @@ public class SplicingInterpolationVisitor : InterpolationVisitor {
         // in the body of the final LambdaExpression, however we don't have access to lambda yet as the
         // expressions are evaluated in order. To avoid allocating a second collection we'll build a
         // replacements array with null target expressions, and then patch it up.
-        var argumentReplacementCount = node.Arguments.Count - 1;
+        var argumentReplacementCount = node.Arguments.Count - 2;
         var argumentReplacements = new KeyValuePair<Expression, Expression>[argumentReplacementCount];
         for(var i = 0; i < argumentReplacementCount; i++)
             argumentReplacements[i] = new KeyValuePair<Expression, Expression>(
                 default!,
-                Visit(node.Arguments[i])
+                Visit(node.Arguments[i + 1])
             );
 
         // Get the lambda now we've processed any splices occurring in the replacement expressions

@@ -5,16 +5,16 @@ internal static class InterpolationStrings {
         InterpolationContextInvocation(nameof(IInterpolationContext<object>.Data));
 
     public static string InterpolationContextSpliceInvoked =>
-        InterpolationContextInvocation(nameof(IInterpolationContext.Splice));
+        InterpolationContextInvocation(nameof(InterpolationSpliceOperations.Splice));
 
     public static string InterpolationContextSpliceBodyInvoked =>
-        InterpolationContextInvocation(nameof(IInterpolationContext.SpliceBody));
+        InterpolationContextInvocation(nameof(InterpolationSpliceOperations.SpliceBody));
 
     public static string InterpolationContextSpliceConstantInvoked =>
-        InterpolationContextInvocation(nameof(IInterpolationContext.SpliceConstant));
+        InterpolationContextInvocation(nameof(InterpolationSpliceOperations.SpliceConstant));
 
     public static string InterpolationContextSpliceQuotedInvoked =>
-        InterpolationContextInvocation(nameof(IInterpolationContext.SpliceQuoted));
+        InterpolationContextInvocation(nameof(InterpolationSpliceOperations.SpliceQuoted));
 
     private static string InterpolationContextInvocation(string memberName) =>
         $"{nameof(IInterpolationContext)}.{memberName} may only be used within an interpolated expression.";

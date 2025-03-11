@@ -45,18 +45,18 @@ public class AnalyzingInterpolationVisitor : InterpolationVisitor {
     }
 
     protected override Expression VisitMember(MemberExpression node) {
-        if(
-            _evaluatingExpression is not null
-            && node is { Expression: not null, Member: PropertyInfo property }
-            && node.Expression.Type.IsAssignableTo(typeof(IInterpolationContext))
-            && property.Name.Equals(nameof(IInterpolationContext<object>.Data))
-        ) {
+        if(_evaluatingExpression is not null && IsInterpolationDataAccess(node)) {
             (_dataReferences ??= new()).Add(node);
             return node;
         } else {
             return base.VisitMember(node);
         }
     }
+
+    private static bool IsInterpolationDataAccess(MemberExpression node) =>
+        node is { Expression: not null, Member: PropertyInfo property }
+        && property.Name.Equals(nameof(IInterpolationContext<object>.Data))
+        && node.Expression.Type.IsAssignableTo(typeof(IInterpolationContext));
 
     protected override Expression VisitParameter(ParameterExpression node) {
         // If the context parameter appears outside of a splicing call in the interpolated region of
@@ -75,20 +75,24 @@ public class AnalyzingInterpolationVisitor : InterpolationVisitor {
     protected override Expression VisitSplicingMethodCall(MethodCallExpression node) {
         // Trigger the InterpolatedParameterEvaluationException for a splice in an evaluated expression
         if(_evaluatingExpression is not null)
-            Visit(node.Object);
+            Visit(node.Arguments[0]);
 
-        foreach(var (parameter, argumentExpression) in node.Method.GetParameters().Zip(node.Arguments)) {
+        var parameters = node.Method.GetParameters();
+        for(var i = 1; i < parameters.Length; i++) {
+            var parameter = parameters[i];
+            var argument = node.Arguments[i];
+
             if(parameter.IsDefined(typeof(EvaluatedSpliceParameterAttribute), false)) {
-                (_evaluatedExpressions ??= new(1)).Add(argumentExpression);
+                (_evaluatedExpressions ??= new(1)).Add(argument);
 
-                _evaluatingExpression = argumentExpression;
-                Visit(argumentExpression);
+                _evaluatingExpression = argument;
+                Visit(argument);
                 _evaluatingExpression = null;
             } else {
                 if(!parameter.IsDefined(typeof(InterpolatedSpliceParameterAttribute), false))
                     throw new Exception($"Parameter {parameter} to method {node.Method} must be annotated with one of {typeof(EvaluatedSpliceParameterAttribute)} or {typeof(InterpolatedSpliceParameterAttribute)}.");
 
-                Visit(argumentExpression);
+                Visit(argument);
             }
         }
 

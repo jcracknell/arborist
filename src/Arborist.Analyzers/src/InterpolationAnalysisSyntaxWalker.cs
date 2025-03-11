@@ -99,8 +99,9 @@ public sealed class InterpolationAnalysisSyntaxWalker : CSharpSyntaxWalker {
         splicingMethod = default;
         if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not IMethodSymbol methodSymbol)
             return false;
-
-        if(!SymbolHelpers.IsSubtype(methodSymbol.ContainingType, _context.TypeSymbols.IInterpolationContext))
+        if(methodSymbol.ReducedFrom is null)
+            return false;
+        if(!SymbolEqualityComparer.Default.Equals(methodSymbol.ContainingType, _context.TypeSymbols.InterpolationSpliceOperations))
             return false;
 
         splicingMethod = methodSymbol;

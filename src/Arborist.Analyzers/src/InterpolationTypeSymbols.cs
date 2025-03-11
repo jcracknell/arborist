@@ -14,6 +14,7 @@ public sealed class InterpolationTypeSymbols {
         ExpressionInterpolatorAttribute = compilation.GetTypeByMetadataName("Arborist.Interpolation.Internal.ExpressionInterpolatorAttribute")!;
         EvaluatedSpliceParameterAttribute = compilation.GetTypeByMetadataName("Arborist.Interpolation.Internal.EvaluatedSpliceParameterAttribute")!;
         InterpolatedSpliceParameterAttribute = compilation.GetTypeByMetadataName("Arborist.Interpolation.Internal.InterpolatedSpliceParameterAttribute")!;
+        InterpolationSpliceOperations = compilation.GetTypeByMetadataName("Arborist.InterpolationSpliceOperations")!;
 
         Expression1 = compilation.GetTypeByMetadataName("System.Linq.Expressions.Expression`1")!.ConstructUnboundGenericType();
 
@@ -36,6 +37,7 @@ public sealed class InterpolationTypeSymbols {
     public INamedTypeSymbol IInterpolationContext1 { get; }
     public INamedTypeSymbol EvaluatedSpliceParameterAttribute { get; }
     public INamedTypeSymbol InterpolatedSpliceParameterAttribute { get; }
+    public INamedTypeSymbol InterpolationSpliceOperations { get;}
     public INamedTypeSymbol Expression1 { get; }
 
     public ImmutableArray<INamedTypeSymbol> Actions { get; }

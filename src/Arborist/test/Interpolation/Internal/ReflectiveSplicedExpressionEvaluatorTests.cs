@@ -176,4 +176,28 @@ public class ReflectiveSplicedExpressionEvaluatorTests {
         Assert.True(ReflectiveSplicedExpressionEvaluator.Instance.TryEvaluate(default(object), expr.Body, out var value));
         Assert.Equivalent(new InitializerFixture { NestedCollection = { "foo" } }, value);
     }
+
+    [Fact]
+    public void Should_evaluate_indexer() {
+        var expr = ExpressionOnNone.Of(() => new List<string> { "foo" }[0]);
+
+        Assert.True(ReflectiveSplicedExpressionEvaluator.Instance.TryEvaluate(default(object), expr.Body, out var value));
+        Assert.Equal("foo", value);
+    }
+
+    [Fact]
+    public void Should_evaluate_array_index() {
+        var expr = ExpressionOn<IInterpolationContext<string[]>>.Of(x => x.Data[0]);
+
+        Assert.True(ReflectiveSplicedExpressionEvaluator.Instance.TryEvaluate(new[] { "foo" }, expr.Body, out var value));
+        Assert.Equal("foo", value);
+    }
+
+    [Fact]
+    public void Should_evaluate_array_length() {
+        var expr = ExpressionOn<IInterpolationContext<string[]>>.Of(x => x.Data.Length);
+
+        Assert.True(ReflectiveSplicedExpressionEvaluator.Instance.TryEvaluate(new string[3], expr.Body, out var value));
+        Assert.Equal(3, value);
+    }
 }

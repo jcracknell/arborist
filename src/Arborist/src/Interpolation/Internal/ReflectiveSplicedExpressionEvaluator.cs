@@ -1,3 +1,4 @@
+using Arborist.Internal;
 using System.Collections.ObjectModel;
 using System.Reflection;
 
@@ -56,8 +57,8 @@ internal sealed class ReflectiveSplicedExpressionEvaluator {
         // this is possible, and then a second pass to actually perform the evaluation.
         var verificationContext = new EvaluationContext<TData, Expression>(
             data: data,
-            input: expression,
-            evaluate: false
+            evaluate: false,
+            input: expression
         );
 
         if(!TryEvaluate(verificationContext, out value))
@@ -65,8 +66,8 @@ internal sealed class ReflectiveSplicedExpressionEvaluator {
 
         var evaluationContext = new EvaluationContext<TData, Expression>(
             data: data,
-            input: expression,
-            evaluate: true
+            evaluate: true,
+            input: expression
         );
 
         if(!TryEvaluate(evaluationContext, out value))
@@ -77,15 +78,15 @@ internal sealed class ReflectiveSplicedExpressionEvaluator {
 
     private readonly struct EvaluationContext<TData, TInput>(
         TData data,
-        TInput input,
-        bool evaluate
+        bool evaluate,
+        TInput input
     ) {
         public readonly TData Data = data;
         public readonly bool Evaluate = evaluate;
         public readonly TInput Input = input;
 
         public EvaluationContext<TData, T> WithInput<T>(T input) =>
-            new(Data, input, Evaluate);
+            new(Data, Evaluate, input);
     }
 
     private bool TryEvaluate<TData>(EvaluationContext<TData, Expression> context, out object? value) {
@@ -106,6 +107,12 @@ internal sealed class ReflectiveSplicedExpressionEvaluator {
 
             case NewExpression:
                 return TryEvaluateNew(context.WithInput((NewExpression)context.Input), out value);
+
+            case IndexExpression:
+                return TryEvaluateIndex(context.WithInput((IndexExpression)context.Input), out value);
+
+            case BinaryExpression:
+                return TryEvaluateBinary(context.WithInput((BinaryExpression)context.Input), out value);
 
             case MemberInitExpression:
                 return TryEvaluateMemberInit(context.WithInput((MemberInitExpression)context.Input), out value);
@@ -170,6 +177,52 @@ internal sealed class ReflectiveSplicedExpressionEvaluator {
                 return true;
 
             default:
+                return false;
+        }
+    }
+
+    private bool TryEvaluateBinary<TData>(EvaluationContext<TData, BinaryExpression> context, out object? value) {
+        switch(context.Input.NodeType) {
+            case ExpressionType.ArrayIndex
+                when TryEvaluate(context.WithInput(context.Input.Left), out var baseValue)
+                && TryEvaluate(context.WithInput(context.Input.Right), out var offsetValue):
+                value = context.Evaluate switch {
+                    false => default,
+                    true =>
+                        typeof(Array).GetMethod(nameof(Array.GetValue), [typeof(int)])!
+                        .Invoke(baseValue, [offsetValue])
+                };
+                return true;
+
+            default:
+                value = default;
+                return false;
+        }
+    }
+
+    private bool TryEvaluateIndex<TData>(EvaluationContext<TData, IndexExpression> context, out object? value) {
+        switch(context.Input) {
+            case { Indexer: not null, Object: not null }
+                when TryEvaluate(context.WithInput(context.Input.Object), out var baseValue)
+                && TryEvaluateMany(context.WithInput(context.Input.Arguments), out var indexerArgs):
+                value = context.Evaluate ? context.Input.Indexer.GetValue(baseValue, indexerArgs) : default;
+                return true;
+
+
+            // Multi-dimensional array access
+            case { Indexer: null, Object: not null, Type.IsArray: true }
+                when TryEvaluate(context.WithInput(context.Input.Object), out var baseValue)
+                && TryEvaluateMany(context.WithInput(context.Input.Arguments), out var indexerArgs):
+                value = context.Evaluate switch {
+                    false => default,
+                    true =>
+                        typeof(Array).GetMethod(nameof(Array.GetValue), [typeof(int[])])!
+                        .Invoke(baseValue, [indexerArgs!.Cast<int>().ToArray()])
+                };
+                return true;
+
+            default:
+                value = default;
                 return false;
         }
     }
@@ -281,6 +334,11 @@ internal sealed class ReflectiveSplicedExpressionEvaluator {
         switch(context.Input.NodeType) {
             case ExpressionType.Convert:
                 return TryEvaluateConvert(context, out value);
+
+            case ExpressionType.ArrayLength
+                when TryEvaluate(context.WithInput(context.Input.Operand), out var baseValue):
+                value = context.Evaluate ? typeof(Array).GetProperty(nameof(Array.Length))!.GetValue(baseValue) : default;
+                return true;
 
             case ExpressionType.Quote:
                 value = context.Input.Operand;

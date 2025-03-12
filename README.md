@@ -57,6 +57,21 @@ resulting from the interpolation process. The interpolation context provides acc
 *splicing methods* used to lower other expression trees into the result expression, as well as
 to any data that you want to inject into the interpolation process.
 
+### A word on performance
+
+Most of the performance cost associated with expression interpolation is associated with the
+evaluation of expression subtrees provided as arguments to evaluated splice parameters
+(annotated with EvaluatedSpliceParameterAttribute). Interpolation becomes expensive in the
+event that [expression compilation][6] is required to evaluate such subtrees.
+
+Arborist will first attempt to evaluate these expressions using a reflective approach which
+is capable of interpreting most *basic* expression trees; i.e. member accesses, method
+invocations, and some basic type conversions. Despite the use of the reflection API, expressions
+which can be evaluated this way require on the order of 25 times less runtime than the
+compilation-based approach used as a fallback in the event that it fails. **As such you should
+generally try to pre-evaluate your spliced trees before providing them to the interpolation
+process.**
+
 ### Splicing methods
 
 Lacking an actual compiler-provided interpolation syntax, the interpolation process works by
@@ -121,7 +136,7 @@ ExpressionOnNone.Interpolate(
 
 > **⚠️ Caution:** A value spliced as a constant within an expression is typically translated by
 > EntityFramework into a literal SQL value instead of a query parameter. This could prevent your
-> database server from caching and reusing an execution plan for your query in the event that the
+> database from caching and reusing an execution plan for your query in the event that the
 > value changes.
 
 To avoid embedding a value as a constant in a scenario where the value is passed in via the data
@@ -604,3 +619,4 @@ has the following JSON representation:
 [3]: https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-12#interceptors
 [4]: https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/using-directive#the-using-alias
 [5]: https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.ef.parameter
+[6]: https://learn.microsoft.com/en-us/dotnet/api/system.linq.expressions.expression-1.compile

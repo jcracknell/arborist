@@ -6,11 +6,8 @@ namespace Arborist.Interpolation.Internal;
 /// <summary>
 /// Reflection-based <see cref="IPartialSplicedExpressionEvaluator"/> implementation.
 /// </summary>
-public class ReflectivePartialSplicedExpressionEvaluator(IExpressionCompiler expressionCompiler)
-    : IPartialSplicedExpressionEvaluator
-{
-    public static ReflectivePartialSplicedExpressionEvaluator Instance { get; } =
-        new(LightExpressionCompiler.Instance);
+public class ReflectivePartialSplicedExpressionEvaluator : IPartialSplicedExpressionEvaluator {
+    public static ReflectivePartialSplicedExpressionEvaluator Instance { get; } = new();
 
     public bool TryEvaluate<TData>(TData data, Expression expression, out object? value) {
         var context = new PartialSplicedExpressionEvaluationContext<TData>(
@@ -343,12 +340,9 @@ public class ReflectivePartialSplicedExpressionEvaluator(IExpressionCompiler exp
                 value = context.Evaluate ? context.Input.Method.Invoke(null, [baseValue]) : default;
                 return true;
             }
+            // N.B. this handles conversions from T to Nullable<T>
             if(targetType == typeof(object) || fromType.IsAssignableTo(targetType)) {
                 value = baseValue;
-                return true;
-            }
-            if(TryGetCastHelper(targetType, fromType, out var castHelper)) {
-                value = context.Evaluate ? castHelper(baseValue) : default;
                 return true;
             }
         }
@@ -356,47 +350,4 @@ public class ReflectivePartialSplicedExpressionEvaluator(IExpressionCompiler exp
         value = default;
         return false;
     }
-
-    private static ImmutableDictionary<(Type, Type), Func<object?, object?>> CastHelperCache =
-        ImmutableDictionary<(Type, Type), Func<object?, object?>>.Empty;
-
-    private bool TryGetCastHelper(
-        Type targetType,
-        Type sourceType,
-        [NotNullWhen(true)] out Func<object?, object?>? helper
-    ) {
-        var cacheKey = (targetType, sourceType);
-        if(CastHelperCache.TryGetValue(cacheKey, out helper))
-            return true;
-        if(!IsSupportedCast(targetType, sourceType))
-            return false;
-
-        helper = CreateCastHelper(targetType, sourceType);
-        CastHelperCache = CastHelperCache.SetItem(cacheKey, helper);
-        return true;
-    }
-
-    private Func<object?, object?> CreateCastHelper(Type targetType, Type sourceType) {
-        var parameter = Expression.Parameter(typeof(object));
-
-        return expressionCompiler.Compile(Expression.Lambda<Func<object?, object?>>(
-            Expression.Convert(
-                Expression.Convert(
-                    Expression.Convert(parameter, sourceType),
-                    targetType
-                ),
-                typeof(object)
-            ),
-            parameter
-        ));
-    }
-
-    private static bool IsSupportedCast(Type targetType, Type sourceType) =>
-        targetType == typeof(object)
-        || sourceType == typeof(object)
-        || IsPrimitiveCastType(sourceType) && IsPrimitiveCastType(targetType);
-
-    private static bool IsPrimitiveCastType(Type type) =>
-        type.IsAssignableTo(typeof(System.IConvertible))
-        || Nullable.GetUnderlyingType(type) is {} underlying && IsPrimitiveCastType(underlying);
 }

@@ -1,5 +1,4 @@
 using Arborist.TestFixtures;
-using System.Reflection;
 
 namespace Arborist.Interpolation.Internal;
 
@@ -36,75 +35,50 @@ public class ReflectivePartialSplicedExpressionEvaluatorTests {
     [Fact]
     public void Should_evaluate_instance_field() {
         var instance = new MemberFixture { InstanceField = "foo" };
-        var field = Expression.Field(Expression.Constant(instance), nameof(instance.InstanceField));
+        var expr = ExpressionOnNone.Of(() => instance.InstanceField);
 
-        Assert.True(ReflectivePartialSplicedExpressionEvaluator.Instance.TryEvaluate(default(object), field, out var value));
+        Assert.True(ReflectivePartialSplicedExpressionEvaluator.Instance.TryEvaluate(default(object), expr.Body, out var value));
         Assert.Equal(instance.InstanceField, value);
     }
 
     [Fact]
     public void Should_evaluate_static_field() {
-        var field = Expression.Field(
-            null,
-            typeof(ReflectivePartialSplicedExpressionEvaluatorTests).GetField(
-                nameof(StaticField),
-                BindingFlags.Static | BindingFlags.NonPublic
-            )!
-        );
+        var expr = ExpressionOnNone.Of(() => StaticField);
 
-        Assert.True(ReflectivePartialSplicedExpressionEvaluator.Instance.TryEvaluate(default(object), field, out var value));
+        Assert.True(ReflectivePartialSplicedExpressionEvaluator.Instance.TryEvaluate(default(object), expr.Body, out var value));
         Assert.Equal(StaticField, value);
     }
 
     [Fact]
     public void Should_evaluate_instance_property() {
         var instance = new MemberFixture { InstanceProperty = "foo" };
-        var property = Expression.Property(Expression.Constant(instance), nameof(instance.InstanceProperty));
+        var expr = ExpressionOnNone.Of(() => instance.InstanceProperty);
 
-        Assert.True(ReflectivePartialSplicedExpressionEvaluator.Instance.TryEvaluate(default(object), property, out var value));
+        Assert.True(ReflectivePartialSplicedExpressionEvaluator.Instance.TryEvaluate(default(object), expr.Body, out var value));
         Assert.Equal(instance.InstanceProperty, value);
     }
 
     [Fact]
     public void Should_evaluate_static_property() {
-        var property = Expression.Property(
-            null,
-            typeof(ReflectivePartialSplicedExpressionEvaluatorTests).GetProperty(
-                nameof(StaticProperty),
-                BindingFlags.Static | BindingFlags.NonPublic
-            )!
-        );
+        var expr = ExpressionOnNone.Of(() => StaticProperty);
 
-        Assert.True(ReflectivePartialSplicedExpressionEvaluator.Instance.TryEvaluate(default(object), property, out var value));
+        Assert.True(ReflectivePartialSplicedExpressionEvaluator.Instance.TryEvaluate(default(object), expr.Body, out var value));
         Assert.Equal(StaticProperty, value);
     }
 
     [Fact]
     public void Should_evaluate_instance_method_call() {
-        var call = Expression.Call(
-            Expression.Constant(this),
-            typeof(ReflectivePartialSplicedExpressionEvaluatorTests).GetMethod(
-                nameof(InstanceMethod),
-                BindingFlags.Instance | BindingFlags.NonPublic
-            )!,
-            Expression.Constant("foo")
-        );
+        var expr = ExpressionOnNone.Of(() => InstanceMethod("foo"));
 
-        Assert.True(ReflectivePartialSplicedExpressionEvaluator.Instance.TryEvaluate(default(object), call, out var value));
+        Assert.True(ReflectivePartialSplicedExpressionEvaluator.Instance.TryEvaluate(default(object), expr.Body, out var value));
         Assert.Equal(InstanceMethod("foo"), value);
     }
 
     [Fact]
     public void Should_evaluate_static_method_call() {
-        var call = Expression.Call(
-            typeof(ReflectivePartialSplicedExpressionEvaluatorTests).GetMethod(
-                nameof(StaticMethod),
-                BindingFlags.Static | BindingFlags.NonPublic
-            )!,
-            Expression.Constant("foo")
-        );
+        var expr = ExpressionOnNone.Of(() => StaticMethod("foo"));
 
-        Assert.True(ReflectivePartialSplicedExpressionEvaluator.Instance.TryEvaluate(default(object), call, out var value));
+        Assert.True(ReflectivePartialSplicedExpressionEvaluator.Instance.TryEvaluate(default(object), expr.Body, out var value));
         Assert.Equal(StaticMethod("foo"), value);
     }
 
@@ -118,19 +92,27 @@ public class ReflectivePartialSplicedExpressionEvaluatorTests {
     }
 
     [Fact]
-    public void Should_evaluate_numeric_conversion() {
-        var convert = Expression.Convert(Expression.Constant(42), typeof(long));
+    public void Should_evaluate_boxing_conversion() {
+        var convert = Expression.Convert(Expression.Constant(42), typeof(object));
 
         Assert.True(ReflectivePartialSplicedExpressionEvaluator.Instance.TryEvaluate(default(object), convert, out var value));
-        Assert.Equal(42L, value);
+        Assert.Equal(42, value);
     }
 
     [Fact]
-    public void Should_evaluate_reference_conversion() {
+    public void Should_evaluate_supertype_conversion() {
         var convert = Expression.Convert(Expression.Constant("foo"), typeof(object));
 
         Assert.True(ReflectivePartialSplicedExpressionEvaluator.Instance.TryEvaluate(default(object), convert, out var value));
         Assert.Equal("foo", value);
+    }
+
+    [Fact]
+    public void Should_evaluate_Nullable_conversion() {
+        var convert = Expression.Convert(Expression.Constant(42), typeof(Nullable<int>));
+
+        Assert.True(ReflectivePartialSplicedExpressionEvaluator.Instance.TryEvaluate(default(object), convert, out var value));
+        Assert.Equal(42, value);
     }
 
     [Fact]

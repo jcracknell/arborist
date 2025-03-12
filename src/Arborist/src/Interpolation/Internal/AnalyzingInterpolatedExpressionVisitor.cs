@@ -2,14 +2,14 @@ using System.Reflection;
 
 namespace Arborist.Interpolation.Internal;
 
-public class AnalyzingInterpolationVisitor : InterpolationVisitor {
+internal sealed class AnalyzingInterpolatedExpressionVisitor : BaseInterpolatedExpressionVisitor {
     private readonly LambdaExpression _interpolatedExpression;
     private ImmutableHashSet<ParameterExpression> _forbiddenParameters;
-    private HashSet<MemberExpression>? _dataReferences;
+    private HashSet<Expression>? _dataReferences;
     private List<Expression>? _evaluatedExpressions;
     private Expression? _evaluatingExpression;
 
-    public AnalyzingInterpolationVisitor(LambdaExpression interpolatedExpression) {
+    public AnalyzingInterpolatedExpressionVisitor(LambdaExpression interpolatedExpression) {
         _interpolatedExpression = interpolatedExpression;
         _forbiddenParameters = ImmutableHashSet.CreateRange(interpolatedExpression.Parameters);
     }
@@ -20,8 +20,8 @@ public class AnalyzingInterpolationVisitor : InterpolationVisitor {
     public IReadOnlyList<Expression> EvaluatedExpressions =>
         _evaluatedExpressions ?? (IReadOnlyList<Expression>)Array.Empty<Expression>();
 
-    public IReadOnlySet<MemberExpression> DataReferences =>
-        _dataReferences ?? (IReadOnlySet<MemberExpression>)ImmutableHashSet<MemberExpression>.Empty;
+    public IReadOnlySet<Expression> DataReferences =>
+        _dataReferences ?? (IReadOnlySet<Expression>)ImmutableHashSet<Expression>.Empty;
 
     public Expression Apply(Expression expression) =>
         Visit(expression);

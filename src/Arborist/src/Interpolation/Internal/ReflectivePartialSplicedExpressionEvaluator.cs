@@ -1,55 +1,16 @@
-using Arborist.Internal;
 using System.Collections.ObjectModel;
 using System.Reflection;
 
 namespace Arborist.Interpolation.Internal;
 
-internal sealed class ReflectiveSplicedExpressionEvaluator {
-    private static ImmutableDictionary<(Type, Type), Func<object?, object?>> CastHelperCache =
-        ImmutableDictionary<(Type, Type), Func<object?, object?>>.Empty;
-
-    private static bool TryGetCastHelper(
-        Type targetType,
-        Type sourceType,
-        [NotNullWhen(true)] out Func<object?, object?>? helper
-    ) {
-        var cacheKey = (targetType, sourceType);
-        if(CastHelperCache.TryGetValue(cacheKey, out helper))
-            return true;
-        if(!IsSupportedCast(targetType, sourceType))
-            return false;
-
-        helper = CreateCastHelper(targetType, sourceType);
-        CastHelperCache = CastHelperCache.SetItem(cacheKey, helper);
-        return true;
-    }
-
-    private static Func<object?, object?> CreateCastHelper(Type targetType, Type sourceType) {
-        var parameter = Expression.Parameter(typeof(object));
-
-        return Expression.Lambda<Func<object?, object?>>(
-            Expression.Convert(
-                Expression.Convert(
-                    Expression.Convert(parameter, sourceType),
-                    targetType
-                ),
-                typeof(object)
-            ),
-            parameter
-        )
-        .Compile();
-    }
-
-    private static bool IsSupportedCast(Type targetType, Type sourceType) =>
-        targetType == typeof(object)
-        || sourceType == typeof(object)
-        || IsPrimitiveCastType(sourceType) && IsPrimitiveCastType(targetType);
-
-    private static bool IsPrimitiveCastType(Type type) =>
-        type.IsAssignableTo(typeof(System.IConvertible))
-        || Nullable.GetUnderlyingType(type) is {} underlying && IsPrimitiveCastType(underlying);
-
-    public static ReflectiveSplicedExpressionEvaluator Instance { get; } = new();
+/// <summary>
+/// Reflection-based <see cref="IPartialSplicedExpressionEvaluator"/> implementation.
+/// </summary>
+public class ReflectivePartialSplicedExpressionEvaluator(IExpressionCompiler expressionCompiler)
+    : IPartialSplicedExpressionEvaluator
+{
+    public static ReflectivePartialSplicedExpressionEvaluator Instance { get; } =
+        new(LightExpressionCompiler.Instance);
 
     public bool TryEvaluate<TData>(TData data, Expression expression, out object? value) {
         // This is a pain in the butt because you can't start evaluation until you are sure you can
@@ -372,4 +333,47 @@ internal sealed class ReflectiveSplicedExpressionEvaluator {
         value = default;
         return false;
     }
+
+    private static ImmutableDictionary<(Type, Type), Func<object?, object?>> CastHelperCache =
+        ImmutableDictionary<(Type, Type), Func<object?, object?>>.Empty;
+
+    private bool TryGetCastHelper(
+        Type targetType,
+        Type sourceType,
+        [NotNullWhen(true)] out Func<object?, object?>? helper
+    ) {
+        var cacheKey = (targetType, sourceType);
+        if(CastHelperCache.TryGetValue(cacheKey, out helper))
+            return true;
+        if(!IsSupportedCast(targetType, sourceType))
+            return false;
+
+        helper = CreateCastHelper(targetType, sourceType);
+        CastHelperCache = CastHelperCache.SetItem(cacheKey, helper);
+        return true;
+    }
+
+    private Func<object?, object?> CreateCastHelper(Type targetType, Type sourceType) {
+        var parameter = Expression.Parameter(typeof(object));
+
+        return expressionCompiler.Compile(Expression.Lambda<Func<object?, object?>>(
+            Expression.Convert(
+                Expression.Convert(
+                    Expression.Convert(parameter, sourceType),
+                    targetType
+                ),
+                typeof(object)
+            ),
+            parameter
+        ));
+    }
+
+    private static bool IsSupportedCast(Type targetType, Type sourceType) =>
+        targetType == typeof(object)
+        || sourceType == typeof(object)
+        || IsPrimitiveCastType(sourceType) && IsPrimitiveCastType(targetType);
+
+    private static bool IsPrimitiveCastType(Type type) =>
+        type.IsAssignableTo(typeof(System.IConvertible))
+        || Nullable.GetUnderlyingType(type) is {} underlying && IsPrimitiveCastType(underlying);
 }

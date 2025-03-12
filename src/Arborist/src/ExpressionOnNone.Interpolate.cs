@@ -16,7 +16,7 @@ public static partial class ExpressionOnNone {
     public static Expression<Func<R>> Interpolate<R>(
         Expression<Func<IInterpolationContext, R>> expression
     ) =>
-        ExpressionInterpolator.Interpolate<object?, Func<R>>(default, expression);
+        ExpressionInterpolator.Default.Interpolate<object?, Func<R>>(default, expression);
 
     /// <summary>
     /// Applies the interpolation process to the provided <paramref name="expression"/>, replacing
@@ -27,7 +27,7 @@ public static partial class ExpressionOnNone {
     public static Expression<Action> Interpolate(
         Expression<Action<IInterpolationContext>> expression
     ) =>
-        ExpressionInterpolator.Interpolate<object?, Action>(default, expression);
+        ExpressionInterpolator.Default.Interpolate<object?, Action>(default, expression);
 
     /// <summary>
     /// Applies the interpolation process to the provided <paramref name="expression"/>, replacing
@@ -49,7 +49,7 @@ public static partial class ExpressionOnNone {
         TData data,
         Expression<Func<IInterpolationContext<TData>, R>> expression
     ) =>
-        ExpressionInterpolator.Interpolate<TData, Func<R>>(data, expression);
+        ExpressionInterpolator.Default.Interpolate<TData, Func<R>>(data, expression);
 
     /// <summary>
     /// Applies the interpolation process to the provided <paramref name="expression"/>, replacing
@@ -68,5 +68,5 @@ public static partial class ExpressionOnNone {
         TData data,
         Expression<Action<IInterpolationContext<TData>>> expression
     ) =>
-        ExpressionInterpolator.Interpolate<TData, Action>(data, expression);
+        ExpressionInterpolator.Default.Interpolate<TData, Action>(data, expression);
 }

@@ -1,6 +1,6 @@
 namespace Arborist.Interpolation.Internal;
 
-public abstract class InterpolationVisitor : ExpressionVisitor {
+internal abstract class BaseInterpolatedExpressionVisitor : ExpressionVisitor {
     protected override Expression VisitMethodCall(MethodCallExpression node) =>
         typeof(InterpolationSpliceOperations) == node.Method.DeclaringType
         ? VisitSplicingMethodCall(node)

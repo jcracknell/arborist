@@ -2,11 +2,11 @@ using Arborist.Internal.Collections;
 
 namespace Arborist.Interpolation.Internal;
 
-public class SplicingInterpolationVisitor : InterpolationVisitor {
+internal sealed class SplicingInterpolatedExpressionVisitor : BaseInterpolatedExpressionVisitor {
     private readonly IReadOnlyList<object?> _evaluatedSpliceParameters;
     private int _evaluatedSpliceParameterIndex;
 
-    public SplicingInterpolationVisitor(IReadOnlyList<object?> evaluatedSpliceParameters) {
+    public SplicingInterpolatedExpressionVisitor(IReadOnlyList<object?> evaluatedSpliceParameters) {
         _evaluatedSpliceParameters = evaluatedSpliceParameters;
         _evaluatedSpliceParameterIndex = 0;
     }

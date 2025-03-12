@@ -1,12 +1,25 @@
-using Arborist.Internal.Collections;
-
 namespace Arborist.Interpolation.Internal;
 
-internal static class ExpressionInterpolator {
-    public static Expression<TDelegate> Interpolate<TData, TDelegate>(TData data, LambdaExpression expression)
+public sealed class ExpressionInterpolator(ISplicedExpressionEvaluator splicedExpressionEvaluator) {
+    /// <summary>
+    /// The default <see cref="ExpressionInterpolator"/> instance used by the public
+    /// interpolation APIs.
+    /// </summary>
+    public static ExpressionInterpolator Default { get; } = new(
+        splicedExpressionEvaluator: new DefaultSplicedExpressionEvaluator(
+            partialExpressionEvaluator: new ReflectivePartialSplicedExpressionEvaluator(
+                expressionCompiler: LightExpressionCompiler.Instance
+            ),
+            expressionEvaluator: new CompilingSplicedExpressionEvaluator(
+                expressionCompiler: LightExpressionCompiler.Instance
+            )
+        )
+    );
+
+    public Expression<TDelegate> Interpolate<TData, TDelegate>(TData data, LambdaExpression expression)
         where TDelegate : Delegate
     {
-        var analyzer = new AnalyzingInterpolationVisitor(expression);
+        var analyzer = new AnalyzingInterpolatedExpressionVisitor(expression);
         analyzer.Apply(expression.Body);
 
         // If there are no expressions requiring evaluation, then there are no splices
@@ -16,96 +29,18 @@ internal static class ExpressionInterpolator {
                 parameters: expression.Parameters.Skip(1)
             );
 
-        var interpolator = new SplicingInterpolationVisitor(
-            evaluatedSpliceParameters: EvaluateSplicedExpressions(
-                data: data,
-                expressions: analyzer.EvaluatedExpressions,
-                dataReferences: analyzer.DataReferences
-            )
-        );
+        var evaluatedSpliceParameters = splicedExpressionEvaluator.Evaluate<TData>(new(
+            data: data,
+            dataReferences: analyzer.DataReferences,
+            expressions: analyzer.EvaluatedExpressions
+        ));
+
+        var splicer = new SplicingInterpolatedExpressionVisitor(evaluatedSpliceParameters);
+        var spliced = splicer.Apply(expression.Body);
 
         return Expression.Lambda<TDelegate>(
-            body: interpolator.Apply(expression.Body),
+            body: spliced,
             parameters: expression.Parameters.Skip(1)
         );
-    }
-
-    private static IReadOnlyList<object?> EvaluateSplicedExpressions<TData>(
-        TData data,
-        IReadOnlyList<Expression> expressions,
-        IReadOnlySet<MemberExpression> dataReferences
-    ) {
-        var expressionCount = expressions.Count;
-        if(expressionCount == 0)
-            return Array.Empty<object?>();
-
-        var values = new object?[expressionCount];
-
-        // First we attempt to evaluate expressions via reflection, as this is actually significantly
-        // faster than compiling an Expression to a Func to achieve the same thing.
-        var evaluatedCount = 0;
-        while(evaluatedCount < expressionCount) {
-            // In the event of a failure, we have to give up to ensure that the expressions are evaluated
-            // in the expected order.
-            if(!TryReflectSplicedExpression(data, expressions[evaluatedCount], out var value))
-                break;
-
-            values[evaluatedCount] = value;
-            evaluatedCount += 1;
-        }
-
-        if(evaluatedCount == expressionCount)
-            return values;
-
-        var compiledValues = CompileSplicedExpressions(
-            data: data,
-            expressions: expressions.Skip(evaluatedCount),
-            dataReferences: dataReferences
-        );
-
-        Array.Copy(compiledValues, 0, values, evaluatedCount, compiledValues.Length);
-
-        return values;
-    }
-
-    private static object?[] CompileSplicedExpressions<TData>(
-        TData data,
-        IEnumerable<Expression> expressions,
-        IReadOnlySet<MemberExpression> dataReferences
-    ) {
-        var dataParameter = Expression.Parameter(typeof(TData));
-
-        // Create an expression to evaluate the unevaluated expression values into an array
-        var compiledDelegate = Expression.Lambda<Func<TData, object?[]>>(
-            ExpressionHelper.Replace(
-                Expression.NewArrayInit(typeof(object),
-                    from expr in expressions
-                    select Expression.Convert(expr, typeof(object))
-                ),
-                // Replace references to IInterpolationContext.Data with the data parameter
-                SmallDictionary.CreateRange(
-                    from dataReference in dataReferences
-                    select new KeyValuePair<Expression, Expression>(dataReference, dataParameter)
-                )
-            ),
-            dataParameter
-        )
-        .Compile();
-
-        // Only wrap exceptions occurring as a result of the invocation, as those are (probably) the
-        // caller's fault.
-        try {
-            return compiledDelegate.Invoke(data);
-        } catch(Exception ex) {
-            throw new SpliceArgumentEvaluationException(ex);
-        }
-    }
-
-    private static bool TryReflectSplicedExpression<TData>(TData data, Expression expression, out object? value) {
-        try {
-            return ReflectiveSplicedExpressionEvaluator.Instance.TryEvaluate(data, expression, out value);
-        } catch(Exception ex) {
-            throw new SpliceArgumentEvaluationException(expression, ex);
-        }
     }
 }

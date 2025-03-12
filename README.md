@@ -62,15 +62,16 @@ to any data that you want to inject into the interpolation process.
 Most of the performance cost associated with expression interpolation is associated with the
 evaluation of expression subtrees provided as arguments to evaluated splice parameters
 (annotated with EvaluatedSpliceParameterAttribute). Interpolation becomes expensive in the
-event that [expression compilation][6] is required to evaluate such subtrees.
+event that expression compilation is required to evaluate such subtrees.
 
 Arborist will first attempt to evaluate these expressions using a reflective approach which
 is capable of interpreting most *basic* expression trees; i.e. member accesses, method
-invocations, and some basic type conversions. Despite the use of the reflection API, expressions
-which can be evaluated this way require on the order of 25 times less runtime than the
-compilation-based approach used as a fallback in the event that it fails. **As such you should
-generally try to pre-evaluate your spliced trees before providing them to the interpolation
-process.**
+invocations, and some basic type conversions. Despite the use of the reflection API, evaluating
+expressions this way is *significantly* faster than the compilation-based approach used as a
+fallback in the event that it fails.
+
+> **💡 Hint:** You should try to pre-evaluate your spliced values to simplify the subtrees
+> requiring evaluation by the interpolation process.
 
 ### Splicing methods
 
@@ -619,4 +620,3 @@ has the following JSON representation:
 [3]: https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-12#interceptors
 [4]: https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/using-directive#the-using-alias
 [5]: https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.ef.parameter
-[6]: https://learn.microsoft.com/en-us/dotnet/api/system.linq.expressions.expression-1.compile

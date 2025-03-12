@@ -48,9 +48,15 @@ public class DefaultSplicedExpressionEvaluator(
             var expression = context.Expressions[evaluatedCount];
 
             try {
+                var partialEvaluationContext = new PartialSplicedExpressionEvaluationContext<TData>(
+                    data: context.Data,
+                    dataReferences: context.DataReferences,
+                    expression: expression
+                );
+
                 // In the event of a failure, we have to give up to ensure that the expressions are evaluated
                 // in the expected order.
-                if(!partialExpressionEvaluator.TryEvaluate(context.Data, expression, out var value))
+                if(!partialExpressionEvaluator.TryEvaluate(partialEvaluationContext, out var value))
                     break;
 
                 evaluated[evaluatedCount] = value;

@@ -13,45 +13,68 @@ public class ReflectivePartialSplicedExpressionEvaluator(IExpressionCompiler exp
         new(LightExpressionCompiler.Instance);
 
     public bool TryEvaluate<TData>(TData data, Expression expression, out object? value) {
+        var context = new PartialSplicedExpressionEvaluationContext<TData>(
+            data: data,
+            dataReferences: ImmutableHashSet<Expression>.Empty,
+            expression: expression
+        );
+
+        return TryEvaluate(context, out value);
+    }
+
+    public bool TryEvaluate<TData>(PartialSplicedExpressionEvaluationContext<TData> context, out object? value) {
         // This is a pain in the butt because you can't start evaluation until you are sure you can
         // evaluate the entire tree, so we do an initial pass disabling evaluation to check that
         // this is possible, and then a second pass to actually perform the evaluation.
         var verificationContext = new EvaluationContext<TData, Expression>(
-            data: data,
+            data: context.Data,
             evaluate: false,
-            input: expression
+            dataReferences: context.DataReferences,
+            input: context.Expression
         );
 
         if(!TryEvaluate(verificationContext, out value))
             return false;
 
         var evaluationContext = new EvaluationContext<TData, Expression>(
-            data: data,
+            data: context.Data,
             evaluate: true,
-            input: expression
+            dataReferences: context.DataReferences,
+            input: context.Expression
         );
 
         if(!TryEvaluate(evaluationContext, out value))
-            throw new Exception($"Evaluation of expression `{expression}` failed after successful verification?");
+            throw new Exception($"Evaluation of expression `{context.Expression}` failed after successful verification?");
 
         return true;
     }
 
     private readonly struct EvaluationContext<TData, TInput>(
         TData data,
+        IReadOnlySet<Expression> dataReferences,
         bool evaluate,
         TInput input
     ) {
         public readonly TData Data = data;
+        public readonly IReadOnlySet<Expression> DataReferences = dataReferences;
         public readonly bool Evaluate = evaluate;
         public readonly TInput Input = input;
 
         public EvaluationContext<TData, T> WithInput<T>(T input) =>
-            new(Data, Evaluate, input);
+            new(
+                data: Data,
+                dataReferences: DataReferences,
+                evaluate: Evaluate,
+                input: input
+            );
     }
 
     private bool TryEvaluate<TData>(EvaluationContext<TData, Expression> context, out object? value) {
         switch(context.Input) {
+            case {} when context.DataReferences.Contains(context.Input):
+                value = context.Evaluate ? context.Data : default;
+                return true;
+
             // This is syntactic sugar for a cascading if statement, and should be ordered by prevalence
             case MemberExpression:
                 return TryEvaluateMember(context.WithInput((MemberExpression)context.Input), out value);
@@ -206,7 +229,7 @@ public class ReflectivePartialSplicedExpressionEvaluator(IExpressionCompiler exp
 
     private bool TryEvaluateMember<TData>(EvaluationContext<TData, MemberExpression> context, out object? value) {
         switch(context.Input) {
-            // Interpolation data access
+            // We retain this formulation of the interpolation data test to make unit testing easier
             case { Expression: {}, Member: PropertyInfo { Name: nameof(IInterpolationContext<TData>.Data) } }
                 when context.Input.Member == typeof(IInterpolationContext<TData>).GetProperty(nameof(IInterpolationContext<TData>.Data)):
                 value = context.Evaluate ? context.Data : default;

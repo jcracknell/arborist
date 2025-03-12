@@ -4,5 +4,5 @@ namespace Arborist.Interpolation.Internal;
 /// Represents a service which may be able to evaluate a subset of possible spliced expressions.
 /// </summary>
 public interface IPartialSplicedExpressionEvaluator {
-    public bool TryEvaluate<TData>(TData data, Expression expression, out object? value);
+    public bool TryEvaluate<TData>(PartialSplicedExpressionEvaluationContext<TData> context, out object? value);
 }

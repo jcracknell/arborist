@@ -21,4 +21,19 @@ public static class CollectionHelpers {
             IReadOnlyCollection<A> { Count: 0 } => Array.Empty<A>(),
             _ => enumerable.ToList()
         };
+
+    /// <summary>
+    /// Copies the specified number of values from the provided <paramref name="source"/> list to the provided
+    /// <paramref name="destination"/> list starting from the provided offsets.
+    /// </summary>
+    public static void Copy<A>(
+        IReadOnlyList<A> source,
+        int sourceOffset,
+        IList<A> destination,
+        int destinationOffset,
+        int count
+    ) {
+        for(var i = 0; i < count; i++)
+            destination[destinationOffset + i] = source[sourceOffset + i];
+    }
 }

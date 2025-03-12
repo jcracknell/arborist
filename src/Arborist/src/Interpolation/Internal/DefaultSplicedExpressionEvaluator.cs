@@ -1,3 +1,5 @@
+using Arborist.Internal;
+
 namespace Arborist.Interpolation.Internal;
 
 /// <summary>
@@ -20,9 +22,9 @@ public class DefaultSplicedExpressionEvaluator(
         if(evaluatedCount == expressionCount)
             return evaluated;
 
-        var fallbackExpressions = new Expression[expressionCount - evaluatedCount];
-        for(var i = 0; i < fallbackExpressions.Length; i++)
-            fallbackExpressions[i] = context.Expressions[evaluatedCount + i];
+        var fallbackCount = expressionCount - evaluatedCount;
+        var fallbackExpressions = new Expression[fallbackCount];
+        CollectionHelpers.Copy(context.Expressions, evaluatedCount, fallbackExpressions, 0, fallbackCount);
 
         var fallbackValues = expressionEvaluator.Evaluate<TData>(new(
             data: context.Data,
@@ -30,9 +32,7 @@ public class DefaultSplicedExpressionEvaluator(
             expressions: fallbackExpressions
         ));
 
-        for(var i = 0; i < fallbackValues.Count; i++)
-            evaluated[evaluatedCount + i] = fallbackValues[i];
-
+        CollectionHelpers.Copy(fallbackValues, 0, evaluated, evaluatedCount, fallbackCount);
         return evaluated;
     }
 

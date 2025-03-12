@@ -9,6 +9,11 @@ public class ReflectiveSplicedExpressionEvaluatorTests {
     private static string StaticMethod(string argument) => argument;
     private string InstanceMethod(string argument) => argument;
 
+    private class InitializerFixture {
+        public List<string> NestedCollection { get; init; } = new();
+        public Owner NestedObject { get; init; } = new();
+    }
+
     [Fact]
     public void Should_evaluate_InterpolationContext_data_access() {
         var access = Expression.Property(
@@ -146,5 +151,29 @@ public class ReflectiveSplicedExpressionEvaluatorTests {
 
         Assert.True(ReflectiveSplicedExpressionEvaluator.Instance.TryEvaluate(default(object), expr.Body, out var value));
         Assert.Equivalent(new List<string> { "foo" }, value);
+    }
+
+    [Fact]
+    public void Should_evaluate_object_initializer() {
+        var expr = ExpressionOnNone.Of(() => new Cat { Name = "Garfield" });
+
+        Assert.True(ReflectiveSplicedExpressionEvaluator.Instance.TryEvaluate(default(object), expr.Body, out var value));
+        Assert.Equivalent(new Cat { Name = "Garfield" }, value);
+    }
+
+    [Fact]
+    public void Should_evaluate_nested_object_initializer() {
+        var expr = ExpressionOnNone.Of(() => new InitializerFixture { NestedObject = { Name = "Garfield" } });
+
+        Assert.True(ReflectiveSplicedExpressionEvaluator.Instance.TryEvaluate(default(object), expr.Body, out var value));
+        Assert.Equivalent(new InitializerFixture { NestedObject = { Name = "Garfield" } }, value);
+    }
+
+    [Fact]
+    public void Should_evaluate_nested_collection_initializer() {
+        var expr = ExpressionOnNone.Of(() => new InitializerFixture { NestedCollection = { "foo" } });
+
+        Assert.True(ReflectiveSplicedExpressionEvaluator.Instance.TryEvaluate(default(object), expr.Body, out var value));
+        Assert.Equivalent(new InitializerFixture { NestedCollection = { "foo" } }, value);
     }
 }

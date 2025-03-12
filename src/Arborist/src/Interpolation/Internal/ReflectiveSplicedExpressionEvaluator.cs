@@ -60,10 +60,8 @@ internal sealed class ReflectiveSplicedExpressionEvaluator {
             evaluate: false
         );
 
-        if(!TryEvaluate(verificationContext, out _)) {
-            value = default;
+        if(!TryEvaluate(verificationContext, out value))
             return false;
-        }
 
         var evaluationContext = new EvaluationContext<TData, Expression>(
             data: data,
@@ -72,44 +70,48 @@ internal sealed class ReflectiveSplicedExpressionEvaluator {
         );
 
         if(!TryEvaluate(evaluationContext, out value))
-            throw new Exception();
+            throw new Exception($"Evaluation of expression `{expression}` failed after successful verification?");
 
         return true;
     }
 
     private readonly struct EvaluationContext<TData, TInput>(
         TData data,
-        bool evaluate,
-        TInput input
+        TInput input,
+        bool evaluate
     ) {
         public readonly TData Data = data;
         public readonly bool Evaluate = evaluate;
         public readonly TInput Input = input;
 
         public EvaluationContext<TData, T> WithInput<T>(T input) =>
-            new(Data, Evaluate, input);
+            new(Data, input, Evaluate);
     }
 
     private bool TryEvaluate<TData>(EvaluationContext<TData, Expression> context, out object? value) {
         switch(context.Input) {
-            case ConstantExpression:
-                value = ((ConstantExpression)context.Input).Value;
-                return true;
-
-            case ListInitExpression:
-                return TryEvaluateListInit(context.WithInput((ListInitExpression)context.Input), out value);
-
+            // This is syntactic sugar for a cascading if statement, and should be ordered by prevalence
             case MemberExpression:
                 return TryEvaluateMember(context.WithInput((MemberExpression)context.Input), out value);
 
             case MethodCallExpression:
                 return TryEvaluateMethodCall(context.WithInput((MethodCallExpression)context.Input), out value);
 
-            case NewExpression:
-                return TryEvaluateNew(context.WithInput((NewExpression)context.Input), out value);
+            case ConstantExpression:
+                value = ((ConstantExpression)context.Input).Value;
+                return true;
 
             case UnaryExpression:
                 return TryEvaluateUnary(context.WithInput((UnaryExpression)context.Input), out value);
+
+            case NewExpression:
+                return TryEvaluateNew(context.WithInput((NewExpression)context.Input), out value);
+
+            case MemberInitExpression:
+                return TryEvaluateMemberInit(context.WithInput((MemberInitExpression)context.Input), out value);
+
+            case ListInitExpression:
+                return TryEvaluateListInit(context.WithInput((ListInitExpression)context.Input), out value);
 
             default:
                 value = default;
@@ -119,29 +121,57 @@ internal sealed class ReflectiveSplicedExpressionEvaluator {
 
     private bool TryEvaluateMany<TData>(
         EvaluationContext<TData, ReadOnlyCollection<Expression>> context,
-        [NotNullWhen(true)] out object?[]? values
+        out object?[]? values
     ) {
         values = default;
         var expressionCount = context.Input.Count;
-        if(expressionCount != 0) {
-            var expressionIndex = 0;
-            foreach(var expression in context.Input) {
-                if(!TryEvaluate(context.WithInput(expression), out var value))
-                    return false;
+        if(expressionCount == 0)
+            return true;
 
-                if(context.Evaluate) {
-                    values ??= new object?[expressionCount];
-                    values[expressionIndex] = value;
-                }
+        for(var i = 0; i < expressionCount; i++) {
+            if(!TryEvaluate(context.WithInput(context.Input[i]), out var value))
+                return false;
 
-                expressionIndex += 1;
+            if(context.Evaluate) {
+                values ??= new object?[expressionCount];
+                values[i] = value;
             }
         }
 
-        // If the values array was not initialized by this point, either we are not evaluating or
-        // there are no input expressions. Either way we can provide the empty array as a result.
-        values ??= Array.Empty<object?>();
         return true;
+    }
+
+    private bool TryGetMember(object? baseValue, MemberInfo member, bool evaluate, out object? value) {
+        switch(member) {
+            case PropertyInfo property:
+                value = evaluate ? property.GetValue(baseValue) : default;
+                return true;
+
+            case FieldInfo field:
+                value = evaluate ? field.GetValue(baseValue) : default;
+                return true;
+
+            default:
+                value = default;
+                return false;
+        }
+    }
+
+    private bool TrySetMember(object? baseValue, MemberInfo member, object? value, bool evaluate) {
+        switch(member) {
+            case PropertyInfo property:
+                if(evaluate)
+                    property.SetValue(baseValue, value);
+                return true;
+
+            case FieldInfo field:
+                if(evaluate)
+                    field.SetValue(baseValue, value);
+                return true;
+
+            default:
+                return false;
+        }
     }
 
     private bool TryEvaluateListInit<TData>(EvaluationContext<TData, ListInitExpression> context, out object? value) =>
@@ -168,28 +198,51 @@ internal sealed class ReflectiveSplicedExpressionEvaluator {
                 value = context.Evaluate ? context.Data : default;
                 return true;
 
-            case { Member: FieldInfo field, Expression: not null }
-                when TryEvaluate(context.WithInput(context.Input.Expression), out var baseValue):
-                value = context.Evaluate ? field.GetValue(baseValue) : default;
+            case { Expression: not null }
+                when TryEvaluate(context.WithInput(context.Input.Expression), out var baseValue)
+                && TryGetMember(baseValue, context.Input.Member, context.Evaluate, out value):
                 return true;
 
-            case { Member: FieldInfo field, Expression: null }:
-                value = context.Evaluate ? field.GetValue(null) : default;
-                return true;
-
-            case { Member: PropertyInfo property, Expression: not null }
-                when TryEvaluate(context.WithInput(context.Input.Expression), out var baseValue):
-                value = context.Evaluate ? property.GetValue(baseValue) : default;
-                return true;
-
-            case { Member: PropertyInfo property, Expression: null }:
-                value = context.Evaluate ? property.GetValue(null) : default;
+            case { Expression: null }
+                when TryGetMember(null, context.Input.Member, context.Evaluate, out value):
                 return true;
 
             default:
                 value = default;
                 return false;
         }
+    }
+
+    private bool TryEvaluateMemberInit<TData>(EvaluationContext<TData, MemberInitExpression> context, out object? value) =>
+        TryEvaluateNew(context.WithInput(context.Input.NewExpression), out value)
+        && TryEvaluateMemberBinds(value, context.WithInput(context.Input.Bindings));
+
+    private bool TryEvaluateMemberBinds<TData>(object? baseValue, EvaluationContext<TData, ReadOnlyCollection<MemberBinding>> context) {
+        foreach(var binding in context.Input) {
+            switch(binding) {
+                case MemberAssignment assignment
+                    when TryEvaluate(context.WithInput(assignment.Expression), out var assignedValue)
+                    && TrySetMember(baseValue, assignment.Member, assignedValue, context.Evaluate):
+                    continue;
+
+                // Nested object initializer
+                case MemberMemberBinding memberBinding
+                    when TryGetMember(baseValue, memberBinding.Member, context.Evaluate, out var memberValue)
+                    && TryEvaluateMemberBinds(memberValue, context.WithInput(memberBinding.Bindings)):
+                    continue;
+
+                // Nested collection initializer
+                case MemberListBinding listBinding
+                    when TryGetMember(baseValue, listBinding.Member, context.Evaluate, out var memberValue)
+                    && TryEvaluateElementInits(memberValue, context.WithInput(listBinding.Initializers)):
+                    continue;
+
+                default:
+                    return false;
+            }
+        }
+
+        return true;
     }
 
     private bool TryEvaluateMethodCall<TData>(EvaluationContext<TData, MethodCallExpression> context, out object? value) {
@@ -248,7 +301,7 @@ internal sealed class ReflectiveSplicedExpressionEvaluator {
                 value = context.Evaluate ? context.Input.Method.Invoke(null, [baseValue]) : default;
                 return true;
             }
-            if(fromType.IsAssignableTo(targetType)) {
+            if(targetType == typeof(object) || fromType.IsAssignableTo(targetType)) {
                 value = baseValue;
                 return true;
             }
@@ -261,5 +314,4 @@ internal sealed class ReflectiveSplicedExpressionEvaluator {
         value = default;
         return false;
     }
-
 }

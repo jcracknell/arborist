@@ -9,7 +9,7 @@ public sealed class ExpressionInterpolator(ISplicedExpressionEvaluator splicedEx
         splicedExpressionEvaluator: new DefaultSplicedExpressionEvaluator(
             partialExpressionEvaluator: ReflectivePartialSplicedExpressionEvaluator.Instance,
             expressionEvaluator: new CompilingSplicedExpressionEvaluator(
-                expressionCompiler: LightExpressionCompiler.Instance
+                splicedExpressionCompiler: LightSplicedExpressionCompiler.Instance
             )
         )
     );

@@ -1,6 +1,6 @@
 namespace Arborist.Interpolation.Internal;
 
-public interface IExpressionCompiler {
+public interface ISplicedExpressionCompiler {
     public TDelegate Compile<TDelegate>(Expression<TDelegate> expression)
         where TDelegate : Delegate;
 

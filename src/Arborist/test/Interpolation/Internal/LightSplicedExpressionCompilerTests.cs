@@ -2,15 +2,15 @@ using Arborist.TestFixtures;
 
 namespace Arborist.Interpolation.Internal;
 
-[Collection(nameof(LightExpressionCompilerTests))]
-[CollectionDefinition(nameof(LightExpressionCompilerTests), DisableParallelization = true)]
-public class LightExpressionCompilerTests {
+[Collection(nameof(LightSplicedExpressionCompilerTests))]
+[CollectionDefinition(nameof(LightSplicedExpressionCompilerTests), DisableParallelization = true)]
+public class LightSplicedExpressionCompilerTests {
     [Fact]
     public void Should_work_as_expected() {
         var expr = ExpressionOn<Cat>.Of(c => c.Owner.Name);
 
         var defaultCompiled = expr.Compile();
-        var lightCompiled = LightExpressionCompiler.Instance.Compile(expr);
+        var lightCompiled = LightSplicedExpressionCompiler.Instance.Compile(expr);
 
         Assert.Null(defaultCompiled.Method.DeclaringType);
         Assert.NotNull(lightCompiled.Method.DeclaringType);
@@ -25,7 +25,7 @@ public class LightExpressionCompilerTests {
         };
 
         var defaultElapsed = Benchmark(static lambda => lambda.Compile());
-        var lightElapsed = Benchmark(static lambda => LightExpressionCompiler.Instance.Compile(lambda));
+        var lightElapsed = Benchmark(static lambda => LightSplicedExpressionCompiler.Instance.Compile(lambda));
 
         Assert.True(lightElapsed < defaultElapsed / 10);
 

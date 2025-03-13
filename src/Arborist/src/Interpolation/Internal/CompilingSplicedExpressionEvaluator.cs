@@ -2,7 +2,7 @@ using Arborist.Internal.Collections;
 
 namespace Arborist.Interpolation.Internal;
 
-public class CompilingSplicedExpressionEvaluator(IExpressionCompiler expressionCompiler)
+public class CompilingSplicedExpressionEvaluator(ISplicedExpressionCompiler splicedExpressionCompiler)
     : ISplicedExpressionEvaluator
 {
     public IReadOnlyList<object?> Evaluate<TData>(SplicedExpressionEvaluationContext<TData> context) {
@@ -36,6 +36,6 @@ public class CompilingSplicedExpressionEvaluator(IExpressionCompiler expressionC
             dataParameter
         );
 
-        return expressionCompiler.Compile(expression);
+        return splicedExpressionCompiler.Compile(expression);
     }
 }

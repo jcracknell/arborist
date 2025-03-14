@@ -101,7 +101,7 @@ public sealed class InterpolationAnalysisSyntaxWalker : CSharpSyntaxWalker {
             return false;
         if(methodSymbol.ReducedFrom is null)
             return false;
-        if(!SymbolEqualityComparer.Default.Equals(methodSymbol.ContainingType, _context.TypeSymbols.InterpolationSpliceOperations))
+        if(!SymbolEqualityComparer.Default.Equals(methodSymbol.ContainingType, _context.TypeSymbols.SplicingOperations))
             return false;
 
         splicingMethod = methodSymbol;

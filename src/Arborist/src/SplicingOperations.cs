@@ -7,7 +7,7 @@ namespace Arborist;
 /// Provides extension methods defining the splicing operations accessible via the
 /// <see cref="IInterpolationContext"/> during expression interpolation.
 /// </summary>
-public static class InterpolationSpliceOperations {
+public static class SplicingOperations {
     /// <summary>
     /// Splices the provided expression tree with type <typeparamref name="A"/> into the
     /// parent expression tree.

@@ -28,10 +28,10 @@ internal sealed class SplicingInterpolatedExpressionVisitor : BaseInterpolatedEx
 
     protected override Expression VisitSplicingMethodCall(MethodCallExpression node) {
         return node.Method.Name switch {
-            nameof(InterpolationSpliceOperations.Splice) => VisitSplice(node),
-            nameof(InterpolationSpliceOperations.SpliceBody) => VisitSpliceBody(node),
-            nameof(InterpolationSpliceOperations.SpliceConstant) => VisitSpliceConstant(node),
-            nameof(InterpolationSpliceOperations.SpliceQuoted) => VisitSpliceQuoted(node),
+            nameof(SplicingOperations.Splice) => VisitSplice(node),
+            nameof(SplicingOperations.SpliceBody) => VisitSpliceBody(node),
+            nameof(SplicingOperations.SpliceConstant) => VisitSpliceConstant(node),
+            nameof(SplicingOperations.SpliceQuoted) => VisitSpliceQuoted(node),
             _ => throw new Exception($"Unhandled {typeof(IInterpolationContext)} method: {node.Method}.")
         };
     }

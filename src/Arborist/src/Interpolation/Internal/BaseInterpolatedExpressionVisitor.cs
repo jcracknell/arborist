@@ -2,7 +2,7 @@ namespace Arborist.Interpolation.Internal;
 
 internal abstract class BaseInterpolatedExpressionVisitor : ExpressionVisitor {
     protected override Expression VisitMethodCall(MethodCallExpression node) =>
-        typeof(InterpolationSpliceOperations) == node.Method.DeclaringType
+        typeof(SplicingOperations) == node.Method.DeclaringType
         ? VisitSplicingMethodCall(node)
         : base.VisitMethodCall(node);
 

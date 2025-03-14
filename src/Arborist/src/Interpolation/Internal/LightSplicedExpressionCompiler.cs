@@ -6,8 +6,11 @@ namespace Arborist.Interpolation.Internal;
 /// is not possible. This is substantially faster (in terms of compilation speed) than the
 /// default IL-based compiler.
 /// </summary>
+/// <seealso cref="StandardSplicedExpressionCompiler"/>
 public sealed class LightSplicedExpressionCompiler : ISplicedExpressionCompiler {
     public static LightSplicedExpressionCompiler Instance { get; } = new();
+
+    private LightSplicedExpressionCompiler() { }
 
     public TDelegate Compile<TDelegate>(Expression<TDelegate> expression)
         where TDelegate : Delegate =>

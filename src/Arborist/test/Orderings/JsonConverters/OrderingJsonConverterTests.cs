@@ -38,4 +38,16 @@ public class OrderingJsonConverterTests {
         var actual = JsonSerializer.Deserialize<Ordering<string>>("[[\"foo\",\"asc\"],[\"bar\",\"desc\"]]");
         Assert.Equal(Ordering.ByAscending("foo").ThenByDescending("bar"), actual);
     }
+
+    [Fact]
+    public void Should_serialize_runtime_typed_nil_as_expected() {
+        var actual = JsonSerializer.Serialize<object>(Ordering<string>.Unordered);
+        Assert.Equal("[]", actual);
+    }
+
+    [Fact]
+    public void Should_serialize_runtime_typed_cons_as_expected() {
+        var actual = JsonSerializer.Serialize<object>(Ordering.ByAscending("foo"));
+        Assert.Equal("[[\"foo\",\"asc\"]]", actual);
+    }
 }

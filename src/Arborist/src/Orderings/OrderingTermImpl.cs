@@ -1,5 +1,9 @@
+using Arborist.Orderings.JsonConverters;
+using System.Text.Json.Serialization;
+
 namespace Arborist.Orderings;
 
+[JsonConverter(typeof(OrderingTermJsonConverterFactory))]
 internal sealed class OrderingTermImpl<TSelector> : OrderingTerm<TSelector> {
     public OrderingTermImpl(TSelector selector, OrderingDirection direction) {
         Selector = selector;

@@ -1,7 +1,10 @@
+using Arborist.Orderings.JsonConverters;
 using System.Collections;
+using System.Text.Json.Serialization;
 
 namespace Arborist.Orderings;
 
+[JsonConverter(typeof(OrderingJsonConverterFactory))]
 internal sealed class OrderingCons<TSelector> : Ordering<TSelector> {
     public OrderingCons(OrderingTerm<TSelector> term, Ordering<TSelector> rest) {
         Term = term;

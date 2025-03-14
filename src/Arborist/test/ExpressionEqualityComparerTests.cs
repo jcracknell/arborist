@@ -14,21 +14,19 @@ public class ExpressionEqualityComparerTests {
     private static int StaticMethod(string arg0) => throw new NotImplementedException();
 
     private static void Equivalent(Expression? a, Expression? b) {
-        if(a is not null && b is not null)
-            Assert.Equal(
-                ExpressionEqualityComparer.Default.GetHashCode(a),
-                ExpressionEqualityComparer.Default.GetHashCode(b)
-            );
+        Assert.Equal(
+            ExpressionEqualityComparer.Default.GetHashCode(a!),
+            ExpressionEqualityComparer.Default.GetHashCode(b!)
+        );
 
         Assert.Equal(a, b, ExpressionEqualityComparer.Default);
     }
 
     private static void NotEquivalent(Expression? a, Expression? b) {
-        if(a is not null && b is not null)
-            Assert.NotEqual(
-                ExpressionEqualityComparer.Default.GetHashCode(a),
-                ExpressionEqualityComparer.Default.GetHashCode(b)
-            );
+        Assert.NotEqual(
+            ExpressionEqualityComparer.Default.GetHashCode(a!),
+            ExpressionEqualityComparer.Default.GetHashCode(b!)
+        );
 
         Assert.NotEqual(a, b, ExpressionEqualityComparer.Default);
     }
@@ -39,13 +37,6 @@ public class ExpressionEqualityComparerTests {
             ExpressionOnNone.Of(() => 1),
             ExpressionOnNone.Of(() => 1)
         );
-    }
-
-    [Fact]
-    public void GetHashCode_should_throw_ArgumentNullException() {
-        Assert.Throws<ArgumentNullException>(() => {
-            _ = ExpressionEqualityComparer.Default.GetHashCode(null!);
-        });
     }
 
     [Fact]

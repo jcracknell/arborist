@@ -16,19 +16,19 @@ public static class InterpolationDiagnosticDescriptors {
         Create(
             severity: DiagnosticSeverity.Warning,
             title: "Interpolated expression contains no splices",
-            message: "The interpolated expression contains no splices, and the interpolation will have no effect."
+            message: "The interpolated expression contains no splices, and will have no effect."
         );
 
     public static DiagnosticDescriptor ARB002_InterpolationContextReference { get; } = Create(
         severity: DiagnosticSeverity.Error,
-        title: "Illegal IInterpolationContext reference",
-        message: "The interpolated expression contains a reference to the IInterpolationContext which is not part of an interpolated splicing call or evaluated data access expression."
+        title: "Illegal interpolation context reference",
+        message: "The interpolated expression contains a reference to the interpolation context which is not part of an interpolated splicing call or evaluated data access expression."
     );
 
     public static DiagnosticDescriptor ARB003_InterpolatedParameterReference { get; } = Create(
         severity: DiagnosticSeverity.Error,
-        title: "Interpolated parameter reference within evaluated splice argument",
-        message: "The interpolated expression contains a reference to one of its parameters within an expression provided as an evaluated splice argument."
+        title: "Interpolated parameter reference in evaluated splice argument",
+        message: "The interpolated expression contains a reference to one of its parameters inside of an evaluated splice argument."
     );
 
     private static DiagnosticDescriptor Create(

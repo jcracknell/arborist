@@ -56,12 +56,6 @@ public static partial class ExpressionOn<A> {
         ExpressionHelper.ConvertCheckedCore<Func<A, T>>(typeof(T), expression);
 
     /// <summary>
-    /// Gets the constructor identified by the provided <paramref name="expression"/>.
-    /// </summary>
-    public static ConstructorInfo GetConstructorInfo<R>(Expression<Func<A, R>> expression) =>
-        ExpressionHelper.GetConstructorInfo(expression);
-
-    /// <summary>
     /// Gets the method identified by the provided <paramref name="expression"/>.
     /// </summary>
     public static MethodInfo GetMethodInfo<R>(Expression<Func<A, R>> expression) =>
@@ -101,20 +95,6 @@ public static partial class ExpressionOn<A> {
     )
         where R : struct =>
         ExpressionHelper.Nullable(expression);
-
-    /// <summary>
-    /// Attempts to get a constructor identified by the provided <paramref name="expression"/>.
-    /// </summary>
-    /// <remarks>
-    /// This method is an escape hatch providing explicit access to the runtime interpolation
-    /// implementation, and can be used as a workaround for potential bugs or deficiencies in
-    /// the compile time interpolator.
-    /// </remarks>
-    public static bool TryGetConstructorInfo<R>(
-        Expression<Func<A, R>> expression,
-        [MaybeNullWhen(false)] out ConstructorInfo constructorInfo
-    ) =>
-        ExpressionHelper.TryGetConstructorInfo(expression, out constructorInfo);
 
     /// <summary>
     /// Attempts to get a method identified by the provided <paramref name="expression"/>.

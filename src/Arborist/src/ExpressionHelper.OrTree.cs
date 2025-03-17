@@ -13,10 +13,9 @@ public static partial class ExpressionHelper {
     /// in certain scenarios (i.e. when interpreted by EntityFramework to produce queries for Microsoft
     /// SQL Server).
     /// </remarks>
-    public static Expression<Func<bool>> OrTree(
-        IEnumerable<Expression<Func<bool>>> predicates
-    ) =>
-        OrTreeUnsafe(predicates);
+    public static Expression<TPredicate> OrTree<TPredicate>(params Expression<TPredicate>[] predicates)
+        where TPredicate : Delegate =>
+        OrTree(predicates.AsEnumerable());
 
     /// <summary>
     /// Combines the provided <paramref name="predicates"/> into a balanced expression tree by
@@ -28,59 +27,11 @@ public static partial class ExpressionHelper {
     /// in certain scenarios (i.e. when interpreted by EntityFramework to produce queries for Microsoft
     /// SQL Server).
     /// </remarks>
-    public static Expression<Func<A, bool>> OrTree<A>(
-        IEnumerable<Expression<Func<A, bool>>> predicates
-    ) =>
-        OrTreeUnsafe(predicates);
-
-    /// <summary>
-    /// Combines the provided <paramref name="predicates"/> into a balanced expression tree by
-    /// ORing their bodies together. Returns a false-valued predicate expression if the provided collection
-    /// of predicates is empty.
-    /// </summary>
-    /// <remarks>
-    /// This method is useful as it significantly reduces the maximum expression depth, which is important
-    /// in certain scenarios (i.e. when interpreted by EntityFramework to produce queries for Microsoft
-    /// SQL Server).
-    /// </remarks>
-    public static Expression<Func<A, B, bool>> OrTree<A, B>(
-        IEnumerable<Expression<Func<A, B, bool>>> predicates
-    ) =>
-        OrTreeUnsafe(predicates);
-
-    /// <summary>
-    /// Combines the provided <paramref name="predicates"/> into a balanced expression tree by
-    /// ORing their bodies together. Returns a false-valued predicate expression if the provided collection
-    /// of predicates is empty.
-    /// </summary>
-    /// <remarks>
-    /// This method is useful as it significantly reduces the maximum expression depth, which is important
-    /// in certain scenarios (i.e. when interpreted by EntityFramework to produce queries for Microsoft
-    /// SQL Server).
-    /// </remarks>
-    public static Expression<Func<A, B, C, bool>> OrTree<A, B, C>(
-        IEnumerable<Expression<Func<A, B, C, bool>>> predicates
-    ) =>
-        OrTreeUnsafe(predicates);
-
-    /// <summary>
-    /// Combines the provided <paramref name="predicates"/> into a balanced expression tree by
-    /// ORing their bodies together. Returns a false-valued predicate expression if the provided collection
-    /// of predicates is empty.
-    /// </summary>
-    /// <remarks>
-    /// This method is useful as it significantly reduces the maximum expression depth, which is important
-    /// in certain scenarios (i.e. when interpreted by EntityFramework to produce queries for Microsoft
-    /// SQL Server).
-    /// </remarks>
-    public static Expression<Func<A, B, C, D, bool>> OrTree<A, B, C, D>(
-        IEnumerable<Expression<Func<A, B, C, D, bool>>> predicates
-    ) =>
-        OrTreeUnsafe(predicates);
-
-    public static Expression<TPredicate> OrTreeUnsafe<TPredicate>(IEnumerable<Expression<TPredicate>> predicates)
+    public static Expression<TPredicate> OrTree<TPredicate>(IEnumerable<Expression<TPredicate>> predicates)
         where TPredicate : Delegate
     {
+        AssertPredicateType(typeof(TPredicate));
+
         var predicateList = CollectionHelpers.AsReadOnlyList(predicates);
 
         return (Expression<TPredicate>)AggregateTreeImpl(

@@ -9,8 +9,8 @@ analagous to string interpolation, as well as a suite of generalized expression 
 
 Arborist differs from [LINQKit][2] in that it:
 
-  - provides a more powerful, generalized approach to expression interpolation which is also
-    more performant than Expand/AsExpandable; and
+  - provides an explicit, generalized expression interpolation facility which both more
+    performant and more powerful than Expand/AsExpandable; and
   - adopts a composable, functional approach to expression manipulation supporting expressions
     in general as compared to mutable PredicateBuilder instances.
 
@@ -57,7 +57,7 @@ resulting from the interpolation process. The interpolation context provides acc
 *splicing methods* used to lower other expression trees into the result expression, as well as
 to any data that you want to inject into the interpolation process.
 
-### A word on performance
+### Interpolation performance implications
 
 Most of the performance cost associated with expression interpolation is associated with the
 evaluation of expression subtrees provided as arguments to evaluated splice parameters
@@ -72,6 +72,10 @@ fallback in the event that it fails.
 
 > **💡 Hint:** You should try to pre-evaluate your spliced values to simplify the subtrees
 > requiring evaluation by the interpolation process.
+
+Interpolation always requires construction of new expression trees, however you can reduce
+the number of allocations per call by using the interpolation data parameter, which lets you
+make the input expression a static declaration.
 
 ### Splicing methods
 

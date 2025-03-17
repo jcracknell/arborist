@@ -9,10 +9,7 @@ public static partial class ExpressionOn<A, B, C, D> {
         Expression<Func<A, B, C, D, I>> root,
         Expression<Func<I, R>> branch
     ) =>
-        Expression.Lambda<Func<A, B, C, D, R>>(
-            body: ExpressionHelper.Replace(branch.Body, branch.Parameters[0], root.Body),
-            parameters: root.Parameters
-        );
+        ExpressionHelper.Graft(root, branch);
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -27,7 +24,7 @@ public static partial class ExpressionOn<A, B, C, D> {
         where I : J?
         where J : class?
         where R : class? =>
-        ExpressionHelper.GraftNullableImpl<Func<A, B, C, D, R?>>(root, branch);
+        ExpressionHelper.GraftNullable(root, branch);
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -46,7 +43,7 @@ public static partial class ExpressionOn<A, B, C, D> {
         where I : J?
         where J : class?
         where R : struct =>
-        ExpressionHelper.GraftNullableImpl<Func<A, B, C, D, Nullable<R>>>(root, branch);
+        ExpressionHelper.GraftNullable(root, branch);
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -61,7 +58,7 @@ public static partial class ExpressionOn<A, B, C, D> {
         where I : J?
         where J : class?
         where R : struct =>
-        ExpressionHelper.GraftNullableImpl<Func<A, B, C, D, Nullable<R>>>(root, branch);
+        ExpressionHelper.GraftNullable(root, branch);
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -75,7 +72,7 @@ public static partial class ExpressionOn<A, B, C, D> {
     )
         where I : struct
         where R : class? =>
-        ExpressionHelper.GraftNullableImpl<Func<A, B, C, D, R?>>(root, branch);
+        ExpressionHelper.GraftNullable(root, branch);
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -93,7 +90,7 @@ public static partial class ExpressionOn<A, B, C, D> {
     )
         where I : struct
         where R : struct =>
-        ExpressionHelper.GraftNullableImpl<Func<A, B, C, D, Nullable<R>>>(root, branch);
+        ExpressionHelper.GraftNullable(root, branch);
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -107,5 +104,5 @@ public static partial class ExpressionOn<A, B, C, D> {
     )
         where I : struct
         where R : struct =>
-        ExpressionHelper.GraftNullableImpl<Func<A, B, C, D, Nullable<R>>>(root, branch);
+        ExpressionHelper.GraftNullable(root, branch);
 }

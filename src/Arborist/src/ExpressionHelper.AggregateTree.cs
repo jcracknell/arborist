@@ -116,7 +116,7 @@ public static partial class ExpressionHelper {
         LambdaExpression fallback,
         LambdaExpression binaryOperator
     ) {
-        var expressionList = expressions as IReadOnlyList<LambdaExpression> ?? expressions.ToList();
+        var expressionList = CollectionHelpers.AsReadOnlyList(expressions);
         switch(expressionList.Count) {
             case 0: return fallback;
             case 1: return expressionList[0];

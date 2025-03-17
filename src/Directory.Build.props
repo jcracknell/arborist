@@ -1,9 +1,11 @@
 <Project>
   <PropertyGroup>
-    <Version>0.0.2</Version>
+    <Version>0.1.0</Version>
     <IsPackable>false</IsPackable>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageAuthor>James Cracknell</PackageAuthor>
+    <RepositoryUrl>https://github.com/jcracknell/arborist</RepositoryUrl>
+    <PackageTags>expressions;iqueryable;linq;entityframework;entityframeworkcore;arborist</PackageTags>
   </PropertyGroup>
 
   <PropertyGroup>

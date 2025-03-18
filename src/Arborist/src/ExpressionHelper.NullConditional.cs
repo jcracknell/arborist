@@ -13,7 +13,7 @@ public static partial class ExpressionHelper {
     /// </param>
     public static Expression<Func<A?, B?>> NullConditional<A, B>(
         Expression<Func<A, B>> expression,
-        DummyStruct<(A, B)> dummy = default
+        Dummy<(A, B)> dummy = default
     )
         where A : class?
         where B : class? =>
@@ -29,7 +29,7 @@ public static partial class ExpressionHelper {
     /// </param>
     public static Expression<Func<A?, Nullable<B>>> NullConditional<A, B>(
         Expression<Func<A, B>> expression,
-        DummyStruct<(A, Nullable<B>)> dummy = default
+        Dummy<(A, Nullable<B>)> dummy = default
     )
         where A : class?
         where B : struct =>
@@ -45,7 +45,7 @@ public static partial class ExpressionHelper {
     /// </param>
     public static Expression<Func<A?, Nullable<B>>> NullConditional<A, B>(
         Expression<Func<A, Nullable<B>>> expression,
-        DummyStruct<(A, Nullable<B>)>? dummy = default
+        Dummy<(A, Nullable<B>)>? dummy = default
     )
         where A : class?
         where B : struct =>
@@ -61,7 +61,7 @@ public static partial class ExpressionHelper {
     /// </param>
     public static Expression<Func<A?, B?>> NullConditional<A, B>(
         Expression<Func<A, B>> expression,
-        DummyStruct<(Nullable<A>, B)> dummy = default
+        Dummy<(Nullable<A>, B)> dummy = default
     )
         where A : struct
         where B : class? =>
@@ -77,7 +77,7 @@ public static partial class ExpressionHelper {
     /// </param>
     public static Expression<Func<A?, Nullable<B>>> NullConditional<A, B>(
         Expression<Func<A, B>> expression,
-        DummyStruct<(Nullable<A>, Nullable<B>)> dummy = default
+        Dummy<(Nullable<A>, Nullable<B>)> dummy = default
     )
         where A : struct
         where B : struct =>
@@ -93,7 +93,7 @@ public static partial class ExpressionHelper {
     /// </param>
     public static Expression<Func<A?, Nullable<B>>> NullConditional<A, B>(
         Expression<Func<A, Nullable<B>>> expression,
-        DummyStruct<(Nullable<A>, Nullable<B>)> dummy = default
+        Dummy<(Nullable<A>, Nullable<B>)> dummy = default
     )
         where A : struct
         where B : struct =>

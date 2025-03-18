@@ -19,7 +19,7 @@ public static partial class ExpressionHelper {
     /// Creates a predicate expression which is true if the input is not null and the provided
     /// <paramref name="predicate"/> holds.
     /// </summary>
-    public static Expression<Func<A?, bool>> NotNullAnd<A>(Expression<Func<A, bool>> predicate, DummyClass? dummy = default)
+    public static Expression<Func<A?, bool>> NotNullAnd<A>(Expression<Func<A, bool>> predicate, Dummy<A> dummy = default)
         where A : class
     {
         return Expression.Lambda<Func<A?, bool>>(
@@ -38,7 +38,7 @@ public static partial class ExpressionHelper {
     /// Creates a predicate expression which is true if the input is not null and the provided
     /// <paramref name="predicate"/> holds.
     /// </summary>
-    public static Expression<Func<A?, bool>> NotNullAnd<A>(Expression<Func<A, bool>> predicate, DummyStruct? dummy = default)
+    public static Expression<Func<A?, bool>> NotNullAnd<A>(Expression<Func<A, bool>> predicate, Dummy<Nullable<A>> dummy = default)
         where A : struct
     {
         var parameter = Expression.Parameter(typeof(A?), predicate.Parameters[0].Name);
@@ -60,7 +60,7 @@ public static partial class ExpressionHelper {
     /// Creates a predicate expression which is true if the input is null or the provided
     /// <paramref name="predicate"/> holds.
     /// </summary>
-    public static Expression<Func<A?, bool>> NullOr<A>(Expression<Func<A, bool>> predicate, DummyClass? dummy = default)
+    public static Expression<Func<A?, bool>> NullOr<A>(Expression<Func<A, bool>> predicate, Dummy<A> dummy = default)
         where A : class
     {
         return Expression.Lambda<Func<A?, bool>>(
@@ -79,7 +79,7 @@ public static partial class ExpressionHelper {
     /// Creates a predicate expression which is true if the input is null or the provided
     /// <paramref name="predicate"/> holds.
     /// </summary>
-    public static Expression<Func<A?, bool>> NullOr<A>(Expression<Func<A, bool>> predicate, DummyStruct dummy = default)
+    public static Expression<Func<A?, bool>> NullOr<A>(Expression<Func<A, bool>> predicate, Dummy<Nullable<A>> dummy = default)
         where A : struct
     {
         var parameter = Expression.Parameter(typeof(A?), predicate.Parameters[0].Name);

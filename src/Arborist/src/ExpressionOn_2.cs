@@ -1,3 +1,5 @@
+using Arborist.Utils;
+
 namespace Arborist;
 
 public static partial class ExpressionOn<A, B> {
@@ -71,7 +73,7 @@ public static partial class ExpressionOn<A, B> {
     /// </param>
     public static Expression<Func<A, B, Nullable<R>>> Nullable<R>(
         Expression<Func<A, B, R>> expression,
-        Nullable<R> dummy = default
+        Dummy dummy = default
     )
         where R : struct =>
         ExpressionHelper.Nullable(expression);

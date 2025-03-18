@@ -1,3 +1,5 @@
+using Arborist.Utils;
+
 namespace Arborist;
 
 public static partial class ExpressionHelper {
@@ -56,7 +58,7 @@ public static partial class ExpressionHelper {
     /// </param>
     public static Expression<Func<Nullable<R>>> Nullable<R>(
         Expression<Func<R>> expression,
-        Nullable<R> dummy = default
+        Dummy dummy = default
     )
         where R : struct =>
         NullableStruct<R, Func<Nullable<R>>>(expression);
@@ -70,7 +72,7 @@ public static partial class ExpressionHelper {
     /// </param>
     public static Expression<Func<A, Nullable<R>>> Nullable<A, R>(
         Expression<Func<A, R>> expression,
-        Nullable<R> dummy = default
+        Dummy dummy = default
     )
         where R : struct =>
         NullableStruct<R, Func<A, Nullable<R>>>(expression);
@@ -84,7 +86,7 @@ public static partial class ExpressionHelper {
     /// </param>
     public static Expression<Func<A, B, Nullable<R>>> Nullable<A, B, R>(
         Expression<Func<A, B, R>> expression,
-        Nullable<R> dummy = default
+        Dummy dummy = default
     )
         where R : struct =>
         NullableStruct<R, Func<A, B, Nullable<R>>>(expression);
@@ -98,7 +100,7 @@ public static partial class ExpressionHelper {
     /// </param>
     public static Expression<Func<A, B, C, Nullable<R>>> Nullable<A, B, C, R>(
         Expression<Func<A, B, C, R>> expression,
-        Nullable<R> dummy = default
+        Dummy dummy = default
     )
         where R : struct =>
         NullableStruct<R, Func<A, B, C, Nullable<R>>>(expression);
@@ -112,7 +114,7 @@ public static partial class ExpressionHelper {
     /// </param>
     public static Expression<Func<A, B, C, D, Nullable<R>>> Nullable<A, B, C, D, R>(
         Expression<Func<A, B, C, D, R>> expression,
-        Nullable<R> dummy = default
+        Dummy dummy = default
     )
         where R : struct =>
         NullableStruct<R, Func<A, B, C, D, Nullable<R>>>(expression);

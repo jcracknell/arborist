@@ -1,3 +1,4 @@
+using Arborist.Utils;
 using System.Diagnostics.Contracts;
 
 namespace Arborist.Orderings;
@@ -56,7 +57,7 @@ public static partial class OrderingExtensions {
     public static Ordering<Expression<Func<A, Nullable<R>>>> GraftSelectorExpressionsToNullable<A, I, J, R>(
         this Ordering<Expression<Func<J, R>>> ordering,
         Expression<Func<A, I>> expression,
-        Nullable<R> dummy = default
+        Dummy dummy = default
     )
         where I : class?, J?
         where J : class?
@@ -122,7 +123,7 @@ public static partial class OrderingExtensions {
     public static Ordering<Expression<Func<A, Nullable<R>>>> GraftSelectorExpressionsToNullable<A, I, R>(
         this Ordering<Expression<Func<I, R>>> ordering,
         Expression<Func<A, Nullable<I>>> expression,
-        Nullable<R> dummy = default
+        Dummy dummy = default
     )
         where I : struct
         where R : struct =>

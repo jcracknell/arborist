@@ -1,3 +1,5 @@
+using Arborist.Utils;
+
 namespace Arborist;
 
 public static partial class ExpressionOn<A, B> {
@@ -38,7 +40,7 @@ public static partial class ExpressionOn<A, B> {
     public static Expression<Func<A, B, Nullable<R>>> GraftNullable<I, J, R>(
         Expression<Func<A, B, I>> root,
         Expression<Func<J, R>> branch,
-        Nullable<R> dummy = default
+        Dummy dummy = default
     )
         where I : class?, J?
         where J : class?
@@ -86,7 +88,7 @@ public static partial class ExpressionOn<A, B> {
     public static Expression<Func<A, B, Nullable<R>>> GraftNullable<I, R>(
         Expression<Func<A, B, Nullable<I>>> root,
         Expression<Func<I, R>> branch,
-        Nullable<R> dummy = default
+        Dummy dummy = default
     )
         where I : struct
         where R : struct =>

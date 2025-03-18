@@ -1,3 +1,5 @@
+using Arborist.Utils;
+
 namespace Arborist;
 
 public static partial class ExpressionHelper {
@@ -138,7 +140,7 @@ public static partial class ExpressionHelper {
     public static Expression<Func<Nullable<R>>> GraftNullable<I, J, R>(
         Expression<Func<I>> root,
         Expression<Func<J, R>> branch,
-        Nullable<R> dummy = default
+        Dummy dummy = default
     )
         where I : class?, J?
         where J : class?
@@ -157,7 +159,7 @@ public static partial class ExpressionHelper {
     public static Expression<Func<A, Nullable<R>>> GraftNullable<A, I, J, R>(
         Expression<Func<A, I>> root,
         Expression<Func<J, R>> branch,
-        Nullable<R> dummy = default
+        Dummy dummy = default
     )
         where I : class?, J?
         where J : class?
@@ -176,7 +178,7 @@ public static partial class ExpressionHelper {
     public static Expression<Func<A, B, Nullable<R>>> GraftNullable<A, B, I, J, R>(
         Expression<Func<A, B, I>> root,
         Expression<Func<J, R>> branch,
-        Nullable<R> dummy = default
+        Dummy dummy = default
     )
         where I : class?, J?
         where J : class?
@@ -195,7 +197,7 @@ public static partial class ExpressionHelper {
     public static Expression<Func<A, B, C, Nullable<R>>> GraftNullable<A, B, C, I, J, R>(
         Expression<Func<A, B, C, I>> root,
         Expression<Func<J, R>> branch,
-        Nullable<R> dummy = default
+        Dummy dummy = default
     )
         where I : class?, J?
         where J : class?
@@ -214,7 +216,7 @@ public static partial class ExpressionHelper {
     public static Expression<Func<A, B, C, D, Nullable<R>>> GraftNullable<A, B, C, D, I, J, R>(
         Expression<Func<A, B, C, D, I>> root,
         Expression<Func<J, R>> branch,
-        Nullable<R> dummy = default
+        Dummy dummy = default
     )
         where I : class?, J?
         where J : class?
@@ -378,7 +380,7 @@ public static partial class ExpressionHelper {
     public static Expression<Func<Nullable<R>>> GraftNullable<I, R>(
         Expression<Func<Nullable<I>>> root,
         Expression<Func<I, R>> branch,
-        Nullable<R> dummy = default
+        Dummy dummy = default
     )
         where I : struct
         where R : struct =>
@@ -396,7 +398,7 @@ public static partial class ExpressionHelper {
     public static Expression<Func<A, Nullable<R>>> GraftNullable<A, I, R>(
         Expression<Func<A, Nullable<I>>> root,
         Expression<Func<I, R>> branch,
-        Nullable<R> dummy = default
+        Dummy dummy = default
     )
         where I : struct
         where R : struct =>
@@ -414,7 +416,7 @@ public static partial class ExpressionHelper {
     public static Expression<Func<A, B, Nullable<R>>> GraftNullable<A, B, I, R>(
         Expression<Func<A, B, Nullable<I>>> root,
         Expression<Func<I, R>> branch,
-        Nullable<R> dummy = default
+        Dummy dummy = default
     )
         where I : struct
         where R : struct =>
@@ -432,7 +434,7 @@ public static partial class ExpressionHelper {
     public static Expression<Func<A, B, C, Nullable<R>>> GraftNullable<A, B, C, I, R>(
         Expression<Func<A, B, C, Nullable<I>>> root,
         Expression<Func<I, R>> branch,
-        Nullable<R> dummy = default
+        Dummy dummy = default
     )
         where I : struct
         where R : struct =>
@@ -450,7 +452,7 @@ public static partial class ExpressionHelper {
     public static Expression<Func<A, B, C, D, Nullable<R>>> GraftNullable<A, B, C, D, I, R>(
         Expression<Func<A, B, C, D, Nullable<I>>> root,
         Expression<Func<I, R>> branch,
-        Nullable<R> dummy = default
+        Dummy dummy = default
     )
         where I : struct
         where R : struct =>

@@ -1,5 +1,3 @@
-using Arborist.Utils;
-
 namespace Arborist;
 
 public static partial class ExpressionOn<A, B, C, D> {
@@ -54,27 +52,4 @@ public static partial class ExpressionOn<A, B, C, D> {
     /// </summary>
     public static Expression<Func<A, B, C, D, T>> ConvertChecked<T>(LambdaExpression expression) =>
         ExpressionHelper.ConvertCheckedCore<Func<A, B, C, D, T>>(typeof(T), expression);
-
-    /// <summary>
-    /// Converts the provided <paramref name="expression"/> so that its declared result type is nullable.
-    /// </summary>
-    public static Expression<Func<A, B, C, D, R?>> Nullable<R>(
-        Expression<Func<A, B, C, D, R>> expression
-    )
-        where R : class =>
-        ExpressionHelper.Nullable(expression);
-
-    /// <summary>
-    /// Wraps the provided <paramref name="expression"/> to produce a <see cref="System.Nullable{T}"/>
-    /// result value.
-    /// </summary>
-    /// <param name="dummy">
-    /// Disambiguates overloads by type parameter constraints.
-    /// </param>
-    public static Expression<Func<A, B, C, D, Nullable<R>>> Nullable<R>(
-        Expression<Func<A, B, C, D, R>> expression,
-        Dummy dummy = default
-    )
-        where R : struct =>
-        ExpressionHelper.Nullable(expression);
 }

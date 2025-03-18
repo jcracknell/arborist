@@ -5,6 +5,16 @@ public static partial class ExpressionHelper {
     /// Grafts the provided <paramref name="branch"/> expression onto the <paramref name="root"/> expression,
     /// replacing references to its parameter with the body of the <paramref name="root"/> expression.
     /// </summary>
+    public static Expression<Func<R>> Graft<I, R>(
+        Expression<Func<I>> root,
+        Expression<Func<I, R>> branch
+    ) =>
+        GraftImpl<Func<R>>(root, branch);
+
+    /// <summary>
+    /// Grafts the provided <paramref name="branch"/> expression onto the <paramref name="root"/> expression,
+    /// replacing references to its parameter with the body of the <paramref name="root"/> expression.
+    /// </summary>
     public static Expression<Func<A, R>> Graft<A, I, R>(
         Expression<Func<A, I>> root,
         Expression<Func<I, R>> branch
@@ -47,14 +57,29 @@ public static partial class ExpressionHelper {
     /// is the result of replacing the parameter to the <paramref name="branch"/> expression with
     /// the non-null body of the <paramref name="root"/> expression.
     /// </summary>
+    public static Expression<Func<R?>> GraftNullable<I, J, R>(
+        Expression<Func<I>> root,
+        Expression<Func<J, R>> branch
+    )
+        where I : class?, J?
+        where J : class?
+        where R : class? =>
+        Graft(root, NullConditional(GraftNullableRefBranch<I, J, R>(branch))!);
+
+    /// <summary>
+    /// Creates a ternary expression where the "then" arm produces null in the event that the
+    /// body of the <paramref name="root"/> expression is null, and the "else" arm
+    /// is the result of replacing the parameter to the <paramref name="branch"/> expression with
+    /// the non-null body of the <paramref name="root"/> expression.
+    /// </summary>
     public static Expression<Func<A, R?>> GraftNullable<A, I, J, R>(
         Expression<Func<A, I>> root,
         Expression<Func<J, R>> branch
     )
-        where I : J?
+        where I : class?, J?
         where J : class?
         where R : class? =>
-        GraftNullableImpl<Func<A, R?>>(root, branch);
+        Graft(root, NullConditional(GraftNullableRefBranch<I, J, R>(branch))!);
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -66,10 +91,10 @@ public static partial class ExpressionHelper {
         Expression<Func<A, B, I>> root,
         Expression<Func<J, R>> branch
     )
-        where I : J?
+        where I : class?, J?
         where J : class?
         where R : class? =>
-        GraftNullableImpl<Func<A, B, R?>>(root, branch);
+        Graft(root, NullConditional(GraftNullableRefBranch<I, J, R>(branch))!);
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -81,10 +106,10 @@ public static partial class ExpressionHelper {
         Expression<Func<A, B, C, I>> root,
         Expression<Func<J, R>> branch
     )
-        where I : J?
+        where I : class?, J?
         where J : class?
         where R : class? =>
-        GraftNullableImpl<Func<A, B, C, R?>>(root, branch);
+        Graft(root, NullConditional(GraftNullableRefBranch<I, J, R>(branch))!);
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -96,10 +121,29 @@ public static partial class ExpressionHelper {
         Expression<Func<A, B, C, D, I>> root,
         Expression<Func<J, R>> branch
     )
-        where I : J?
+        where I : class?, J?
         where J : class?
         where R : class? =>
-        GraftNullableImpl<Func<A, B, C, D, R?>>(root, branch);
+        Graft(root, NullConditional(GraftNullableRefBranch<I, J, R>(branch))!);
+
+    /// <summary>
+    /// Creates a ternary expression where the "then" arm produces null in the event that the
+    /// body of the <paramref name="root"/> expression is null, and the "else" arm
+    /// is the result of replacing the parameter to the <paramref name="branch"/> expression with
+    /// the non-null body of the <paramref name="root"/> expression.
+    /// </summary>
+    /// <param name="dummy">
+    /// Disambiguates overloads by type parameter constraints.
+    /// </param>
+    public static Expression<Func<Nullable<R>>> GraftNullable<I, J, R>(
+        Expression<Func<I>> root,
+        Expression<Func<J, R>> branch,
+        Nullable<R> dummy = default
+    )
+        where I : class?, J?
+        where J : class?
+        where R : struct =>
+        Graft(root, NullConditional(GraftNullableRefBranch<I, J, R>(branch))!);
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -115,10 +159,10 @@ public static partial class ExpressionHelper {
         Expression<Func<J, R>> branch,
         Nullable<R> dummy = default
     )
-        where I : J?
+        where I : class?, J?
         where J : class?
         where R : struct =>
-        GraftNullableImpl<Func<A, Nullable<R>>>(root, branch);
+        Graft(root, NullConditional(GraftNullableRefBranch<I, J, R>(branch))!);
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -134,10 +178,10 @@ public static partial class ExpressionHelper {
         Expression<Func<J, R>> branch,
         Nullable<R> dummy = default
     )
-        where I : J?
+        where I : class?, J?
         where J : class?
         where R : struct =>
-        GraftNullableImpl<Func<A, B, Nullable<R>>>(root, branch);
+        Graft(root, NullConditional(GraftNullableRefBranch<I, J, R>(branch))!);
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -153,10 +197,10 @@ public static partial class ExpressionHelper {
         Expression<Func<J, R>> branch,
         Nullable<R> dummy = default
     )
-        where I : J?
+        where I : class?, J?
         where J : class?
         where R : struct =>
-        GraftNullableImpl<Func<A, B, C, Nullable<R>>>(root, branch);
+        Graft(root, NullConditional(GraftNullableRefBranch<I, J, R>(branch))!);
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -172,10 +216,25 @@ public static partial class ExpressionHelper {
         Expression<Func<J, R>> branch,
         Nullable<R> dummy = default
     )
-        where I : J?
+        where I : class?, J?
         where J : class?
         where R : struct =>
-        GraftNullableImpl<Func<A, B, C, D, Nullable<R>>>(root, branch);
+        Graft(root, NullConditional(GraftNullableRefBranch<I, J, R>(branch))!);
+
+    /// <summary>
+    /// Creates a ternary expression where the "then" arm produces null in the event that the
+    /// body of the <paramref name="root"/> expression is null, and the "else" arm
+    /// is the result of replacing the parameter to the <paramref name="branch"/> expression with
+    /// the non-null body of the <paramref name="root"/> expression.
+    /// </summary>
+    public static Expression<Func<Nullable<R>>> GraftNullable<I, J, R>(
+        Expression<Func<I>> root,
+        Expression<Func<J, Nullable<R>>> branch
+    )
+        where I : class?, J?
+        where J : class?
+        where R : struct =>
+        Graft(root, NullConditional(GraftNullableRefBranch<I, J, Nullable<R>>(branch))!);
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -187,10 +246,10 @@ public static partial class ExpressionHelper {
         Expression<Func<A, I>> root,
         Expression<Func<J, Nullable<R>>> branch
     )
-        where I : J?
+        where I : class?, J?
         where J : class?
         where R : struct =>
-        GraftNullableImpl<Func<A, Nullable<R>>>(root, branch);
+        Graft(root, NullConditional(GraftNullableRefBranch<I, J, Nullable<R>>(branch))!);
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -202,10 +261,10 @@ public static partial class ExpressionHelper {
         Expression<Func<A, B, I>> root,
         Expression<Func<J, Nullable<R>>> branch
     )
-        where I : J?
+        where I : class?, J?
         where J : class?
         where R : struct =>
-        GraftNullableImpl<Func<A, B, Nullable<R>>>(root, branch);
+        Graft(root, NullConditional(GraftNullableRefBranch<I, J, Nullable<R>>(branch))!);
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -217,10 +276,10 @@ public static partial class ExpressionHelper {
         Expression<Func<A, B, C, I>> root,
         Expression<Func<J, Nullable<R>>> branch
     )
-        where I : J?
+        where I : class?, J?
         where J : class?
         where R : struct =>
-        GraftNullableImpl<Func<A, B, C, Nullable<R>>>(root, branch);
+        Graft(root, NullConditional(GraftNullableRefBranch<I, J, Nullable<R>>(branch))!);
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -232,10 +291,24 @@ public static partial class ExpressionHelper {
         Expression<Func<A, B, C, D, I>> root,
         Expression<Func<J, Nullable<R>>> branch
     )
-        where I : J?
+        where I : class?, J?
         where J : class?
         where R : struct =>
-        GraftNullableImpl<Func<A, B, C, D, Nullable<R>>>(root, branch);
+        Graft(root, NullConditional(GraftNullableRefBranch<I, J, Nullable<R>>(branch))!);
+
+    /// <summary>
+    /// Creates a ternary expression where the "then" arm produces null in the event that the
+    /// body of the <paramref name="root"/> expression is null, and the "else" arm
+    /// is the result of replacing the parameter to the <paramref name="branch"/> expression with
+    /// the non-null body of the <paramref name="root"/> expression.
+    /// </summary>
+    public static Expression<Func<R?>> GraftNullable<I, R>(
+        Expression<Func<Nullable<I>>> root,
+        Expression<Func<I, R>> branch
+    )
+        where I : struct
+        where R : class? =>
+        Graft(root, NullConditional(branch));
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -249,7 +322,7 @@ public static partial class ExpressionHelper {
     )
         where I : struct
         where R : class? =>
-        GraftNullableImpl<Func<A, R?>>(root, branch);
+        Graft(root, NullConditional(branch));
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -263,7 +336,7 @@ public static partial class ExpressionHelper {
     )
         where I : struct
         where R : class? =>
-        GraftNullableImpl<Func<A, B, R?>>(root, branch);
+        Graft(root, NullConditional(branch));
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -277,7 +350,7 @@ public static partial class ExpressionHelper {
     )
         where I : struct
         where R : class? =>
-        GraftNullableImpl<Func<A, B, C, R?>>(root, branch);
+        Graft(root, NullConditional(branch));
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -291,7 +364,25 @@ public static partial class ExpressionHelper {
     )
         where I : struct
         where R : class? =>
-        GraftNullableImpl<Func<A, B, C, D, R?>>(root, branch);
+        Graft(root, NullConditional(branch));
+
+    /// <summary>
+    /// Creates a ternary expression where the "then" arm produces null in the event that the
+    /// body of the <paramref name="root"/> expression is null, and the "else" arm
+    /// is the result of replacing the parameter to the <paramref name="branch"/> expression with
+    /// the non-null body of the <paramref name="root"/> expression.
+    /// </summary>
+    /// <param name="dummy">
+    /// Disambiguates overloads by type parameter constraints.
+    /// </param>
+    public static Expression<Func<Nullable<R>>> GraftNullable<I, R>(
+        Expression<Func<Nullable<I>>> root,
+        Expression<Func<I, R>> branch,
+        Nullable<R> dummy = default
+    )
+        where I : struct
+        where R : struct =>
+        Graft(root, NullConditional(branch));
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -309,7 +400,7 @@ public static partial class ExpressionHelper {
     )
         where I : struct
         where R : struct =>
-        GraftNullableImpl<Func<A, Nullable<R>>>(root, branch);
+        Graft(root, NullConditional(branch));
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -327,7 +418,7 @@ public static partial class ExpressionHelper {
     )
         where I : struct
         where R : struct =>
-        GraftNullableImpl<Func<A, B, Nullable<R>>>(root, branch);
+        Graft(root, NullConditional(branch));
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -345,7 +436,7 @@ public static partial class ExpressionHelper {
     )
         where I : struct
         where R : struct =>
-        GraftNullableImpl<Func<A, B, C, Nullable<R>>>(root, branch);
+        Graft(root, NullConditional(branch));
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -363,7 +454,21 @@ public static partial class ExpressionHelper {
     )
         where I : struct
         where R : struct =>
-        GraftNullableImpl<Func<A, B, C, D, Nullable<R>>>(root, branch);
+        Graft(root, NullConditional(branch));
+
+    /// <summary>
+    /// Creates a ternary expression where the "then" arm produces null in the event that the
+    /// body of the <paramref name="root"/> expression is null, and the "else" arm
+    /// is the result of replacing the parameter to the <paramref name="branch"/> expression with
+    /// the non-null body of the <paramref name="root"/> expression.
+    /// </summary>
+    public static Expression<Func<Nullable<R>>> GraftNullable<I, R>(
+        Expression<Func<Nullable<I>>> root,
+        Expression<Func<I, Nullable<R>>> branch
+    )
+        where I : struct
+        where R : struct =>
+        Graft(root, NullConditional(branch));
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -377,7 +482,7 @@ public static partial class ExpressionHelper {
     )
         where I : struct
         where R : struct =>
-        GraftNullableImpl<Func<A, Nullable<R>>>(root, branch);
+        Graft(root, NullConditional(branch));
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -391,7 +496,7 @@ public static partial class ExpressionHelper {
     )
         where I : struct
         where R : struct =>
-        GraftNullableImpl<Func<A, B, Nullable<R>>>(root, branch);
+        Graft(root, NullConditional(branch));
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -405,7 +510,7 @@ public static partial class ExpressionHelper {
     )
         where I : struct
         where R : struct =>
-        GraftNullableImpl<Func<A, B, C, Nullable<R>>>(root, branch);
+        Graft(root, NullConditional(branch));
 
     /// <summary>
     /// Creates a ternary expression where the "then" arm produces null in the event that the
@@ -419,7 +524,7 @@ public static partial class ExpressionHelper {
     )
         where I : struct
         where R : struct =>
-        GraftNullableImpl<Func<A, B, C, D, Nullable<R>>>(root, branch);
+        Graft(root, NullConditional(branch));
 
     internal static Expression<TDelegate> GraftImpl<TDelegate>(
         LambdaExpression root,
@@ -433,53 +538,18 @@ public static partial class ExpressionHelper {
         );
     }
 
-    internal static Expression<TDelegate> GraftNullableImpl<TDelegate>(
-        LambdaExpression root,
-        LambdaExpression branch
-    )
-        where TDelegate : Delegate
+    internal static Expression<Func<I, R>> GraftNullableRefBranch<I, J, R>(Expression<Func<J, R>> branch)
+        where I : class?, J?
+        where J : class?
     {
-        AssertFuncType(typeof(TDelegate));
+        if(typeof(I) == typeof(J))
+            return (Expression<Func<I, R>>)(LambdaExpression)branch;
 
-        var rootResultType = root.Type.GenericTypeArguments[^1];
-        var branchInputType = branch.Type.GenericTypeArguments[0];
+        var parameter = Expression.Parameter(typeof(I), branch.Parameters[0].Name);
 
-        // Calculate the result type of the expression. Note that this is based on the type of the
-        // branch expression to avoid introducing explicit casts which would otherwise be handled
-        // by the expression type!
-        var resultType = (branch.Body.Type.IsValueType && !IsNullableType(branch.Body.Type)) switch {
-            true => typeof(System.Nullable<>).MakeGenericType(branch.Body.Type),
-            false => branch.Body.Type
-        };
-
-        return Expression.Lambda<TDelegate>(
-            body: Expression.Condition(
-                Expression.Equal(
-                    root.Body,
-                    Expression.Constant(null, root.Body.Type.IsValueType switch {
-                        true => root.Body.Type,
-                        false => typeof(object)
-                    })
-                ),
-                Expression.Constant(null, resultType),
-                // Coerce struct branch result to Nullable<T>
-                Coerce(resultType, Replace(
-                    branch.Body,
-                    branch.Parameters[0],
-                    // Coerce subtype to supertype or interface
-                    Coerce(branchInputType, IsNullableType(rootResultType) switch {
-                        true => Expression.Property(root.Body, rootResultType.GetProperty("Value")!),
-                        false => root.Body
-                    })
-                ))
-            ),
-            parameters: root.Parameters
+        return Expression.Lambda<Func<I, R>>(
+            Replace(branch.Body, branch.Parameters[0], Expression.Convert(parameter, typeof(J))),
+            parameter
         );
-
-        static bool IsNullableType(Type type) =>
-            System.Nullable.GetUnderlyingType(type) is not null;
-
-        static Expression Coerce(Type type, Expression expression) =>
-            type == expression.Type ? expression : Expression.Convert(expression, type);
     }
 }

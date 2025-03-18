@@ -21,7 +21,7 @@ public static partial class ExpressionOn<A> {
         Expression<Func<A, I>> root,
         Expression<Func<J, R>> branch
     )
-        where I : J?
+        where I : class?, J?
         where J : class?
         where R : class? =>
         ExpressionHelper.GraftNullable(root, branch);
@@ -40,7 +40,7 @@ public static partial class ExpressionOn<A> {
         Expression<Func<J, R>> branch,
         Nullable<R> dummy = default
     )
-        where I : J?
+        where I : class?, J?
         where J : class?
         where R : struct =>
         ExpressionHelper.GraftNullable(root, branch);
@@ -55,7 +55,7 @@ public static partial class ExpressionOn<A> {
         Expression<Func<A, I>> root,
         Expression<Func<J, Nullable<R>>> branch
     )
-        where I : J?
+        where I : class?, J?
         where J : class?
         where R : struct =>
         ExpressionHelper.GraftNullable(root, branch);

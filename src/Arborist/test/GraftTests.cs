@@ -45,7 +45,7 @@ public class GraftTests {
 
     [Fact]
     public void GraftNullable0_works_with_reference_intermediary_and_reference_result() {
-        var expected = ExpressionOnNone.Of(() => default(Cat)!.Owner == null ? null : default(Cat)!.Owner.Name);
+        var expected = ExpressionOnNone.Of(() => default(Cat)!.Owner != null ? default(Cat)!.Owner.Name : null);
 
         var actual = ExpressionOnNone.GraftNullable(
             ExpressionOnNone.Of(() => default(Cat)!.Owner),
@@ -58,7 +58,7 @@ public class GraftTests {
     [Fact]
     public void GraftNullable0_works_with_reference_intermediary_and_struct_result() {
         var expected = ExpressionOnNone.Of(
-            () => default(Cat)!.Owner == null ? null : (Nullable<int>)default(Cat)!.Owner.Id
+            () => default(Cat)!.Owner != null ? (Nullable<int>)default(Cat)!.Owner.Id : null
         );
 
         var actual = ExpressionOnNone.GraftNullable(
@@ -72,7 +72,7 @@ public class GraftTests {
     [Fact]
     public void GraftNullable0_works_with_reference_intermediary_and_nullable_result() {
         var expected = ExpressionOnNone.Of(
-            () => default(Cat)!.Owner == null ? null : default(Cat)!.Owner.Age
+            () => default(Cat)!.Owner != null ? default(Cat)!.Owner.Age : null
         );
 
         var actual = ExpressionOnNone.GraftNullable(
@@ -85,7 +85,7 @@ public class GraftTests {
 
     [Fact]
     public void GraftNullable0_works_with_nullable_intermediary_and_reference_result() {
-        var expected = ExpressionOnNone.Of(() => default(Cat)!.Age == null ? null : default(Cat)!.Age!.Value.ToString());
+        var expected = ExpressionOnNone.Of(() => default(Cat)!.Age != null ? default(Cat)!.Age!.Value.ToString() : null);
 
         var actual = ExpressionOnNone.GraftNullable(
             ExpressionOnNone.Of(() => default(Cat)!.Age),
@@ -98,7 +98,7 @@ public class GraftTests {
     [Fact]
     public void GraftNullable0_works_with_nullable_intermediary_and_struct_result() {
         var expected = ExpressionOnNone.Of(
-            () => default(Cat)!.Age == null ? null : (Nullable<int>)default(Cat)!.Age!.Value
+            () => default(Cat)!.Age != null ? (Nullable<int>)default(Cat)!.Age!.Value : null
         );
 
         var actual = ExpressionOnNone.GraftNullable(
@@ -112,7 +112,7 @@ public class GraftTests {
     [Fact]
     public void GraftNullable0_works_with_nullable_intermediary_and_nullable_result() {
         var expected = ExpressionOnNone.Of(
-            () => default(Cat)!.Age == null ? null : new Nullable<int>(default(Cat)!.Age!.Value)
+            () => default(Cat)!.Age != null ? new Nullable<int>(default(Cat)!.Age!.Value) : null
         );
 
         var actual = ExpressionOnNone.GraftNullable(
@@ -125,7 +125,7 @@ public class GraftTests {
 
     [Fact]
     public void GraftNullable1_works_with_reference_intermediary_and_reference_result() {
-        var expected = ExpressionOn<Cat>.Of(c => c.Owner == null ? null : c.Owner.Name);
+        var expected = ExpressionOn<Cat>.Of(c => c.Owner != null ? c.Owner.Name : null);
 
         var actual = ExpressionOn<Cat>.GraftNullable(
             ExpressionOn<Cat>.Of(c => c.Owner),
@@ -138,7 +138,7 @@ public class GraftTests {
     [Fact]
     public void GraftNullable1_works_with_reference_intermediary_and_struct_result() {
         var expected = ExpressionOn<Cat>.Of(
-            c => c.Owner == null ? null : (Nullable<int>)c.Owner.Id
+            c => c.Owner != null ? (Nullable<int>)c.Owner.Id : null
         );
 
         var actual = ExpressionOn<Cat>.GraftNullable(
@@ -152,7 +152,7 @@ public class GraftTests {
     [Fact]
     public void GraftNullable1_works_with_reference_intermediary_and_nullable_result() {
         var expected = ExpressionOn<Cat>.Of(
-            c => c.Owner == null ? null : c.Owner.Age
+            c => c.Owner != null ? c.Owner.Age : null
         );
 
         var actual = ExpressionOn<Cat>.GraftNullable(
@@ -165,7 +165,7 @@ public class GraftTests {
 
     [Fact]
     public void GraftNullable1_works_with_nullable_intermediary_and_reference_result() {
-        var expected = ExpressionOn<Cat>.Of(c => c.Age == null ? null : c.Age.Value.ToString());
+        var expected = ExpressionOn<Cat>.Of(c => c.Age != null ? c.Age.Value.ToString() : null);
 
         var actual = ExpressionOn<Cat>.GraftNullable(
             ExpressionOn<Cat>.Of(c => c.Age),
@@ -178,7 +178,7 @@ public class GraftTests {
     [Fact]
     public void GraftNullable1_works_with_nullable_intermediary_and_struct_result() {
         var expected = ExpressionOn<Cat>.Of(
-            c => c.Age == null ? null : (Nullable<int>)c.Age.Value
+            c => c.Age != null ? (Nullable<int>)c.Age.Value : null
         );
 
         var actual = ExpressionOn<Cat>.GraftNullable(
@@ -192,7 +192,7 @@ public class GraftTests {
     [Fact]
     public void GraftNullable1_works_with_nullable_intermediary_and_nullable_result() {
         var expected = ExpressionOn<Cat>.Of(
-            c => c.Age == null ? null : new Nullable<int>(c.Age.Value)
+            c => c.Age != null ? new Nullable<int>(c.Age.Value) : null
         );
 
         var actual = ExpressionOn<Cat>.GraftNullable(

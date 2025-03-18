@@ -57,14 +57,13 @@ public class OrderingExtensionTests {
 
     [Fact]
     public void GraftSelectorExpressionToNullable_should_work_for_intermediate_class_and_result_class() {
+        var expected = ExpressionOn<Cat>.Of<object?>(c => c.Owner != null ? c.Owner.Name : null);
+
         var actual = Ordering<Expression<Func<Owner, object?>>>.ByAscending(o => o.Name)
         .GraftSelectorExpressionsToNullable(ExpressionOn<Cat>.Of(c => c.Owner));
 
         Assert.Equal(1, actual.Count());
-        Assert.Equivalent(
-            expected: ExpressionOn<Cat>.Of<object?>(c => c.Owner == null ? null : c.Owner.Name),
-            actual: actual.ElementAt(0).Selector
-        );
+        Assert.Equivalent(expected, actual.ElementAt(0).Selector);
     }
 
     [Fact]
@@ -74,7 +73,7 @@ public class OrderingExtensionTests {
 
         Assert.Equal(1, actual.Count());
         Assert.Equivalent(
-            expected: ExpressionOn<Cat>.Of<int?>(c => c.Owner == null ? null : c.Owner.Id),
+            expected: ExpressionOn<Cat>.Of<int?>(c => c.Owner != null ? c.Owner.Id : null),
             actual: actual.ElementAt(0).Selector
         );
     }
@@ -86,7 +85,7 @@ public class OrderingExtensionTests {
 
         Assert.Equal(1, actual.Count());
         Assert.Equivalent(
-            expected: ExpressionOn<Cat>.Of<int?>(c => c.Owner == null ? null : new int?(c.Owner.Id)),
+            expected: ExpressionOn<Cat>.Of<int?>(c => c.Owner != null ? new int?(c.Owner.Id) : null),
             actual: actual.ElementAt(0).Selector
         );
     }
@@ -99,7 +98,7 @@ public class OrderingExtensionTests {
         Assert.Equal(1, actual.Count());
         Assert.Equivalent(
             #pragma warning disable CS0472
-            expected: ExpressionOn<Cat>.Of<object?>(c => new int?(c.Id) == null ? null : new int?(c.Id)!.Value.ToString()),
+            expected: ExpressionOn<Cat>.Of<object?>(c => new int?(c.Id) != null ? new int?(c.Id)!.Value.ToString() : null),
             #pragma warning restore CS0472
             actual: actual.ElementAt(0).Selector
         );
@@ -113,7 +112,7 @@ public class OrderingExtensionTests {
         Assert.Equal(1, actual.Count());
         Assert.Equivalent(
             #pragma warning disable CS0472
-            expected: ExpressionOn<Cat>.Of<int?>(c => new int?(c.Id) == null ? null : new int?(c.Id)!.Value / 2),
+            expected: ExpressionOn<Cat>.Of<int?>(c => new int?(c.Id) != null ? new int?(c.Id)!.Value / 2 : null),
             #pragma warning restore CS0472
             actual: actual.ElementAt(0).Selector
         );
@@ -127,7 +126,7 @@ public class OrderingExtensionTests {
         Assert.Equal(1, actual.Count());
         Assert.Equivalent(
             #pragma warning disable CS0472
-            expected: ExpressionOn<Cat>.Of<int?>(c => new int?(c.Id) == null ? null : new int?(new int?(c.Id)!.Value / 2)),
+            expected: ExpressionOn<Cat>.Of<int?>(c => new int?(c.Id) != null ? new int?(new int?(c.Id)!.Value / 2) : null),
             #pragma warning restore CS0472
             actual: actual.ElementAt(0).Selector
         );

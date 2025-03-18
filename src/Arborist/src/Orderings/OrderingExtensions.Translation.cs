@@ -18,7 +18,7 @@ public static partial class OrderingExtensions {
         GraftSelectorExpressions(
             ordering,
             expression,
-            static (r, b) => ExpressionOn<A>.Graft(r, b)
+            static (r, b) => ExpressionHelper.Graft(r, b)
         );
 
     /// <summary>
@@ -33,13 +33,13 @@ public static partial class OrderingExtensions {
         this Ordering<Expression<Func<J, R>>> ordering,
         Expression<Func<A, I>> expression
     )
-        where I : J?
+        where I : class?, J?
         where J : class?
         where R : class? =>
         GraftSelectorExpressions(
             ordering,
             expression,
-            static (r, b) => ExpressionOn<A>.GraftNullable(r, b)
+            static (r, b) => ExpressionHelper.GraftNullable(r, b)
         );
 
     /// <summary>
@@ -58,13 +58,13 @@ public static partial class OrderingExtensions {
         Expression<Func<A, I>> expression,
         Nullable<R> dummy = default
     )
-        where I : J?
+        where I : class?, J?
         where J : class?
         where R : struct =>
         GraftSelectorExpressions(
             ordering,
             expression,
-            static (r, b) => ExpressionOn<A>.GraftNullable(r, b)
+            static (r, b) => ExpressionHelper.GraftNullable(r, b)
         );
 
     /// <summary>
@@ -79,13 +79,13 @@ public static partial class OrderingExtensions {
         this Ordering<Expression<Func<J, Nullable<R>>>> ordering,
         Expression<Func<A, I>> expression
     )
-        where I : J?
+        where I : class?, J?
         where J : class?
         where R : struct =>
         GraftSelectorExpressions(
             ordering,
             expression,
-            static (r, b) => ExpressionOn<A>.GraftNullable(r, b)
+            static (r, b) => ExpressionHelper.GraftNullable(r, b)
         );
 
     /// <summary>
@@ -105,7 +105,7 @@ public static partial class OrderingExtensions {
         GraftSelectorExpressions(
             ordering,
             expression,
-            static (r, b) => ExpressionOn<A>.GraftNullable(r, b)
+            static (r, b) => ExpressionHelper.GraftNullable(r, b)
         );
 
     /// <summary>
@@ -129,7 +129,7 @@ public static partial class OrderingExtensions {
         GraftSelectorExpressions(
             ordering,
             expression,
-            static (r, b) => ExpressionOn<A>.GraftNullable(r, b)
+            static (r, b) => ExpressionHelper.GraftNullable(r, b)
         );
 
     /// <summary>
@@ -149,7 +149,7 @@ public static partial class OrderingExtensions {
         GraftSelectorExpressions(
             ordering,
             expression,
-            static (r, b) => ExpressionOn<A>.GraftNullable(r, b)
+            static (r, b) => ExpressionHelper.GraftNullable(r, b)
         );
 
     private static Ordering<Expression<Func<A, S>>> GraftSelectorExpressions<A, I, J, R, S>(

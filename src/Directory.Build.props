@@ -18,6 +18,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)/Arborist.snk</AssemblyOriginatorKeyFile>
+    <StrongNamePublicKey>002400000480000094000000060200000024000052534131000400000100010089648e26fb49b8e7c009e396f1a6af1bbf4af3e06ed730dcfc1092f43c10b54a3b618af3a4f6f2c9ea538c8223ca850ca202f2b7e1470ea71ee6ce420675d5048de3aa3da6bd35c2d1f9297251dbc364e05d10cd33c4f5286c0aa60277cd6eaafd3f5ef75616e84186b3027e2c429d37911e4b361fd941af98055dd6a8c432b2</StrongNamePublicKey>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- Clear default SDK-provided usings -->
     <Using Remove="*" />

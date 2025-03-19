@@ -12,6 +12,7 @@
   
   <ItemGroup>
     <InternalsVisibleTo Include="$(AssemblyName).Tests, PublicKey=$(StrongNamePublicKey)"/>
+    <InternalsVisibleTo Include="$(AssemblyName).Benchmarks, PublicKey=$(StrongNamePublicKey)"/>
   </ItemGroup>
 
   <ItemGroup>

@@ -7,3 +7,5 @@
 [Bb]in/
 [Oo]bj/
 /nuget/
+
+BenchmarkDotNet.Artifacts/

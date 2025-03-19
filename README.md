@@ -13,7 +13,7 @@ Arborist differs from [LINQKit][2] in that it:
     performant and more powerful than Expand/AsExpandable; and
   - adopts a composable, functional approach to expression manipulation supporting expressions
     in general as compared to mutable PredicateBuilder instances.
-
+  
 ## Expression interpolation
 
 One of the many problems with the IQueryable API is an almost total lack of composability.
@@ -76,6 +76,7 @@ fallback in the event that it fails.
 Interpolation always requires construction of new expression trees, however you can reduce
 the number of allocations per call by using the interpolation data parameter, which lets you
 make the input expression a static declaration.
+
 
 ### Splicing methods
 
@@ -179,6 +180,23 @@ ExpressionOn<IQueryable<Cat>>.Interpolate(
 );
 // q => Queryable.Any(q, c => c.Age == 8) && Enumerable.Any(q, c => c.Age == 8)
 ```
+
+### Interpolation benchmarks
+
+A simple comparison of basic expression interpolation performance between Arborist 0.2.0 and
+LinqKit 1.3.8 yields the following results:
+
+| Method                        | Mean      | Error     | StdDev    | Allocated |
+|------------------------------ |----------:|----------:|----------:|----------:|
+| Arborist_Interpolate_Dynamic  |  4.178 us | 0.0065 us | 0.0054 us |   2.87 KB |
+| Arborist_Interpolate_Static   |  3.574 us | 0.0080 us | 0.0071 us |   2.57 KB |
+| Arborist_Interpolate_Compiled |  6.799 us | 0.0146 us | 0.0129 us |   4.86 KB |
+| LinqKit_Expand_Dynamic        | 46.713 us | 0.1502 us | 0.1331 us |   5.71 KB |
+| LinqKit_Expand_Static         | 45.112 us | 0.1357 us | 0.1133 us |   5.71 KB |
+
+Here the Compiled case represents an uncommon, worst-case scenario where Arborist
+is obligated to compile the expression providing the spliced expression tree in order to
+evaluate it.
 
 ## Predicate helpers
 

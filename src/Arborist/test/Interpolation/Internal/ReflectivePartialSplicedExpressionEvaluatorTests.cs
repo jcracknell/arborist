@@ -14,6 +14,23 @@ public class ReflectivePartialSplicedExpressionEvaluatorTests {
     }
 
     [Fact]
+    public void Should_not_evaluate_expression_marked_unsupported() {
+        Assert.False(ReflectivePartialSplicedExpressionEvaluator.Instance.TryEvaluate(
+            default(object),
+            ExpressionOnNone.Of(() => ReflectivePartialSplicedExpressionEvaluator.Unsupported(42)).Body,
+            out _
+        ));
+
+        // Should evaluate the same unmarked expression
+        Assert.True(ReflectivePartialSplicedExpressionEvaluator.Instance.TryEvaluate(
+            default(object),
+            ExpressionOnNone.Of(() => 42).Body,
+            out var value
+        ));
+        Assert.Equal(42, value);
+    }
+
+    [Fact]
     public void Should_evaluate_InterpolationContext_data_access() {
         var access = Expression.Property(
             Expression.Parameter(typeof(IInterpolationContext<int>)),

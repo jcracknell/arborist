@@ -9,6 +9,12 @@ namespace Arborist.Interpolation.Internal;
 public class ReflectivePartialSplicedExpressionEvaluator : IPartialSplicedExpressionEvaluator {
     public static ReflectivePartialSplicedExpressionEvaluator Instance { get; } = new();
 
+    /// <summary>
+    /// Explicitly prevents evaluation of the target expression.
+    /// </summary>
+    internal static T Unsupported<T>(T expr) =>
+        expr;
+
     public bool TryEvaluate<TData>(TData data, Expression expression, out object? value) {
         var context = new PartialSplicedExpressionEvaluationContext<TData>(
             data: data,
@@ -281,16 +287,26 @@ public class ReflectivePartialSplicedExpressionEvaluator : IPartialSplicedExpres
     }
 
     private bool TryEvaluateMethodCall<TData>(EvaluationContext<TData, MethodCallExpression> context, out object? value) {
+        var method = context.Input.Method;
+
+        if(
+            method.DeclaringType == typeof(ReflectivePartialSplicedExpressionEvaluator)
+            && method.Name.Equals(nameof(Unsupported))
+        ) {
+            value = default;
+            return false;
+        }
+
         switch(context.Input) {
             case { Object: not null }
                 when TryEvaluate(context.WithInput(context.Input.Object), out var baseValue)
                 && TryEvaluateMany(context.WithInput(context.Input.Arguments), out var argValues):
-                value = context.Evaluate ? context.Input.Method.Invoke(baseValue, argValues) : default;
+                value = context.Evaluate ? method.Invoke(baseValue, argValues) : default;
                 return true;
 
             case { Object: null }
                 when TryEvaluateMany(context.WithInput(context.Input.Arguments), out var argValues):
-                value = context.Evaluate ? context.Input.Method.Invoke(null, argValues) : default;
+                value = context.Evaluate ? method.Invoke(null, argValues) : default;
                 return true;
 
             default:

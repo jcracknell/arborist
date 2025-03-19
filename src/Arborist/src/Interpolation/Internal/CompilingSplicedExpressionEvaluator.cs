@@ -1,3 +1,4 @@
+using Arborist.Internal;
 using Arborist.Internal.Collections;
 
 namespace Arborist.Interpolation.Internal;
@@ -23,15 +24,15 @@ public class CompilingSplicedExpressionEvaluator(ISplicedExpressionCompiler spli
         // Create an expression evaluating all of the provided expressions into an array
         var expression = Expression.Lambda<Func<TData, object?[]>>(
             ExpressionHelper.Replace(
-                Expression.NewArrayInit(typeof(object),
-                    from expr in context.Expressions
-                    select Expression.Convert(expr, typeof(object))
-                ),
+                Expression.NewArrayInit(typeof(object), CollectionHelpers.SelectEager(
+                    context.Expressions,
+                    static expr => (Expression)Expression.Convert(expr, typeof(object))
+                )),
                 // Replace references to IInterpolationContext.Data with the data parameter
-                SmallDictionary.CreateRange(
-                    from dataReference in context.DataReferences
-                    select new KeyValuePair<Expression, Expression>(dataReference, dataParameter)
-                )
+                SmallDictionary.CreateRange(CollectionHelpers.SelectEager(
+                    context.DataReferences,
+                    dataReference => new KeyValuePair<Expression, Expression>(dataReference, dataParameter)
+                ))
             ),
             dataParameter
         );

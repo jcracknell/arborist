@@ -155,7 +155,7 @@ public static class SplicingOperations {
         [InterpolatedSpliceParameter] B b,
         [InterpolatedSpliceParameter] C c,
         [InterpolatedSpliceParameter] D d,
-        [EvaluatedSpliceParameter] Expression<Func<A, B, C, R>> expression
+        [EvaluatedSpliceParameter] Expression<Func<A, B, C, D, R>> expression
     ) =>
         throw new InvalidOperationException(InterpolationStrings.InterpolationContextSpliceBodyInvoked);
 

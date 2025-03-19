@@ -36,4 +36,49 @@ public static class CollectionHelpers {
         for(var i = 0; i < count; i++)
             destination[destinationOffset + i] = source[sourceOffset + i];
     }
+
+    /// <summary>
+    /// Eagerly applies the provided <paramref name="projection"/> to the elements of the subject
+    /// collection, returning the results as an array.
+    /// </summary>
+    public static B[] SelectEager<A, B>(IReadOnlyCollection<A> collection, Func<A, B> projection) {
+        if(collection is IReadOnlyList<A> list)
+            return SelectEager(list, projection);
+
+        var count = collection.Count;
+        if(collection.Count == 0)
+            return Array.Empty<B>();
+
+        var results = new B[count];
+
+        using var enumerator = collection.GetEnumerator();
+
+        for(var i = 0; i < count; i++) {
+            if(!enumerator.MoveNext())
+                throw new InvalidOperationException($"Subject {nameof(collection)} has fewer elements than the expected {nameof(collection.Count)}.");
+
+            results[i] = projection(enumerator.Current);
+        }
+
+        if(enumerator.MoveNext())
+            throw new InvalidOperationException($"Subject {nameof(collection)} contains elements beyond the expected {nameof(collection.Count)}.");
+
+        return results;
+    }
+
+    /// <summary>
+    /// Eagerly applies the provided <paramref name="projection"/> to the elements of the subject
+    /// collection, returning the results as an array.
+    /// </summary>
+    public static B[] SelectEager<A, B>(IReadOnlyList<A> list, Func<A, B> projection) {
+        var count = list.Count;
+        if(count == 0)
+            return Array.Empty<B>();
+
+        var results = new B[count];
+        for(var i = 0; i < count; i++)
+            results[i] = projection(list[i]);
+
+        return results;
+    }
 }

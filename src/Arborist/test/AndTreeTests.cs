@@ -1,8 +1,8 @@
 namespace Arborist;
 
-public class ExpressionHelperAndTreeTests {
+public class AndTreeTests {
     [Fact]
-    public void AndTree_should_return_true_when_empty() {
+    public void Should_return_true_when_empty() {
         var expr = ExpressionHelper.AndTree(Enumerable.Empty<Expression<Func<string, bool>>>());
 
         var constExpr = Assert.IsAssignableFrom<ConstantExpression>(expr.Body);
@@ -10,7 +10,7 @@ public class ExpressionHelperAndTreeTests {
     }
 
     [Fact]
-    public void AndTree_works_as_expected() {
+    public void Should_work_as_expected() {
         var expr = ExpressionHelper.AndTree([
             ExpressionOn<string>.Of(x => true),
             ExpressionOn<string>.Of(x => false),
@@ -33,7 +33,7 @@ public class ExpressionHelperAndTreeTests {
     }
 
     [Fact]
-    public void AndTree_should_be_left_biased() {
+    public void Should_be_left_biased() {
         var expr = ExpressionHelper.AndTree([
             ExpressionOn<string>.Of(x => true),
             ExpressionOn<string>.Of(x => false),
@@ -49,5 +49,15 @@ public class ExpressionHelperAndTreeTests {
         );
 
         Assert.Equivalent(expectedBody, expr.Body);
+    }
+
+    [Fact]
+    public void Should_throw_for_invalid_predicate_type() {
+        Assert.Throws<InvalidOperationException>(() => {
+            ExpressionHelper.AndTree(Enumerable.Empty<Expression<Action<object>>>());
+        });
+        Assert.Throws<InvalidOperationException>(() => {
+            ExpressionHelper.AndTree(Enumerable.Empty<Expression<Func<object, string>>>());
+        });
     }
 }

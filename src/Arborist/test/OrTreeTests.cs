@@ -1,8 +1,8 @@
 namespace Arborist;
 
-public class ExpressionHelperOrTreeTests {
+public class OrTreeTests {
     [Fact]
-    public void OrTree_should_return_false_when_empty() {
+    public void Should_return_false_when_empty() {
         var expr = ExpressionHelper.OrTree(Enumerable.Empty<Expression<Func<string, bool>>>());
 
         var constExpr = Assert.IsAssignableFrom<ConstantExpression>(expr.Body);
@@ -33,7 +33,7 @@ public class ExpressionHelperOrTreeTests {
     }
 
     [Fact]
-    public void OrTree_should_be_left_biased() {
+    public void Should_be_left_biased() {
         var expr = ExpressionHelper.OrTree([
             ExpressionOn<string>.Of(x => true),
             ExpressionOn<string>.Of(x => false),
@@ -49,5 +49,15 @@ public class ExpressionHelperOrTreeTests {
         );
 
         Assert.Equivalent(expectedBody, expr.Body);
+    }
+
+    [Fact]
+    public void Should_throw_for_invalid_predicate_type() {
+        Assert.Throws<InvalidOperationException>(() => {
+            ExpressionHelper.OrTree(Enumerable.Empty<Expression<Action<object>>>());
+        });
+        Assert.Throws<InvalidOperationException>(() => {
+            ExpressionHelper.OrTree(Enumerable.Empty<Expression<Func<object, string>>>());
+        });
     }
 }

@@ -1,8 +1,8 @@
 namespace Arborist;
 
-public class ExpressionHelperNotTests {
+public class NotTests {
     [Fact]
-    public void Not_applys_unary_not() {
+    public void Should_apply_unary_not() {
         var expr = ExpressionHelper.Not<Func<string, bool>>(x => true);
 
         var unary = Assert.IsAssignableFrom<UnaryExpression>(expr.Body);
@@ -13,7 +13,7 @@ public class ExpressionHelperNotTests {
     }
 
     [Fact]
-    public void Not_does_nothing_special() {
+    public void Should_do_nothing_special() {
         // N.B. the compiler will optimize !true in an expression tree
         var expr = ExpressionHelper.Not(ExpressionHelper.Not<Func<string, bool>>(x => true));
 
@@ -25,5 +25,15 @@ public class ExpressionHelperNotTests {
 
         var constExpr = Assert.IsAssignableFrom<ConstantExpression>(unary1.Operand);
         Assert.Equal(true, constExpr.Value);
+    }
+
+    [Fact]
+    public void Should_throw_for_invalid_predicate_type() {
+        Assert.Throws<InvalidOperationException>(() => {
+            ExpressionHelper.Not(ExpressionOn<List<string>>.Of(l => l.Add("foo")));
+        });
+        Assert.Throws<InvalidOperationException>(() => {
+            ExpressionHelper.AndTree(ExpressionOn<object>.Of(o => o.ToString()));
+        });
     }
 }

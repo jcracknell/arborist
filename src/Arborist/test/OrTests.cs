@@ -1,8 +1,8 @@
 namespace Arborist;
 
-public class ExpressionHelperOrTests {
+public class OrTests {
     [Fact]
-    public void Or_should_return_true_when_empty() {
+    public void Should_return_true_when_empty() {
         var expr = ExpressionHelper.Or(Enumerable.Empty<Expression<Func<string, bool>>>());
 
         var constExpr = Assert.IsAssignableFrom<ConstantExpression>(expr.Body);
@@ -10,7 +10,7 @@ public class ExpressionHelperOrTests {
     }
 
     [Fact]
-    public void Or_should_work_with_1_expression() {
+    public void Should_work_with_1_expression() {
         var expr = ExpressionHelper.Or<Func<string, bool>>(x => true);
 
         var expected = Expression.Constant(true);
@@ -19,7 +19,7 @@ public class ExpressionHelperOrTests {
     }
 
     [Fact]
-    public void Or_should_work_with_2_expressions() {
+    public void Should_work_with_2_expressions() {
         var expr = ExpressionHelper.Or<Func<string, bool>>(x => true, x => false);
 
         var expected = Expression.OrElse(
@@ -31,7 +31,7 @@ public class ExpressionHelperOrTests {
     }
 
     [Fact]
-    public void Or_should_work_with_3_expressions() {
+    public void Should_work_with_3_expressions() {
         var expr = ExpressionHelper.Or<Func<string, bool>>(x => true, x => false, x => true);
 
         var expected = Expression.OrElse(
@@ -43,5 +43,15 @@ public class ExpressionHelperOrTests {
         );
 
         Assert.Equivalent(expected, expr.Body);
+    }
+
+    [Fact]
+    public void Should_throw_for_invalid_predicate_type() {
+        Assert.Throws<InvalidOperationException>(() => {
+            ExpressionHelper.Or(Enumerable.Empty<Expression<Action<object>>>());
+        });
+        Assert.Throws<InvalidOperationException>(() => {
+            ExpressionHelper.Or(Enumerable.Empty<Expression<Func<object, string>>>());
+        });
     }
 }

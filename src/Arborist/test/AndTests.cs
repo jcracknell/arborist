@@ -1,6 +1,6 @@
 namespace Arborist;
 
-public class ExpressionHelperAndTests {
+public class AndTests {
     [Fact]
     public void And_should_return_true_when_empty() {
         var expr = ExpressionHelper.And(Enumerable.Empty<Expression<Func<string, bool>>>());
@@ -43,5 +43,15 @@ public class ExpressionHelperAndTests {
         );
 
         Assert.Equivalent(expected, expr.Body);
+    }
+
+    [Fact]
+    public void Should_throw_for_invalid_predicate_type() {
+        Assert.Throws<InvalidOperationException>(() => {
+            ExpressionHelper.And(Enumerable.Empty<Expression<Action<object>>>());
+        });
+        Assert.Throws<InvalidOperationException>(() => {
+            ExpressionHelper.And(Enumerable.Empty<Expression<Func<object, string>>>());
+        });
     }
 }

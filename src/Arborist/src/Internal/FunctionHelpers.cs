@@ -1,6 +1,6 @@
 namespace Arborist.Internal;
 
-public static class FunctionHelpers {
+internal static class FunctionHelpers {
     /// <summary>
     /// The identity function. Returns its input value verbatim.
     /// </summary>

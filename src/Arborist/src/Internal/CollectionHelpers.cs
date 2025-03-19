@@ -1,6 +1,6 @@
 namespace Arborist.Internal;
 
-public static class CollectionHelpers {
+internal static class CollectionHelpers {
     /// <summary>
     /// Converts the provided argument <paramref name="enumerable"/> into an <see cref="IReadOnlyCollection{T}"/>,
     /// returning the input verbatim if it is already a collection.

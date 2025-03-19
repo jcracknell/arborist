@@ -1,9 +1,6 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Linq.Expressions;
-
 namespace Arborist.Internal;
 
-public class ReplacingExpressionVisitor : ExpressionVisitor {
+internal sealed class ReplacingExpressionVisitor : ExpressionVisitor {
     private IReadOnlyDictionary<Expression, Expression> _replacements;
 
     public ReplacingExpressionVisitor(IReadOnlyDictionary<Expression, Expression> replacements) {

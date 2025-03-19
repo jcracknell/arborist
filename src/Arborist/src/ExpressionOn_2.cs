@@ -20,14 +20,6 @@ public static partial class ExpressionOn<A, B> {
         expression;
 
     /// <summary>
-    /// Wraps the body of the provided lambda <paramref name="expression"/> in a
-    /// <see cref="System.Linq.Expressions.ExpressionType.TypeAs"/> node of the form
-    /// <c>body as T</c>.
-    /// </summary>
-    public static Expression<Func<A, B, T>> As<T>(LambdaExpression expression) =>
-        ExpressionHelper.AsCore<Func<A, B, T>>(typeof(T), expression);
-
-    /// <summary>
     /// Creates a constant-valued expression with the provided <paramref name="value"/>.
     /// </summary>
     /// <typeparam name="T">

@@ -35,21 +35,4 @@ public static partial class ExpressionOn<A, B, C> {
     /// </typeparam>
     public static Expression<Func<A, B, C, T>> Constant<T>(T value) =>
         ExpressionHelper.Const<Func<A, B, C, T>>(default, value);
-
-    /// <summary>
-    /// Wraps the body of the provided lambda <paramref name="expression"/> in a
-    /// <see cref="System.Linq.Expressions.ExpressionType.Convert"/> node of the form
-    /// <c>(T)body</c>.
-    /// </summary>
-    public static Expression<Func<A, B, C, T>> Convert<T>(LambdaExpression expression) =>
-        ExpressionHelper.ConvertCore<Func<A, B, C, T>>(typeof(T), expression);
-
-    /// <summary>
-    /// Wraps the body of the provided lambda <paramref name="expression"/> in a
-    /// <see cref="System.Linq.Expressions.ExpressionType.ConvertChecked"/> node (or
-    /// <see cref="System.Linq.Expressions.ExpressionType.Convert"/> if there is no defined checked
-    /// conversion) of the form <c>(T)body</c>.
-    /// </summary>
-    public static Expression<Func<A, B, C, T>> ConvertChecked<T>(LambdaExpression expression) =>
-        ExpressionHelper.ConvertCheckedCore<Func<A, B, C, T>>(typeof(T), expression);
 }

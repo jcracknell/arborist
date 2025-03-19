@@ -67,11 +67,12 @@ public class ReflectivePartialSplicedExpressionEvaluator : IPartialSplicedExpres
     }
 
     private bool TryEvaluate<TData>(EvaluationContext<TData, Expression> context, out object? value) {
-        switch(context.Input) {
-            case {} when context.DataReferences.Contains(context.Input):
-                value = context.Evaluate ? context.Data : default;
-                return true;
+        if(context.DataReferences.Contains(context.Input)) {
+            value = context.Evaluate ? context.Data : default;
+            return true;
+        }
 
+        switch(context.Input) {
             // This is syntactic sugar for a cascading if statement, and should be ordered by prevalence
             case MemberExpression:
                 return TryEvaluateMember(context.WithInput((MemberExpression)context.Input), out value);

@@ -46,7 +46,7 @@ public static partial class ExpressionOn<A, B, C, D> {
     /// </typeparam>
     [ExpressionInterpolator]
     public static Expression<Func<A, B, C, D, R>> Interpolate<TData, R>(
-        TData data,
+        [InterpolatedDataParameter] TData data,
         [InterpolatedExpressionParameter] Expression<Func<IInterpolationContext<TData>, A, B, C, D, R>> expression
     ) =>
         ExpressionInterpolator.Default.Interpolate<TData, Func<A, B, C, D, R>>(data, expression);
@@ -65,7 +65,7 @@ public static partial class ExpressionOn<A, B, C, D> {
     /// </typeparam>
     [ExpressionInterpolator]
     public static Expression<Action<A, B, C, D>> Interpolate<TData>(
-        TData data,
+        [InterpolatedDataParameter] TData data,
         [InterpolatedExpressionParameter] Expression<Action<IInterpolationContext<TData>, A, B, C, D>> expression
     ) =>
         ExpressionInterpolator.Default.Interpolate<TData, Action<A, B, C, D>>(data, expression);

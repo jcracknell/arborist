@@ -28,7 +28,7 @@ public class InterpolationAnalyzer : DiagnosticAnalyzer {
         var invocation = (InvocationExpressionSyntax)context.Node;
         if(!TryGetInvocationMethodIdentifier(invocation, out var identifier))
             return;
-        if(!identifier.ValueText.StartsWith("Interpolate"))
+        if(!identifier.ValueText.Contains("Interpolate"))
             return;
         if(context.SemanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol methodSymbol)
             return;
@@ -41,7 +41,7 @@ public class InterpolationAnalyzer : DiagnosticAnalyzer {
 
         var diagnostics = new InterpolationDiagnosticsCollection();
 
-        AnalyzeInterpolation(
+        AnalyzeInvocation(
             diagnostics: diagnostics,
             semanticModel: context.SemanticModel,
             invocation: invocation,
@@ -85,7 +85,7 @@ public class InterpolationAnalyzer : DiagnosticAnalyzer {
             }
         };
 
-    private static void AnalyzeInterpolation(
+    private static void AnalyzeInvocation(
         InterpolationDiagnosticsCollection diagnostics,
         SemanticModel semanticModel,
         InvocationExpressionSyntax invocation,
@@ -93,43 +93,25 @@ public class InterpolationAnalyzer : DiagnosticAnalyzer {
         InterpolationTypeSymbols typeSymbols,
         CancellationToken cancellationToken
     ) {
-        switch(invocation.ArgumentList.Arguments.Count) {
-            case 1 when TryGetLambdaParameter(methodSymbol, methodSymbol.Parameters[0], out var dataType, typeSymbols)
-                && dataType is null
-                && TryGetParameterArgumentSyntax(invocation, methodSymbol.Parameters[0], out var expressionArgument, semanticModel):
-                AnalyzeInterpolation(
-                    semanticModel: semanticModel,
-                    diagnostics: diagnostics,
-                    invocation: invocation,
-                    expressionArgument: expressionArgument,
-                    typeSymbols: typeSymbols,
-                    cancellationToken: cancellationToken
-                );
-                break;
+        foreach(var parameter in methodSymbol.Parameters) {
+            if(!IsInterpolatedExpressionParameter(parameter, typeSymbols))
+                continue;
+            if(!TryGetParameterArgumentSyntax(invocation, parameter, out var expressionArgument, semanticModel))
+                continue;
 
-            case 2 when TryGetLambdaParameter(methodSymbol, methodSymbol.Parameters[1], out var dataType, typeSymbols)
-                && SymbolHelpers.IsSubtype(methodSymbol.Parameters[0].Type, dataType)
-                && TryGetParameterArgumentSyntax(invocation, methodSymbol.Parameters[1], out var expressionArgument, semanticModel):
-                AnalyzeInterpolation(
-                    semanticModel: semanticModel,
-                    diagnostics: diagnostics,
-                    invocation: invocation,
-                    expressionArgument: expressionArgument,
-                    typeSymbols: typeSymbols,
-                    cancellationToken: cancellationToken
-                );
-                break;
-
-            default:
-                diagnostics.ReportUnsupportedSyntax(invocation);
-                break;
+            AnalyzeInterpolatedExpression(
+                semanticModel: semanticModel,
+                diagnostics: diagnostics,
+                expressionArgument: expressionArgument,
+                typeSymbols: typeSymbols,
+                cancellationToken: cancellationToken
+            );
         }
     }
 
-    private static void AnalyzeInterpolation(
+    private static void AnalyzeInterpolatedExpression(
         InterpolationDiagnosticsCollection diagnostics,
         SemanticModel semanticModel,
-        InvocationExpressionSyntax invocation,
         ArgumentSyntax expressionArgument,
         InterpolationTypeSymbols typeSymbols,
         CancellationToken cancellationToken
@@ -139,11 +121,9 @@ public class InterpolationAnalyzer : DiagnosticAnalyzer {
             return;
 
         var context = new InterpolationAnalysisContext(
-            invocation: invocation,
             semanticModel: semanticModel,
             typeSymbols: typeSymbols,
             diagnostics: diagnostics,
-            lambdaSyntax: lambdaSyntax,
             cancellationToken: cancellationToken
         );
 
@@ -157,73 +137,25 @@ public class InterpolationAnalyzer : DiagnosticAnalyzer {
             diagnostics.ReportNoSplices(lambdaSyntax);
     }
 
-    private static bool TryGetLambdaParameter(
-        IMethodSymbol methodSymbol,
+    private static bool IsInterpolatedExpressionParameter(
         IParameterSymbol parameter,
-        out ITypeSymbol? dataType,
         InterpolationTypeSymbols typeSymbols
     ) {
-        dataType = default;
-
         if(parameter.Type is not INamedTypeSymbol parameterType)
             return false;
         if(!parameterType.IsGenericType)
             return false;
         if(!SymbolEqualityComparer.Default.Equals(parameterType.ConstructUnboundGenericType(), typeSymbols.Expression1.ConstructUnboundGenericType()))
             return false;
-
         if(parameterType.TypeArguments[0] is not INamedTypeSymbol { IsGenericType: true } interpolatedDelegateType)
             return false;
         if(!SymbolHelpers.IsSubtype(interpolatedDelegateType.TypeArguments[0], typeSymbols.IInterpolationContext))
             return false;
-        if(!TryGetResultDelegateTypeFromInterpolated(interpolatedDelegateType, out var resultType, typeSymbols))
+        // Has [InterpolatedExpressionParameter]
+        if(!SymbolHelpers.HasAttribute(parameter, typeSymbols.InterpolatedExpressionParameterAttribute))
             return false;
 
-        if(!SymbolHelpers.IsSubtype(methodSymbol.ReturnType, typeSymbols.Expression1.ConstructedFrom.Construct(resultType)))
-            return false;
-
-        if(SymbolHelpers.IsSubtype(interpolatedDelegateType.TypeArguments[0], typeSymbols.IInterpolationContext)) {
-            if(SymbolHelpers.TryGetInterfaceImplementation(typeSymbols.IInterpolationContext1, interpolatedDelegateType.TypeArguments[0], out var ic1Impl)) {
-                dataType = ic1Impl.TypeArguments[0];
-                return true;
-            }
-
-            dataType = default;
-            return true;
-        }
-
-        return false;
-    }
-
-    private static bool TryGetResultDelegateTypeFromInterpolated(
-        INamedTypeSymbol interpolated,
-        [NotNullWhen(true)] out INamedTypeSymbol? result,
-        InterpolationTypeSymbols typeSymbols
-    ) {
-        result = default;
-        if(!interpolated.IsGenericType)
-            return false;
-
-        var unbound = interpolated.ConstructUnboundGenericType();
-        var argCount = interpolated.TypeArguments.Length;
-
-        if(2 <= argCount && SymbolEqualityComparer.Default.Equals(unbound, typeSymbols.Funcs[argCount - 1])) {
-            var typeArgs = interpolated.TypeArguments.Skip(1).ToArray();
-            result = typeSymbols.Funcs[argCount - 2].ConstructedFrom.Construct(typeArgs);
-            return true;
-        }
-
-        if(1 <= argCount && SymbolEqualityComparer.Default.Equals(unbound, typeSymbols.Actions[argCount])) {
-            var typeArgs = interpolated.TypeArguments.Skip(1).ToArray();
-            var actionType = typeSymbols.Actions[argCount - 1];
-            result = actionType.IsGenericType switch {
-                true => actionType.ConstructedFrom.Construct(typeArgs),
-                false => actionType
-            };
-            return true;
-        }
-
-        return false;
+        return true;
     }
 
     /// <summary>
@@ -236,24 +168,31 @@ public class InterpolationAnalyzer : DiagnosticAnalyzer {
         [NotNullWhen(true)] out ArgumentSyntax? argumentSyntax,
         SemanticModel semanticModel
     ) {
-        // In most cases the argument will be provided positionally, so we'll check that first
+        // The semantic model is based on the "unreduced" versions of extension method parameters
+        var expandedParameter = parameterSymbol.ContainingSymbol switch {
+            IMethodSymbol { ReducedFrom: not null } extension =>
+                extension.GetConstructedReducedFrom()!.Parameters[parameterSymbol.Ordinal + 1],
+            _ => parameterSymbol
+        };
+
+        // In the vast majority of cases the parameter will be specified positionally, so we'll
+        // try that first
+        var positionalArgument = invocation.ArgumentList.Arguments[parameterSymbol.Ordinal];
         if(
-            invocation.ArgumentList.Arguments[parameterSymbol.Ordinal] is {} positional
-            && semanticModel.GetOperation(positional) is IArgumentOperation poi
-            && SymbolEqualityComparer.Default.Equals(parameterSymbol, poi.Parameter)
+            semanticModel.GetOperation(positionalArgument) is IArgumentOperation pop
+            && SymbolEqualityComparer.Default.Equals(pop.Parameter, expandedParameter)
         ) {
-            argumentSyntax = positional;
+            argumentSyntax = positionalArgument;
             return true;
         }
 
-        // Otherwise we'll do a linear search for the matching named argument
-        foreach(var candidate in invocation.ArgumentList.Arguments) {
-            if(
-                candidate.NameColon is not null
-                && semanticModel.GetOperation(candidate) is IArgumentOperation noi
-                && SymbolEqualityComparer.Default.Equals(parameterSymbol, noi.Parameter)
-            ) {
-                argumentSyntax = candidate;
+        foreach(var namedArgument in invocation.ArgumentList.Arguments) {
+            if(namedArgument.NameColon is null)
+                continue;
+            if(semanticModel.GetOperation(namedArgument) is not IArgumentOperation nop)
+                continue;
+            if(SymbolEqualityComparer.Default.Equals(nop.Parameter, expandedParameter)) {
+                argumentSyntax = namedArgument;
                 return true;
             }
         }

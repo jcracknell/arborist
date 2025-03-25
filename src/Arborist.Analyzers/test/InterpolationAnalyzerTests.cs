@@ -32,6 +32,14 @@ public class InterpolationAnalyzerTests {
     }
 
     [Fact]
+    public async Task Should_produce_ARB001_for_SelectInterpolated_with_no_splices() {
+        await InterpolationAnalyzerTestBuilder.Create()
+        .Generate(@"
+            default(IQueryable<Cat>)!.SelectInterpolated({|ARB001:(x, c) => c.Id|});
+        ");
+    }
+
+    [Fact]
     public async Task Should_produce_ARB002_for_ExpressionOnNone_with_bare_context_reference() {
         await InterpolationAnalyzerTestBuilder.Create()
         .Generate(@"

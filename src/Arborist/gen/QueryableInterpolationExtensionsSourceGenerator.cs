@@ -200,10 +200,24 @@ public class QueryableInterpolationExtensionsSourceGenerator : IIncrementalGener
             }
         }
 
-        // At present there does not appear to be any Queryable methods using type constraints
         sb.AppendLine();
-        sb.AppendLine("    ) =>");
+        sb.Append("    )");
 
+        foreach(var typeParameter in methodSymbol.TypeParameters) {
+            if(GetTypeParameterConstraints(sb, typeParameter) is { Count: not 0 } constraints) {
+                sb.AppendLine();
+                sb.Append("        where ");
+                AppendTypeName(sb, typeParameter);
+                sb.Append(" : ");
+                sb.Append(constraints[0]);
+                for(var i = 1; i < constraints.Count; i++) {
+                    sb.Append(", ");
+                    sb.Append(constraints[i]);
+                }
+            }
+        }
+
+        sb.AppendLine(" =>");
         sb.AppendLine($"        global::System.Linq.Queryable.{methodSymbol.Name}(");
         sb.Append($"            {methodSymbol.Parameters[0].Name}");
 
@@ -244,14 +258,14 @@ public class QueryableInterpolationExtensionsSourceGenerator : IIncrementalGener
         switch(typeSymbol) {
             case ITypeParameterSymbol:
                 sb.Append(typeSymbol.Name);
-                sb.Append(NullableAnnotation.Annotated == typeSymbol.NullableAnnotation && !typeSymbol.IsValueType ? "?" : "");
+                sb.Append(Nullability(typeSymbol));
                 return;
 
             case INamedTypeSymbol named:
                 AppendNamespaceName(sb, named.ContainingNamespace);
                 sb.Append(named.Name);
                 AppendTypeParameterList(sb, named.TypeArguments);
-                sb.Append(NullableAnnotation.Annotated == typeSymbol.NullableAnnotation && !typeSymbol.IsValueType ? "?" : "");
+                sb.Append(Nullability(typeSymbol));
                 return;
 
             default:
@@ -285,4 +299,37 @@ public class QueryableInterpolationExtensionsSourceGenerator : IIncrementalGener
             sb.Append('.');
         }
     }
+
+    private static IReadOnlyList<string> GetTypeParameterConstraints(StringBuilder sb, ITypeParameterSymbol typeParameter) {
+        return GetConstraints(typeParameter).ToList();
+
+        static IEnumerable<string> GetConstraints(ITypeParameterSymbol typeParameter) {
+            if(typeParameter.HasValueTypeConstraint)
+                yield return "struct";
+            if(typeParameter.HasReferenceTypeConstraint)
+                yield return $"class{Nullability(typeParameter.ReferenceTypeConstraintNullableAnnotation)}";
+            if(typeParameter.HasNotNullConstraint)
+                yield return "notnull";
+            if(typeParameter.HasUnmanagedTypeConstraint)
+                yield return "unmanaged";
+
+            if(!typeParameter.ConstraintTypes.IsEmpty) {
+                var sb = new StringBuilder();
+                for(var i = 0; i < typeParameter.ConstraintTypes.Length; i++) {
+                    sb.Clear();
+                    AppendTypeName(sb, typeParameter.ConstraintTypes[i].WithNullableAnnotation(typeParameter.ConstraintNullableAnnotations[i]));
+                    yield return sb.ToString();
+                }
+            }
+
+            if(typeParameter.HasConstructorConstraint)
+                yield return "new()";
+        }
+    }
+
+    private static string Nullability(ITypeSymbol type) =>
+        type.IsValueType ? "" : Nullability(type.NullableAnnotation);
+
+    private static string Nullability(NullableAnnotation annotation) =>
+        NullableAnnotation.Annotated == annotation ? "?" : "";
 }

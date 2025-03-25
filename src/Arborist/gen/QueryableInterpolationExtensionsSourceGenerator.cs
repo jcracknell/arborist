@@ -198,6 +198,16 @@ public class QueryableInterpolationExtensionsSourceGenerator : IIncrementalGener
                 }
                 sb.Append($">> {parameter.Name}");
             }
+
+            if(parameter.HasExplicitDefaultValue) {
+                sb.Append(" = ");
+                sb.Append(parameter.ExplicitDefaultValue switch {
+                    null => "default",
+                    true => "true",
+                    false => "false",
+                    _ => throw new NotImplementedException()
+                });
+            }
         }
 
         sb.AppendLine();

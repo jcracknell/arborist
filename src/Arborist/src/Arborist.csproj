@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="$(SlnRoot)/Arborist/gen/Arborist.Generators.csproj" OutputItemType="Analyzer" PrivateAssets="all" />
     <ProjectReference Include="$(SlnRoot)/Arborist.Analyzers/src/Arborist.Analyzers.csproj" OutputItemType="Analyzer" PrivateAssets="all" />
   </ItemGroup>
 </Project>

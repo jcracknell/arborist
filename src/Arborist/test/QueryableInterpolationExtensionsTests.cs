@@ -23,7 +23,7 @@ public class QueryableInterpolationExtensionsTests {
     private static void Resolves(Action action) { }
 
     [Fact]
-    public void Aggregate_should_resolve() {
+    public void AggregateInterpolated_should_resolve() {
         Resolves(() => {
             IntQueryable.AggregateInterpolated((x, acc, i) => acc + i + x.SpliceConstant(42));
             OwnerQueryable.AggregateInterpolated(0, (x, acc, o) => acc + o.Id + x.SpliceConstant(42));
@@ -32,6 +32,32 @@ public class QueryableInterpolationExtensionsTests {
             OwnerQueryable.AggregateInterpolated(0, (x, acc, o) => acc + o.Id + x.SpliceConstant(42), (x, v) => x.SpliceConstant(42));
         });
     }
+
+    #if NET9_0_OR_GREATER
+    [Fact]
+    public void AggregateByInterpolated_should_resolve() {
+        var data = new { Int = 42, Str = "foo" };
+
+        Resolves(() => {
+            OwnerQueryable.AggregateByInterpolated((x, o) => x.SpliceConstant(42), (x, k) => x.SpliceConstant("foo"), (x, acc, o) => acc + x.SpliceConstant("foo"));
+            OwnerQueryable.AggregateByInterpolated((x, o) => x.SpliceConstant(42), (x, k) => x.SpliceConstant("foo"), (x, acc, o) => acc + x.SpliceConstant("foo"), EqualityComparer<int>.Default);
+            OwnerQueryable.AggregateByInterpolated(data, (x, o) => x.SpliceConstant(x.Data.Int), (x, k) => x.SpliceConstant(x.Data.Str), (x, acc, o) => acc + x.SpliceConstant(x.Data.Str));
+            OwnerQueryable.AggregateByInterpolated(data, (x, o) => x.SpliceConstant(x.Data.Int), (x, k) => x.SpliceConstant(x.Data.Str), (x, acc, o) => acc + x.SpliceConstant(x.Data.Str), EqualityComparer<int>.Default);
+            OwnerQueryable.AggregateByInterpolated(o => 42, (x, k) => x.SpliceConstant("foo"), (x, acc, o) => acc + x.SpliceConstant("foo"));
+            OwnerQueryable.AggregateByInterpolated(o => 42, (x, k) => x.SpliceConstant("foo"), (x, acc, o) => acc + x.SpliceConstant("foo"), EqualityComparer<int>.Default);
+            OwnerQueryable.AggregateByInterpolated(data, o => 42, (x, k) => x.SpliceConstant(x.Data.Str), (x, acc, o) => acc + x.SpliceConstant(x.Data.Str));
+            OwnerQueryable.AggregateByInterpolated(data, o => 42, (x, k) => x.SpliceConstant(x.Data.Str), (x, acc, o) => acc + x.SpliceConstant(x.Data.Str), EqualityComparer<int>.Default);
+            OwnerQueryable.AggregateByInterpolated((x, o) => x.SpliceConstant(42), k => "foo", (x, acc, o) => acc + x.SpliceConstant("foo"));
+            OwnerQueryable.AggregateByInterpolated((x, o) => x.SpliceConstant(42), k => "foo", (x, acc, o) => acc + x.SpliceConstant("foo"), EqualityComparer<int>.Default);
+            OwnerQueryable.AggregateByInterpolated(data, (x, o) => x.SpliceConstant(x.Data.Int), k => "foo", (x, acc, o) => acc + x.SpliceConstant(x.Data.Str));
+            OwnerQueryable.AggregateByInterpolated(data, (x, o) => x.SpliceConstant(x.Data.Int), k => "foo", (x, acc, o) => acc + x.SpliceConstant(x.Data.Str), EqualityComparer<int>.Default);
+            OwnerQueryable.AggregateByInterpolated((x, o) => x.SpliceConstant(42), (x, k) => x.SpliceConstant("foo"), (acc, o) => acc + "foo");
+            OwnerQueryable.AggregateByInterpolated((x, o) => x.SpliceConstant(42), (x, k) => x.SpliceConstant("foo"), (acc, o) => acc + "foo", EqualityComparer<int>.Default);
+            OwnerQueryable.AggregateByInterpolated(data, (x, o) => x.SpliceConstant(x.Data.Int), (x, k) => x.SpliceConstant(x.Data.Str), (acc, o) => acc + "foo");
+            OwnerQueryable.AggregateByInterpolated(data, (x, o) => x.SpliceConstant(x.Data.Int), (x, k) => x.SpliceConstant(x.Data.Str), (acc, o) => acc + "foo", EqualityComparer<int>.Default);
+        });
+    }
+    #endif
 
     [Fact]
     public void AllInterpolated_should_resolve() {
@@ -72,6 +98,18 @@ public class QueryableInterpolationExtensionsTests {
             OwnerQueryable.CountInterpolated(false, (x, o) => x.SpliceConstant(x.Data));
         });
     }
+
+    #if NET9_0_OR_GREATER
+    [Fact]
+    public void CountByInterpolated_should_resolve() {
+        Resolves(() => {
+            OwnerQueryable.CountByInterpolated((x, o) => x.SpliceConstant(42));
+            OwnerQueryable.CountByInterpolated((x, o) => x.SpliceConstant(42), EqualityComparer<int>.Default);
+            OwnerQueryable.CountByInterpolated(42, (x, o) => x.SpliceConstant(x.Data));
+            OwnerQueryable.CountByInterpolated(42, (x, o) => x.SpliceConstant(x.Data), EqualityComparer<int>.Default);
+        });
+    }
+    #endif
 
     [Fact]
     public void DistinctByInterpolated_should_resolve() {

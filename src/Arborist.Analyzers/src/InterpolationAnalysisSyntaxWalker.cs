@@ -85,27 +85,20 @@ public sealed class InterpolationAnalysisSyntaxWalker : CSharpSyntaxWalker {
     }
 
     public override void VisitInvocationExpression(InvocationExpressionSyntax node) {
-        if(!_inEvaluatedExpression && TryGetSplicingMethod(node, out var spliceMethod)) {
-            VisitSplicingInvocation(node, spliceMethod);
-        } else {
-            base.VisitInvocationExpression(node);
+        if(!_inEvaluatedExpression) {
+            if(TryGetSplicingMethod(node, out var spliceMethod)) {
+                VisitSplicingInvocation(node, spliceMethod);
+                return;
+            }
+
+            // Report a call to an expression interpolator occurring within an interpolated expression.
+            // N.B. we still need to apply any interpolations associated with our interpolation context
+            // to its argument expressions.
+            if(SyntaxHelpers.IsExpressionInterpolatorInvocation(node, _context.SemanticModel, out _))
+                _context.Diagnostics.ReportNestedInterpolation(node);
         }
-    }
 
-    private bool TryGetSplicingMethod(
-        InvocationExpressionSyntax node,
-        [NotNullWhen(true)] out IMethodSymbol? splicingMethod
-    ) {
-        splicingMethod = default;
-        if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not IMethodSymbol methodSymbol)
-            return false;
-        if(methodSymbol.ReducedFrom is null)
-            return false;
-        if(!SymbolEqualityComparer.Default.Equals(methodSymbol.ContainingType, _context.TypeSymbols.SplicingOperations))
-            return false;
-
-        splicingMethod = methodSymbol;
-        return true;
+        base.VisitInvocationExpression(node);
     }
 
     private void VisitSplicingInvocation(InvocationExpressionSyntax node, IMethodSymbol method) {
@@ -133,18 +126,6 @@ public sealed class InterpolationAnalysisSyntaxWalker : CSharpSyntaxWalker {
         }
     }
 
-    private bool IsContextDataAccess(MemberAccessExpressionSyntax node) {
-        if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not IPropertySymbol propertySymbol)
-            return false;
-        if(propertySymbol is not { Name: "Data", ContainingType.IsGenericType: true })
-            return false;
-
-        return SymbolEqualityComparer.Default.Equals(
-            propertySymbol.ContainingType.ConstructUnboundGenericType(),
-            _context.TypeSymbols.IInterpolationContext1
-        );
-    }
-
     public override void VisitIdentifierName(IdentifierNameSyntax node) {
         // The only identifier which cannot be referenced within the interpolated expression tree
         // is the one referencing the interpolation context, which does not exist in the result
@@ -159,6 +140,8 @@ public sealed class InterpolationAnalysisSyntaxWalker : CSharpSyntaxWalker {
     public override void VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node) {
         using var snapshot = CreateIdentifiersSnapshot();
 
+        // Register parameters declared in the lambda. This also handles shadowing of the top-level
+        // interpolation context parameter (for nested interpolation calls)
         AddInterpolatedIdentifier(node.Parameter.Identifier.ValueText);
 
         base.VisitSimpleLambdaExpression(node);
@@ -167,6 +150,8 @@ public sealed class InterpolationAnalysisSyntaxWalker : CSharpSyntaxWalker {
     public override void VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node) {
         using var snapshot = CreateIdentifiersSnapshot();
 
+        // Register parameters declared in the lambda. This also handles shadowing of the top-level
+        // interpolation context parameter (for nested interpolation calls)
         foreach(var parameter in node.ParameterList.Parameters)
             AddInterpolatedIdentifier(parameter.Identifier.ValueText);
 
@@ -212,5 +197,47 @@ public sealed class InterpolationAnalysisSyntaxWalker : CSharpSyntaxWalker {
     public override void VisitLetClause(LetClauseSyntax node) {
         AddInterpolatedIdentifier(node.Identifier.ValueText);
         base.VisitLetClause(node);
+    }
+
+    private bool TryGetSplicingMethod(
+        InvocationExpressionSyntax node,
+        [NotNullWhen(true)] out IMethodSymbol? splicingMethod
+    ) {
+        splicingMethod = default;
+
+        // Is this a splicing method?
+        if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not IMethodSymbol methodSymbol)
+            return false;
+        if(methodSymbol.ReducedFrom is null)
+            return false;
+        if(!SymbolEqualityComparer.Default.Equals(methodSymbol.ContainingType, _context.TypeSymbols.SplicingOperations))
+            return false;
+
+        // Is the method accessed from the active context identifier?
+        if(node.Expression is not MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.ValueText: var identifier }})
+            return false;
+        if(!_contextIdentifier.Contains(identifier))
+            return false;
+
+        splicingMethod = methodSymbol;
+        return true;
+    }
+
+    private bool IsContextDataAccess(MemberAccessExpressionSyntax node) {
+        // Is this the data property?
+        if(_context.SemanticModel.GetSymbolInfo(node).Symbol is not IPropertySymbol propertySymbol)
+            return false;
+        if(propertySymbol is not { Name: "Data", ContainingType.IsGenericType: true })
+            return false;
+        if(!SymbolEqualityComparer.Default.Equals(propertySymbol.ContainingType.ConstructUnboundGenericType(), _context.TypeSymbols.IInterpolationContext1))
+            return false;
+
+        // Is the property accessed from the active context identifier?
+        if(node.Expression is not IdentifierNameSyntax { Identifier.ValueText: var identifier })
+            return false;
+        if(!_contextIdentifier.Contains(identifier))
+            return false;
+
+        return true;
     }
 }

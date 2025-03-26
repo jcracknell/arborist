@@ -11,6 +11,27 @@ internal static class SymbolHelpers {
         return false;
     }
 
+    public static bool IsInterpolatedExpressionParameter(
+        IParameterSymbol parameter,
+        InterpolationTypeSymbols typeSymbols
+    ) {
+        if(parameter.Type is not INamedTypeSymbol parameterType)
+            return false;
+        if(!parameterType.IsGenericType)
+            return false;
+        if(!SymbolEqualityComparer.Default.Equals(parameterType.ConstructUnboundGenericType(), typeSymbols.Expression1.ConstructUnboundGenericType()))
+            return false;
+        if(parameterType.TypeArguments[0] is not INamedTypeSymbol { IsGenericType: true } interpolatedDelegateType)
+            return false;
+        if(!IsSubtype(interpolatedDelegateType.TypeArguments[0], typeSymbols.IInterpolationContext))
+            return false;
+        // Has [InterpolatedExpressionParameter]
+        if(!HasAttribute(parameter, typeSymbols.InterpolatedExpressionParameterAttribute))
+            return false;
+
+        return true;
+    }
+
     public static bool IsSubtype(ITypeSymbol? a, ITypeSymbol? b) {
         if(a is null)
             return false;
@@ -50,15 +71,4 @@ internal static class SymbolHelpers {
 
         return false;
     }
-
-    public static bool TryGetInterfaceImplementation(
-        INamedTypeSymbol @interface,
-        ITypeSymbol type,
-        [MaybeNullWhen(false)] out INamedTypeSymbol implementation
-    ) =>
-        type.AllInterfaces.Prepend(type).OfType<INamedTypeSymbol>().TryGetSingle(
-            i => SymbolEqualityComparer.Default.Equals(@interface, i)
-            || i.IsGenericType && @interface.IsGenericType && SymbolEqualityComparer.Default.Equals(@interface, i.ConstructUnboundGenericType()),
-            out implementation
-        );
 }

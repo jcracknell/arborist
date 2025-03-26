@@ -2,7 +2,7 @@ using Microsoft.CodeAnalysis;
 
 namespace Arborist.Analyzers;
 
-public class InterpolationAnalysisContext(
+public sealed class InterpolationAnalysisContext(
     SemanticModel semanticModel,
     InterpolationTypeSymbols typeSymbols,
     InterpolationDiagnosticsCollection diagnostics,

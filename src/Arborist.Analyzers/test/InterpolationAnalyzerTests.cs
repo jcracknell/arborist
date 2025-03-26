@@ -40,6 +40,20 @@ public class InterpolationAnalyzerTests {
     }
 
     [Fact]
+    public async Task Should_produce_ARB001_for_splice_using_nested_context() {
+        await InterpolationAnalyzerTestBuilder.Create()
+        .Generate(@"
+            ExpressionOn<Cat>.Interpolate(
+                {|ARB001:(x, c) => c.Owner.Dogs.AsQueryable().Any(
+                    {|ARB004:ExpressionOn<Dog>.Interpolate(
+                        (x, d) => x.SpliceConstant(true)
+                    )|}
+                )|}
+            );
+        ");
+    }
+
+    [Fact]
     public async Task Should_produce_ARB002_for_ExpressionOnNone_with_bare_context_reference() {
         await InterpolationAnalyzerTestBuilder.Create()
         .Generate(@"
@@ -135,6 +149,57 @@ public class InterpolationAnalyzerTests {
         .Generate(@"
             ExpressionOn<Owner>.Interpolate(
                 (x, o) => x.SpliceBody(o, o => o)
+            );
+        ");
+    }
+
+    [Fact]
+    public async Task Should_produce_ARB004_for_nested_interpolation_call() {
+        await InterpolationAnalyzerTestBuilder.Create()
+        .Generate(@"
+            ExpressionOn<IQueryable<Cat>>.Interpolate(
+                (x, q) => q.SelectMany(
+                    c => x.SpliceBody(c, c => c.Owner.Dogs),
+                    {|ARB004:ExpressionOn<Cat, Dog>.Interpolate((x, c, d) => x.SpliceConstant(42))|}
+                )
+            );
+        ");
+    }
+
+    [Fact]
+    public async Task Should_produce_ARB004_for_nested_SelectInterpolated() {
+        await InterpolationAnalyzerTestBuilder.Create()
+        .Generate(@"
+            ExpressionOn<IQueryable<Cat>>.Interpolate(
+                (x, q) => {|ARB004:q.SelectInterpolated((y, c) => x.SpliceConstant(1) + y.SpliceConstant(1))|}
+            );
+        ");
+    }
+
+    [Fact]
+    public async Task Should_not_produce_ARB004_for_nested_interpolation_in_evaluated_splice_parameter() {
+        await InterpolationAnalyzerTestBuilder.Create()
+        .Generate(@"
+            ExpressionOn<Cat>.Interpolate(
+                (x, c) => x.SpliceBody(
+                    c,
+                    ExpressionOn<Cat>.Interpolate((x, c) => x.SpliceConstant(42))
+                )
+            );
+        ");
+    }
+
+    [Fact]
+    public async Task Should_produce_ARB004_for_nested_interpolation_in_interpolated_splice_parameter() {
+        await InterpolationAnalyzerTestBuilder.Create()
+        .Generate(@"
+            ExpressionOn<Cat>.Interpolate(
+                (x, c) => x.SpliceBody(
+                    c.Owner.Dogs.AsQueryable().Any(
+                        {|ARB004:ExpressionOn<Dog>.Interpolate((x, d) => x.SpliceConstant(true))|}
+                    ),
+                    ExpressionOn<bool>.Of(v => v)
+                )
             );
         ");
     }

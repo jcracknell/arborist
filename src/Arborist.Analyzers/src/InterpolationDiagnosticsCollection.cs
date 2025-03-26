@@ -4,7 +4,7 @@ using System.Collections;
 
 namespace Arborist.Analyzers;
 
-public class InterpolationDiagnosticsCollection : IReadOnlyCollection<Diagnostic> {
+public sealed class InterpolationDiagnosticsCollection : IReadOnlyCollection<Diagnostic> {
     private readonly List<Diagnostic> _diagnostics = new();
 
     public int Count => _diagnostics.Count;
@@ -18,10 +18,10 @@ public class InterpolationDiagnosticsCollection : IReadOnlyCollection<Diagnostic
         ));
     }
 
-    public void ReportNoSplices(LambdaExpressionSyntax invocation) {
+    public void ReportNoSplices(LambdaExpressionSyntax node) {
         _diagnostics.Add(Diagnostic.Create(
             descriptor: InterpolationDiagnosticDescriptors.ARB001_NoSplices,
-            location: invocation.GetLocation()
+            location: node.GetLocation()
         ));
     }
 
@@ -35,6 +35,13 @@ public class InterpolationDiagnosticsCollection : IReadOnlyCollection<Diagnostic
     public void ReportInterpolatedParameterReference(SyntaxNode node) {
         _diagnostics.Add(Diagnostic.Create(
             descriptor: InterpolationDiagnosticDescriptors.ARB003_InterpolatedParameterReference,
+            location: node.GetLocation()
+        ));
+    }
+
+    public void ReportNestedInterpolation(InvocationExpressionSyntax node) {
+        _diagnostics.Add(Diagnostic.Create(
+            descriptor: InterpolationDiagnosticDescriptors.ARB004_NestedInterpolation,
             location: node.GetLocation()
         ));
     }

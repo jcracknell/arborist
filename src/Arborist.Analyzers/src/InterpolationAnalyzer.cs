@@ -2,13 +2,12 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Operations;
 using System.Reflection;
 
 namespace Arborist.Analyzers;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public class InterpolationAnalyzer : DiagnosticAnalyzer {
+public sealed class InterpolationAnalyzer : DiagnosticAnalyzer {
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = GetSupportedDiagnostics();
 
     private static ImmutableArray<DiagnosticDescriptor> GetSupportedDiagnostics() =>
@@ -26,19 +25,11 @@ public class InterpolationAnalyzer : DiagnosticAnalyzer {
 
     private static void SyntaxNodeAction(SyntaxNodeAnalysisContext context) {
         var invocation = (InvocationExpressionSyntax)context.Node;
-        if(!TryGetInvocationMethodIdentifier(invocation, out var identifier))
-            return;
-        if(!identifier.ValueText.Contains("Interpolate"))
-            return;
-        if(context.SemanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol methodSymbol)
-            return;
-        if(!methodSymbol.GetAttributes().Any(IsExpressionInterpolatorAttribute))
+
+        if(!SyntaxHelpers.IsExpressionInterpolatorInvocation(invocation, context.SemanticModel, out var methodSymbol))
             return;
 
         var typeSymbols = InterpolationTypeSymbols.Create(context.SemanticModel.Compilation);
-        if(!SymbolHelpers.HasAttribute(methodSymbol, typeSymbols.ExpressionInterpolatorAttribute))
-            return;
-
         var diagnostics = new InterpolationDiagnosticsCollection();
 
         AnalyzeInvocation(
@@ -54,37 +45,6 @@ public class InterpolationAnalyzer : DiagnosticAnalyzer {
             context.ReportDiagnostic(diagnostic);
     }
 
-    internal static bool TryGetInvocationMethodIdentifier(InvocationExpressionSyntax invocation, out SyntaxToken identifier) {
-        switch(invocation.Expression) {
-            case MemberAccessExpressionSyntax mae:
-                identifier = mae.Name.Identifier;
-                return true;
-
-            case SimpleNameSyntax sns:
-                identifier = sns.Identifier;
-                return true;
-
-            default:
-                identifier = default;
-                return false;
-        }
-    }
-
-    private static bool IsExpressionInterpolatorAttribute(AttributeData a) =>
-        a.AttributeClass is {
-            Name: "ExpressionInterpolatorAttribute",
-            ContainingNamespace: {
-                Name: "Internal",
-                ContainingNamespace: {
-                    Name: "Interpolation",
-                    ContainingNamespace: {
-                        Name: "Arborist",
-                        ContainingNamespace: { IsGlobalNamespace: true }
-                    }
-                }
-            }
-        };
-
     private static void AnalyzeInvocation(
         InterpolationDiagnosticsCollection diagnostics,
         SemanticModel semanticModel,
@@ -94,9 +54,9 @@ public class InterpolationAnalyzer : DiagnosticAnalyzer {
         CancellationToken cancellationToken
     ) {
         foreach(var parameter in methodSymbol.Parameters) {
-            if(!IsInterpolatedExpressionParameter(parameter, typeSymbols))
+            if(!SymbolHelpers.IsInterpolatedExpressionParameter(parameter, typeSymbols))
                 continue;
-            if(!TryGetParameterArgumentSyntax(invocation, parameter, out var expressionArgument, semanticModel))
+            if(!SyntaxHelpers.TryGetParameterArgumentSyntax(invocation, parameter, out var expressionArgument, semanticModel))
                 continue;
 
             AnalyzeInterpolatedExpression(
@@ -135,69 +95,5 @@ public class InterpolationAnalyzer : DiagnosticAnalyzer {
         // fallback rewrite the expression.
         if(!visitor.SplicesFound)
             diagnostics.ReportNoSplices(lambdaSyntax);
-    }
-
-    private static bool IsInterpolatedExpressionParameter(
-        IParameterSymbol parameter,
-        InterpolationTypeSymbols typeSymbols
-    ) {
-        if(parameter.Type is not INamedTypeSymbol parameterType)
-            return false;
-        if(!parameterType.IsGenericType)
-            return false;
-        if(!SymbolEqualityComparer.Default.Equals(parameterType.ConstructUnboundGenericType(), typeSymbols.Expression1.ConstructUnboundGenericType()))
-            return false;
-        if(parameterType.TypeArguments[0] is not INamedTypeSymbol { IsGenericType: true } interpolatedDelegateType)
-            return false;
-        if(!SymbolHelpers.IsSubtype(interpolatedDelegateType.TypeArguments[0], typeSymbols.IInterpolationContext))
-            return false;
-        // Has [InterpolatedExpressionParameter]
-        if(!SymbolHelpers.HasAttribute(parameter, typeSymbols.InterpolatedExpressionParameterAttribute))
-            return false;
-
-        return true;
-    }
-
-    /// <summary>
-    /// Attempts to locate the argument tree in the provided invocation corresponding to the provided
-    /// <see cref="IParameterSymbol"/>.
-    /// </summary>
-    private static bool TryGetParameterArgumentSyntax(
-        InvocationExpressionSyntax invocation,
-        IParameterSymbol parameterSymbol,
-        [NotNullWhen(true)] out ArgumentSyntax? argumentSyntax,
-        SemanticModel semanticModel
-    ) {
-        // The semantic model is based on the "unreduced" versions of extension method parameters
-        var expandedParameter = parameterSymbol.ContainingSymbol switch {
-            IMethodSymbol { ReducedFrom: not null } extension =>
-                extension.GetConstructedReducedFrom()!.Parameters[parameterSymbol.Ordinal + 1],
-            _ => parameterSymbol
-        };
-
-        // In the vast majority of cases the parameter will be specified positionally, so we'll
-        // try that first
-        var positionalArgument = invocation.ArgumentList.Arguments[parameterSymbol.Ordinal];
-        if(
-            semanticModel.GetOperation(positionalArgument) is IArgumentOperation pop
-            && SymbolEqualityComparer.Default.Equals(pop.Parameter, expandedParameter)
-        ) {
-            argumentSyntax = positionalArgument;
-            return true;
-        }
-
-        foreach(var namedArgument in invocation.ArgumentList.Arguments) {
-            if(namedArgument.NameColon is null)
-                continue;
-            if(semanticModel.GetOperation(namedArgument) is not IArgumentOperation nop)
-                continue;
-            if(SymbolEqualityComparer.Default.Equals(nop.Parameter, expandedParameter)) {
-                argumentSyntax = namedArgument;
-                return true;
-            }
-        }
-
-        argumentSyntax = default;
-        return false;
     }
 }

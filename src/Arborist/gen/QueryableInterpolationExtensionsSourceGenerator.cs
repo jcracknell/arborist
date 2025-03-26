@@ -26,39 +26,46 @@ public class QueryableInterpolationExtensionsSourceGenerator : IIncrementalGener
         GeneratorSyntaxContext context,
         CancellationToken cancellationToken
     ) {
-        var symbolHelpers = new SymbolHelpers(context.SemanticModel.Compilation);
+        var symbols = new CommonSymbols(context.SemanticModel.Compilation);
 
-        return symbolHelpers.Queryable.GetMembers().OfType<IMethodSymbol>()
+        return symbols.Queryable.GetMembers().OfType<IMethodSymbol>()
         .Where(ShouldOverride)
         .GroupBy(m => m.Name)
         .OrderBy(g => g.Key)
-        .Select(g => new MethodGroup(methods: g.ToList(), symbolHelpers))
+        .Select(g => new MethodGroup(methods: g.ToList(), symbols))
         .ToImmutableArray();
 
         bool ShouldOverride(IMethodSymbol method) =>
             method.IsExtensionMethod
             && Accessibility.Public == method.DeclaredAccessibility
             // Accepts an expression argument
-            && method.Parameters.Any(p => symbolHelpers.TryGetExpressionDelegateTypeArgs(p.Type, out _))
+            && method.Parameters.Any(p => IsExpression(p, symbols))
             // No expression argument accepting an int input (index parameters which prevent inferral of the
             // overload accepting an interpolation context)
             && !method.Parameters.Any(
-                p => symbolHelpers.TryGetExpressionDelegateTypeArgs(p.Type, out var typeArgs)
-                && typeArgs.Slice(0, typeArgs.Length - 1).Any(t => SymbolEqualityComparer.Default.Equals(t, symbolHelpers.Int32))
+                p => TryGetExpressionDelegateTypeArgs(p.Type, symbols, out var typeArgs)
+                && typeArgs.Slice(0, typeArgs.Length - 1).Any(t => SymbolEqualityComparer.Default.Equals(t, symbols.Int32))
             );
     }
 
     private sealed class MethodGroup(
         IReadOnlyList<IMethodSymbol> methods,
-        SymbolHelpers symbolHelpers
+        CommonSymbols symbols
     )
         : IEquatable<MethodGroup>
     {
         public IReadOnlyList<IMethodSymbol> Methods { get; } = methods;
-        public SymbolHelpers SymbolHelpers { get; } = symbolHelpers;
+        public CommonSymbols Symbols { get; } = symbols;
 
+        /// <summary>
+        /// A <see cref="MethodGroup"/> can have data if there is no method in the group accepting a
+        /// generic argument immediately preceding the first expression parameter.
+        /// </summary>
         public bool CanHaveData =>
-            Methods.All(static m => m.Parameters.Length > 1 && m.Parameters[1].Type is not ITypeParameterSymbol);
+            Methods.All(m => m.Parameters.IndexOf(p => IsExpression(p, Symbols)) switch {
+                <= 0 => true,
+                var i => m.Parameters[i - 1].Type is not ITypeParameterSymbol
+            });
 
         public override int GetHashCode() =>
             Methods[0].Name.GetHashCode();
@@ -71,31 +78,36 @@ public class QueryableInterpolationExtensionsSourceGenerator : IIncrementalGener
             && this.Methods[0].Name.Equals(that.Methods[0].Name);
     }
 
-    private sealed class SymbolHelpers(Compilation compilation) {
+    private sealed class CommonSymbols(Compilation compilation) {
         public ITypeSymbol Queryable { get; } = compilation.GetTypeByMetadataName("System.Linq.Queryable")!;
         public ITypeSymbol Expression1 { get; } = compilation.GetTypeByMetadataName("System.Linq.Expressions.Expression`1")!.ConstructUnboundGenericType();
         public ITypeSymbol Int32 { get; } = compilation.GetTypeByMetadataName("System.Int32")!;
+    }
 
-        public bool IsExpression(ITypeSymbol type) => TryGetExpressionDelegateTypeArgs(type, out _);
+    private static bool IsExpression(IParameterSymbol parameter, CommonSymbols symbols) =>
+        IsExpression(parameter.Type, symbols);
 
-        /// <summary>
-        /// Returns true if the the provided <paramref name="type"/> is <see cref="Expression{TDelegate}"/>
-        /// with a generic delegate type.
-        /// </summary>
-        public bool TryGetExpressionDelegateTypeArgs(
-            ITypeSymbol type,
-            out ImmutableArray<ITypeSymbol> typeArgs
-        ) {
-            if(type is not INamedTypeSymbol { IsGenericType: true } named)
-                return false;
-            if(!SymbolEqualityComparer.Default.Equals(named.ConstructUnboundGenericType(), Expression1))
-                return false;
-            if(named.TypeArguments[0] is not INamedTypeSymbol { IsGenericType: true, Name: "Func" } delegateType)
-                return false;
+    private static bool IsExpression(ITypeSymbol typeSymbol, CommonSymbols symbols) =>
+        TryGetExpressionDelegateTypeArgs(typeSymbol, symbols, out _);
 
-            typeArgs = delegateType.TypeArguments;
-            return true;
-        }
+    /// <summary>
+    /// Returns true if the the provided <paramref name="type"/> is <see cref="Expression{TDelegate}"/>
+    /// with a generic delegate type.
+    /// </summary>
+    private static bool TryGetExpressionDelegateTypeArgs(
+        ITypeSymbol type,
+        CommonSymbols symbols,
+        out ImmutableArray<ITypeSymbol> typeArgs
+    ) {
+        if(type is not INamedTypeSymbol { IsGenericType: true } named)
+            return false;
+        if(!SymbolEqualityComparer.Default.Equals(named.ConstructUnboundGenericType(), symbols.Expression1))
+            return false;
+        if(named.TypeArguments[0] is not INamedTypeSymbol { IsGenericType: true, Name: "Func" } delegateType)
+            return false;
+
+        typeArgs = delegateType.TypeArguments;
+        return true;
     }
 
     private static void GenerateSource(SourceProductionContext context, MethodGroup methodGroup) {
@@ -116,7 +128,7 @@ public class QueryableInterpolationExtensionsSourceGenerator : IIncrementalGener
 
         foreach(var method in methodGroup.Methods) {
             var interpolatable = method.Parameters
-            .Where(p => methodGroup.SymbolHelpers.IsExpression(p.Type))
+            .Where(p => IsExpression(p, methodGroup.Symbols))
             .ToArray();
 
             // The easiest way to generate all permutations of interpolatable expressions is to just treat an integer as
@@ -168,18 +180,20 @@ public class QueryableInterpolationExtensionsSourceGenerator : IIncrementalGener
         AppendTypeName(sb, methodSymbol.Parameters[0].Type);
         sb.Append($" {methodSymbol.Parameters[0].Name}");
 
-        if(withData) {
-            sb.AppendLine(",");
-            sb.Append("        [global::Arborist.Interpolation.Internal.InterpolatedDataParameter] TData data");
-        }
-
         for(var i = 1; i < methodSymbol.Parameters.Length; i++) {
             var parameter = methodSymbol.Parameters[i];
             sb.AppendLine(",");
             sb.Append("        ");
+
+            // Emit the data parameter immediately preceding the first expression parameter
+            if(withData && i == methodSymbol.Parameters.IndexOf(p => IsExpression(p, methodGroup.Symbols))) {
+                sb.AppendLine("[global::Arborist.Interpolation.Internal.InterpolatedDataParameter] TData data,");
+                sb.Append("        ");
+            }
+
             if(!(
                 interpolated[i]
-                && methodGroup.SymbolHelpers.TryGetExpressionDelegateTypeArgs(methodSymbol.Parameters[i].Type, out var typeArgs)
+                && TryGetExpressionDelegateTypeArgs(parameter.Type, methodGroup.Symbols, out var typeArgs)
             )) {
                 AppendRefKind(sb, parameter);
                 AppendTypeName(sb, parameter.Type);
@@ -232,11 +246,13 @@ public class QueryableInterpolationExtensionsSourceGenerator : IIncrementalGener
         sb.Append($"            {methodSymbol.Parameters[0].Name}");
 
         for(var i = 1; i < methodSymbol.Parameters.Length; i++) {
+            var parameter = methodSymbol.Parameters[i];
+
             sb.AppendLine(",");
             sb.Append("            ");
             if(!(
                 interpolated[i]
-                && methodGroup.SymbolHelpers.TryGetExpressionDelegateTypeArgs(methodSymbol.Parameters[i].Type, out var inputTypes)
+                && TryGetExpressionDelegateTypeArgs(parameter.Type, methodGroup.Symbols, out var inputTypes)
             )) {
                 sb.Append(methodSymbol.Parameters[i].Name);
             } else {

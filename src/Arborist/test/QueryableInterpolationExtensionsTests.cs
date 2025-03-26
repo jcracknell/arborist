@@ -126,8 +126,8 @@ public class QueryableInterpolationExtensionsTests {
         Resolves(() => {
             OwnerQueryable.ExceptByInterpolated(CatQueryable, (x, o) => x.SpliceConstant(default(Cat)!));
             OwnerQueryable.ExceptByInterpolated(CatQueryable, (x, o) => x.SpliceConstant(default(Cat)!), EqualityComparer<Cat>.Default);
-            OwnerQueryable.ExceptByInterpolated(default(Cat)!, CatQueryable, (x, o) => x.SpliceConstant(x.Data));
-            OwnerQueryable.ExceptByInterpolated(default(Cat)!, CatQueryable, (x, o) => x.SpliceConstant(x.Data), EqualityComparer<Cat>.Default);
+            OwnerQueryable.ExceptByInterpolated(CatQueryable, default(Cat)!, (x, o) => x.SpliceConstant(x.Data));
+            OwnerQueryable.ExceptByInterpolated(CatQueryable, default(Cat)!, (x, o) => x.SpliceConstant(x.Data), EqualityComparer<Cat>.Default);
         });
     }
 
@@ -174,20 +174,20 @@ public class QueryableInterpolationExtensionsTests {
         Resolves(() => {
             OwnerQueryable.GroupJoinInterpolated(CatQueryable, (x, o) => x.SpliceConstant(42), (x, c) => x.SpliceConstant(42), (x, o, c) => x.SpliceConstant(42));
             OwnerQueryable.GroupJoinInterpolated(CatQueryable, (x, o) => x.SpliceConstant(42), (x, c) => x.SpliceConstant(42), (x, o, c) => x.SpliceConstant(42), EqualityComparer<int>.Default);
-            OwnerQueryable.GroupJoinInterpolated(42, CatQueryable, (x, o) => x.SpliceConstant(x.Data), (x, c) => x.SpliceConstant(x.Data), (x, o, c) => x.SpliceConstant(x.Data));
-            OwnerQueryable.GroupJoinInterpolated(42, CatQueryable, (x, o) => x.SpliceConstant(x.Data), (x, c) => x.SpliceConstant(x.Data), (x, o, c) => x.SpliceConstant(x.Data), EqualityComparer<int>.Default);
+            OwnerQueryable.GroupJoinInterpolated(CatQueryable, 42, (x, o) => x.SpliceConstant(x.Data), (x, c) => x.SpliceConstant(x.Data), (x, o, c) => x.SpliceConstant(x.Data));
+            OwnerQueryable.GroupJoinInterpolated(CatQueryable, 42, (x, o) => x.SpliceConstant(x.Data), (x, c) => x.SpliceConstant(x.Data), (x, o, c) => x.SpliceConstant(x.Data), EqualityComparer<int>.Default);
             OwnerQueryable.GroupJoinInterpolated(CatQueryable, (x, o) => x.SpliceConstant(42), c => 42, (o, c) => 42);
             OwnerQueryable.GroupJoinInterpolated(CatQueryable, (x, o) => x.SpliceConstant(42), c => 42, (o, c) => 42, EqualityComparer<int>.Default);
-            OwnerQueryable.GroupJoinInterpolated(42, CatQueryable, (x, o) => x.SpliceConstant(x.Data), c => 42, (o, c) => 42);
-            OwnerQueryable.GroupJoinInterpolated(42, CatQueryable, (x, o) => x.SpliceConstant(x.Data), c => 42, (o, c) => 42, EqualityComparer<int>.Default);
+            OwnerQueryable.GroupJoinInterpolated(CatQueryable, 42, (x, o) => x.SpliceConstant(x.Data), c => 42, (o, c) => 42);
+            OwnerQueryable.GroupJoinInterpolated(CatQueryable, 42, (x, o) => x.SpliceConstant(x.Data), c => 42, (o, c) => 42, EqualityComparer<int>.Default);
             OwnerQueryable.GroupJoinInterpolated(CatQueryable, o => 42, (x, c) => x.SpliceConstant(42), (o, c) => 42);
             OwnerQueryable.GroupJoinInterpolated(CatQueryable, o => 42, (x, c) => x.SpliceConstant(42), (o, c) => 42, EqualityComparer<int>.Default);
-            OwnerQueryable.GroupJoinInterpolated(42, CatQueryable, o => 42, (x, c) => x.SpliceConstant(x.Data), (o, c) => 42);
-            OwnerQueryable.GroupJoinInterpolated(42, CatQueryable, o => 42, (x, c) => x.SpliceConstant(x.Data), (o, c) => 42, EqualityComparer<int>.Default);
+            OwnerQueryable.GroupJoinInterpolated(CatQueryable, 42, o => 42, (x, c) => x.SpliceConstant(x.Data), (o, c) => 42);
+            OwnerQueryable.GroupJoinInterpolated(CatQueryable, 42, o => 42, (x, c) => x.SpliceConstant(x.Data), (o, c) => 42, EqualityComparer<int>.Default);
             OwnerQueryable.GroupJoinInterpolated(CatQueryable, o => 42, c => 42, (x, o, c) => x.SpliceConstant(42));
             OwnerQueryable.GroupJoinInterpolated(CatQueryable, o => 42, c => 42, (x, o, c) => x.SpliceConstant(42), EqualityComparer<int>.Default);
-            OwnerQueryable.GroupJoinInterpolated(42, CatQueryable, o => 42, c => 42, (x, o, c) => x.SpliceConstant(x.Data));
-            OwnerQueryable.GroupJoinInterpolated(42, CatQueryable, o => 42, c => 42, (x, o, c) => x.SpliceConstant(x.Data), EqualityComparer<int>.Default);
+            OwnerQueryable.GroupJoinInterpolated(CatQueryable, 42, o => 42, c => 42, (x, o, c) => x.SpliceConstant(x.Data));
+            OwnerQueryable.GroupJoinInterpolated(CatQueryable, 42, o => 42, c => 42, (x, o, c) => x.SpliceConstant(x.Data), EqualityComparer<int>.Default);
         });
     }
 
@@ -196,8 +196,8 @@ public class QueryableInterpolationExtensionsTests {
         Resolves(() => {
             OwnerQueryable.IntersectByInterpolated(CatQueryable, (x, o) => x.SpliceConstant(default(Cat)!));
             OwnerQueryable.IntersectByInterpolated(CatQueryable, (x, o) => x.SpliceConstant(default(Cat)!), EqualityComparer<Cat>.Default);
-            OwnerQueryable.IntersectByInterpolated(default(Cat)!, CatQueryable, (x, o) => x.SpliceConstant(x.Data));
-            OwnerQueryable.IntersectByInterpolated(default(Cat)!, CatQueryable, (x, o) => x.SpliceConstant(x.Data), EqualityComparer<Cat>.Default);
+            OwnerQueryable.IntersectByInterpolated(CatQueryable, default(Cat)!, (x, o) => x.SpliceConstant(x.Data));
+            OwnerQueryable.IntersectByInterpolated(CatQueryable, default(Cat)!, (x, o) => x.SpliceConstant(x.Data), EqualityComparer<Cat>.Default);
         });
     }
 
@@ -206,20 +206,20 @@ public class QueryableInterpolationExtensionsTests {
         Resolves(() => {
             OwnerQueryable.JoinInterpolated(CatQueryable, (x, o) => x.SpliceConstant(42), (x, c) => x.SpliceConstant(42), (x, o, c) => x.SpliceConstant(42));
             OwnerQueryable.JoinInterpolated(CatQueryable, (x, o) => x.SpliceConstant(42), (x, c) => x.SpliceConstant(42), (x, o, c) => x.SpliceConstant(42), EqualityComparer<int>.Default);
-            OwnerQueryable.JoinInterpolated(42, CatQueryable, (x, o) => x.SpliceConstant(x.Data), (x, c) => x.SpliceConstant(x.Data), (x, o, c) => x.SpliceConstant(x.Data));
-            OwnerQueryable.JoinInterpolated(42, CatQueryable, (x, o) => x.SpliceConstant(x.Data), (x, c) => x.SpliceConstant(x.Data), (x, o, c) => x.SpliceConstant(x.Data), EqualityComparer<int>.Default);
+            OwnerQueryable.JoinInterpolated(CatQueryable, 42, (x, o) => x.SpliceConstant(x.Data), (x, c) => x.SpliceConstant(x.Data), (x, o, c) => x.SpliceConstant(x.Data));
+            OwnerQueryable.JoinInterpolated(CatQueryable, 42, (x, o) => x.SpliceConstant(x.Data), (x, c) => x.SpliceConstant(x.Data), (x, o, c) => x.SpliceConstant(x.Data), EqualityComparer<int>.Default);
             OwnerQueryable.JoinInterpolated(CatQueryable, (x, o) => x.SpliceConstant(42), c => 42, (o, c) => 42);
             OwnerQueryable.JoinInterpolated(CatQueryable, (x, o) => x.SpliceConstant(42), c => 42, (o, c) => 42, EqualityComparer<int>.Default);
-            OwnerQueryable.JoinInterpolated(42, CatQueryable, (x, o) => x.SpliceConstant(x.Data), c => 42, (o, c) => 42);
-            OwnerQueryable.JoinInterpolated(42, CatQueryable, (x, o) => x.SpliceConstant(x.Data), c => 42, (o, c) => 42, EqualityComparer<int>.Default);
+            OwnerQueryable.JoinInterpolated(CatQueryable, 42, (x, o) => x.SpliceConstant(x.Data), c => 42, (o, c) => 42);
+            OwnerQueryable.JoinInterpolated(CatQueryable, 42, (x, o) => x.SpliceConstant(x.Data), c => 42, (o, c) => 42, EqualityComparer<int>.Default);
             OwnerQueryable.JoinInterpolated(CatQueryable, o => 42, (x, c) => x.SpliceConstant(42), (o, c) => 42);
             OwnerQueryable.JoinInterpolated(CatQueryable, o => 42, (x, c) => x.SpliceConstant(42), (o, c) => 42, EqualityComparer<int>.Default);
-            OwnerQueryable.JoinInterpolated(42, CatQueryable, o => 42, (x, c) => x.SpliceConstant(x.Data), (o, c) => 42);
-            OwnerQueryable.JoinInterpolated(42, CatQueryable, o => 42, (x, c) => x.SpliceConstant(x.Data), (o, c) => 42, EqualityComparer<int>.Default);
+            OwnerQueryable.JoinInterpolated(CatQueryable, 42, o => 42, (x, c) => x.SpliceConstant(x.Data), (o, c) => 42);
+            OwnerQueryable.JoinInterpolated(CatQueryable, 42, o => 42, (x, c) => x.SpliceConstant(x.Data), (o, c) => 42, EqualityComparer<int>.Default);
             OwnerQueryable.JoinInterpolated(CatQueryable, o => 42, c => 42, (x, o, c) => x.SpliceConstant(42));
             OwnerQueryable.JoinInterpolated(CatQueryable, o => 42, c => 42, (x, o, c) => x.SpliceConstant(42), EqualityComparer<int>.Default);
-            OwnerQueryable.JoinInterpolated(42, CatQueryable, o => 42, c => 42, (x, o, c) => x.SpliceConstant(x.Data));
-            OwnerQueryable.JoinInterpolated(42, CatQueryable, o => 42, c => 42, (x, o, c) => x.SpliceConstant(x.Data), EqualityComparer<int>.Default);
+            OwnerQueryable.JoinInterpolated(CatQueryable, 42, o => 42, c => 42, (x, o, c) => x.SpliceConstant(x.Data));
+            OwnerQueryable.JoinInterpolated(CatQueryable, 42, o => 42, c => 42, (x, o, c) => x.SpliceConstant(x.Data), EqualityComparer<int>.Default);
         });
     }
 
@@ -389,8 +389,8 @@ public class QueryableInterpolationExtensionsTests {
         Resolves(() => {
             OwnerQueryable.UnionByInterpolated(OwnerQueryable, (x, o) => x.SpliceConstant(default(Cat)!));
             OwnerQueryable.UnionByInterpolated(OwnerQueryable, (x, o) => x.SpliceConstant(default(Cat)!), EqualityComparer<Cat>.Default);
-            OwnerQueryable.UnionByInterpolated(default(Cat)!, OwnerQueryable, (x, o) => x.SpliceConstant(x.Data));
-            OwnerQueryable.UnionByInterpolated(default(Cat)!, OwnerQueryable, (x, o) => x.SpliceConstant(x.Data), EqualityComparer<Cat>.Default);
+            OwnerQueryable.UnionByInterpolated(OwnerQueryable, default(Cat)!, (x, o) => x.SpliceConstant(x.Data));
+            OwnerQueryable.UnionByInterpolated(OwnerQueryable, default(Cat)!, (x, o) => x.SpliceConstant(x.Data), EqualityComparer<Cat>.Default);
         });
     }
 
@@ -406,7 +406,7 @@ public class QueryableInterpolationExtensionsTests {
     public void ZipInterpolated_should_resolve() {
         Resolves(() => {
             OwnerQueryable.ZipInterpolated(CatQueryable, (x, o, c) => x.SpliceConstant(42));
-            OwnerQueryable.ZipInterpolated(42, CatQueryable, (x, o, c) => x.SpliceConstant(x.Data));
+            OwnerQueryable.ZipInterpolated(CatQueryable, 42, (x, o, c) => x.SpliceConstant(x.Data));
         });
     }
 }

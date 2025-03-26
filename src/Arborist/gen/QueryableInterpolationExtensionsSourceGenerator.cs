@@ -214,7 +214,7 @@ public class QueryableInterpolationExtensionsSourceGenerator : IIncrementalGener
         sb.Append("    )");
 
         foreach(var typeParameter in methodSymbol.TypeParameters) {
-            if(GetTypeParameterConstraints(sb, typeParameter) is { Count: not 0 } constraints) {
+            if(GetTypeParameterConstraints(typeParameter) is { Count: not 0 } constraints) {
                 sb.AppendLine();
                 sb.Append("        where ");
                 AppendTypeName(sb, typeParameter);
@@ -310,7 +310,7 @@ public class QueryableInterpolationExtensionsSourceGenerator : IIncrementalGener
         }
     }
 
-    private static IReadOnlyList<string> GetTypeParameterConstraints(StringBuilder sb, ITypeParameterSymbol typeParameter) {
+    private static IReadOnlyList<string> GetTypeParameterConstraints(ITypeParameterSymbol typeParameter) {
         return GetConstraints(typeParameter).ToList();
 
         static IEnumerable<string> GetConstraints(ITypeParameterSymbol typeParameter) {

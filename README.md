@@ -5,14 +5,30 @@
 Arborist is a library for manipulating and combining C# expression trees consumed by the IQueryable
 interface and object-relational mappers such as EntityFramework. It provides full expression
 interpolation ("quasiquoting") capabilities, allowing you to interpolate expressions in a manner
-analagous to string interpolation, as well as a suite of generalized expression manipulation helpers.
+analagous to string interpolation, as well as a suite of generalized expression helpers for
+manipulating and combining expression trees.
 
-Arborist differs from [LINQKit][2] in that it:
+## Contents
 
-  - provides an explicit, generalized expression interpolation facility which both more
-    performant and more powerful than Expand/AsExpandable; and
-  - adopts a composable, functional approach to expression manipulation supporting expressions
-    in general as compared to mutable PredicateBuilder instances.
+  - [Expression interpolation](#expression-interpolation)
+      - [Splicing methods](#splicing-methods)
+          - [Splice](#splice)
+          - [SpliceBody](#splicebody)
+          - [SpliceConstant](#spliceconstant)
+          - [SpliceQuoted](#splicequoted)
+      - [Interpolating IQueryable&lt;T&gt; extension methods](#interpolating-iqueryablet-extension-methods)
+      - [Interpolation and LINQ query syntax](#interpolation-and-linq-query-syntax)
+      - [Interpolation performance considerations](#interpolation-performance-considerations)
+  - [Predicate helpers](#predicate-helpers)
+      - [And/AndTree](#andandtree)
+      - [Not](#not)
+      - [NotNullAnd](#notnulland)
+      - [NullOr](#nullor)
+      - [Or/OrTree](#orortree)
+  - [Orderings](#orderings)
+      - [Composable orderings for EntityFramework](#composable-orderings-for-entityframework)
+      - [Ordering simplification](#ordering-simplification)
+      - [Ordering JSON serialization](#ordering-json-serialization)
   
 ## Expression interpolation
 
@@ -56,26 +72,6 @@ interpolation process, and any additional parameters are those that appear in th
 resulting from the interpolation process. The interpolation context provides access to the
 *splicing methods* used to lower other expression trees into the result expression, as well as
 to any data that you want to inject into the interpolation process.
-
-### Interpolation performance implications
-
-Most of the performance cost associated with expression interpolation is associated with the
-evaluation of expression subtrees provided as arguments to evaluated splice parameters
-(annotated with EvaluatedSpliceParameterAttribute). Interpolation becomes expensive in the
-event that expression compilation is required to evaluate such subtrees.
-
-Arborist will first attempt to evaluate these expressions using a reflective approach which
-is capable of interpreting most *basic* expression trees; i.e. member accesses, method
-invocations, and some basic type conversions. Despite the use of the reflection API, evaluating
-expressions this way is *significantly* faster than the compilation-based approach used as a
-fallback in the event that it fails.
-
-> **💡 Hint:** You should try to pre-evaluate your spliced values to simplify the subtrees
-> requiring evaluation by the interpolation process.
-
-Interpolation always requires construction of new expression trees, however you can reduce
-the number of allocations per call by using the interpolation data parameter, which lets you
-make the input expression a static declaration.
 
 
 ### Splicing methods
@@ -178,10 +174,102 @@ ExpressionOn<IQueryable<Cat>>.Interpolate(
         q.Any(x.SpliceQuoted(x.Data.Predicate))
         && q.Any(x.Splice(x.Data.Predicate))
 );
-// q => Queryable.Any(q, c => c.Age == 8) && Enumerable.Any(q, c => c.Age == 8)
+// q => Queryable.Any(q, c => c.Age == 8)
+// && Enumerable.Any(q, c => c.Age == 8)
 ```
 
-### Interpolation benchmarks
+### Interpolating IQueryable&lt;T&gt; extension methods
+
+Arborist provides a suite of extension methods on IQueryable&lt;T&gt; instances providing easy
+support for interpolation with type inferral.
+
+For every extension method defined by System.Linq.Queryable accepting an expression as an argument,
+a source generator is used to define an equivalent interpolating extension method accepting every
+possible combination of interpolated and uninterpolated expressions as determined by the inclusion
+of an optional leading IInterpolationContext parameter. 
+In addition, overloads are generated accepting a data parameter immediately preceding the initial
+expression argument (the data parameter follows the input collection argument to the joining and
+set operations).
+
+```csharp
+dbContext.Cats.SelectManyInterpolated(
+    // Optional data argument precedes the initial expression
+    new { dogPredicate },
+    // Include an IInterpolationContext parameter for interpolation
+    (x, c) => c.Owner.Dogs.Where(x.Splice(x.Data.dogPredicate)),
+    // Or omit it to skip interpolation of a given expression
+    (c, d) => new { c, d }
+);
+```
+
+There are a few exceptions to this rule:
+
+  - Overloads accepting a supplementary index parameter (as in the case of Select and SelectMany)
+    are not mirrored, as the supplementary parameter would prevent resolution of the appropriate
+    interpolating overload.
+  
+  - A data-accepting overload is not generated for methods where the type of the argument preceding
+    the initial expression is a generic type parameter (as in the case of Aggregate).
+
+### Interpolation and LINQ query syntax
+
+Arborist does not provide a way to apply interpolation to all expressions processed by a given
+IQueryable&lt;T&gt; instance (i.e. an equivalent to LINQKit's AsExpandable extension method),
+because this feature is wholly incompatible with the design goal of having explicit, limited
+scopes within which interpolation can occur.
+
+Requiring splicing operations to be conducted on an IInterpolationContext provided by the explicit
+invocation of an interpolation method prevents accidental omission of the interpolation process
+(as is the case with LINQKit's Expand/AsExpandable and its "misappropriated" splicing methods).
+It also permits us to ship a syntax analyzer to help you identify cases where interpolation is
+incorrectly applied at compile time.
+
+A consequence of this design is that there is no way to apply interpolation to a query expressed
+purely using LINQ query syntax (from ...), because there is no reasonable way to establish a
+delimiting scope within which interpolation can occur. This is not a huge loss, as there are
+numerous reasons why you should not use LINQ query syntax:
+
+  - it is only capable of expressing a small subset of the available LINQ operations;
+  - it resembles SQL but is actually a misrepresented monadic comprehension and has
+    no bearing on the actual SQL which is generated and executed;
+  - you are *required* to switch to method syntax to materialize query results; and
+  - it obscures the usage of Expression&lt;T&gt; instances when assembling queries - the
+    fundamental currency of composability and reusability for the IQueryable&lt;T&gt; API and
+    your presumable reason for applying interpolation in the first place.
+
+That being said it is possible to wrap query syntax within a top level SelectMany by pulling the
+initial input up out of the query syntax - with the caveat that such usage requires at least two
+input clauses:
+
+```csharp
+dbContext.Owner.SelectManyInterpolated(
+    (x, o) =>
+        from d in o.Dogs
+        where x.SpliceBody(d, dogPredicate)
+        select d
+);
+```
+
+### Interpolation performance considerations
+
+Most of the performance cost associated with expression interpolation is associated with the
+evaluation of expression subtrees provided as arguments to evaluated splice parameters
+(annotated with EvaluatedSpliceParameterAttribute). Interpolation becomes expensive in the
+event that expression compilation is required to evaluate such subtrees.
+
+Arborist will first attempt to evaluate these expressions using a reflective approach which
+is capable of interpreting most *basic* expression trees; i.e. member accesses, method
+invocations, and some basic type conversions. Despite the use of the reflection API, evaluating
+expressions this way is *significantly* faster than the compilation-based approach used as a
+fallback in the event that it fails.
+
+> **💡 Hint:** You should try to pre-evaluate your spliced values to simplify the subtrees
+> requiring evaluation by the interpolation process.
+
+Interpolation always requires construction of new expression trees (to eliminate the
+IInterpolationContext parameter), however you can reduce the number of allocations per
+call by using the interpolation data parameter, which lets you make the input expression a
+static declaration.
 
 A simple comparison of basic expression interpolation performance between Arborist 0.2.0 and
 LinqKit 1.3.8 yields the following results:
@@ -638,7 +726,6 @@ has the following JSON representation:
 
 [0]: https://learn.microsoft.com/en-us/dotnet/api/system.linq.expressions.expression.constant
 [1]: https://learn.microsoft.com/en-us/dotnet/api/system.linq.expressions.expression.quote
-[2]: https://github.com/scottksmith95/LINQKit
 [3]: https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-12#interceptors
 [4]: https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/using-directive#the-using-alias
 [5]: https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.ef.parameter

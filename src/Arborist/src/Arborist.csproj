@@ -7,6 +7,7 @@
   <PropertyGroup>
     <IsPackable>true</IsPackable>
     <PackageId>Arborist</PackageId>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <Description>Arborist provides surgical tools for operating on expression trees.</Description>
   </PropertyGroup>
   
@@ -16,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="$(SlnRoot)/../README.md" Pack="true" PackagePath="/" Visible="false" />
     <None Include="$(OutputPath)/net8.0/Arborist.Analyzers.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
   </ItemGroup>
 

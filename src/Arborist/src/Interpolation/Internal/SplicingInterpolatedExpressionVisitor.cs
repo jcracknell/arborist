@@ -6,7 +6,12 @@ internal sealed class SplicingInterpolatedExpressionVisitor : BaseInterpolatedEx
     private readonly IReadOnlyList<object?> _evaluatedSpliceParameters;
     private int _evaluatedSpliceParameterIndex;
 
-    public SplicingInterpolatedExpressionVisitor(IReadOnlyList<object?> evaluatedSpliceParameters) {
+    public SplicingInterpolatedExpressionVisitor(
+        LambdaExpression intepolatedExpression,
+        IReadOnlyList<object?> evaluatedSpliceParameters
+    )
+        : base(intepolatedExpression)
+    {
         _evaluatedSpliceParameters = evaluatedSpliceParameters;
         _evaluatedSpliceParameterIndex = 0;
     }
@@ -26,7 +31,12 @@ internal sealed class SplicingInterpolatedExpressionVisitor : BaseInterpolatedEx
     private T GetEvaluatedSpliceParameter<T>(int index) =>
         (T)_evaluatedSpliceParameters[index]!;
 
-    protected override Expression VisitSplicingMethodCall(MethodCallExpression node) {
+    protected override Expression VisitInterpolationData(MemberExpression node) {
+        // This should never occur, because all data references should be handled by splice processing
+        throw new InvalidOperationException();
+    }
+
+    protected override Expression VisitSplicingCall(MethodCallExpression node) {
         return node.Method.Name switch {
             nameof(SplicingOperations.Splice) => VisitSplice(node),
             nameof(SplicingOperations.SpliceBody) => VisitSpliceBody(node),

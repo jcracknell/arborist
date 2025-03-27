@@ -9,7 +9,9 @@ internal sealed class AnalyzingInterpolatedExpressionVisitor : BaseInterpolatedE
     private List<Expression>? _evaluatedExpressions;
     private Expression? _evaluatingExpression;
 
-    public AnalyzingInterpolatedExpressionVisitor(LambdaExpression interpolatedExpression) {
+    public AnalyzingInterpolatedExpressionVisitor(LambdaExpression interpolatedExpression)
+        : base(interpolatedExpression)
+    {
         _interpolatedExpression = interpolatedExpression;
         _forbiddenParameters = ImmutableHashSet.CreateRange(interpolatedExpression.Parameters);
     }
@@ -44,19 +46,15 @@ internal sealed class AnalyzingInterpolatedExpressionVisitor : BaseInterpolatedE
         return node;
     }
 
-    protected override Expression VisitMember(MemberExpression node) {
-        if(_evaluatingExpression is not null && IsInterpolationDataAccess(node)) {
+    protected override Expression VisitInterpolationData(MemberExpression node) {
+        if(_evaluatingExpression is not null) {
             (_dataReferences ??= new()).Add(node);
-            return node;
         } else {
-            return base.VisitMember(node);
+            base.Visit(node.Expression);
         }
-    }
 
-    private static bool IsInterpolationDataAccess(MemberExpression node) =>
-        node is { Expression: not null, Member: PropertyInfo property }
-        && property.Name.Equals(nameof(IInterpolationContext<object>.Data))
-        && node.Expression.Type.IsAssignableTo(typeof(IInterpolationContext));
+        return node;
+    }
 
     protected override Expression VisitParameter(ParameterExpression node) {
         // If the context parameter appears outside of a splicing call in the interpolated region of
@@ -72,7 +70,7 @@ internal sealed class AnalyzingInterpolatedExpressionVisitor : BaseInterpolatedE
         return node;
     }
 
-    protected override Expression VisitSplicingMethodCall(MethodCallExpression node) {
+    protected override Expression VisitSplicingCall(MethodCallExpression node) {
         // Trigger the InterpolatedParameterEvaluationException for a splice in an evaluated expression
         if(_evaluatingExpression is not null)
             Visit(node.Arguments[0]);

@@ -1,6 +1,5 @@
-using Arborist.TestFixtures;
 using Arborist.Interpolation;
-using Arborist.Interpolation.Internal;
+using Arborist.TestFixtures;
 
 namespace Arborist;
 
@@ -60,5 +59,87 @@ public partial class InterpolateTests {
         var expected = ExpressionOnNone.Of(() => "foo".Any(c => c.Equals('o')));
 
         Assert.Equivalent(expected, interpolated);
+    }
+
+    [Fact]
+    public void Should_not_apply_splices_for_nested_interpolation() {
+        #pragma warning disable ARB001
+        #pragma warning disable ARB004
+        var interpolated = ExpressionOnNone.Interpolate(
+            x => default(Owner)!.Dogs.AsQueryable()
+            .Any(ExpressionOn<Dog>.Interpolate((y, d) => y.SpliceConstant(true)))
+        );
+        #pragma warning restore
+
+        var expected = ExpressionOnNone.Of(
+            () => default(Owner)!.Dogs.AsQueryable()
+            .Any(ExpressionOn<Dog>.Interpolate((y, d) => y.SpliceConstant(true)))
+        );
+
+        Assert.Equivalent(expected, interpolated);
+    }
+
+    [Fact]
+    public void Should_apply_splices_for_outer_context_in_nested_interpolation() {
+        #pragma warning disable ARB001
+        #pragma warning disable ARB004
+        var interpolated = ExpressionOnNone.Interpolate(
+            x => default(Owner)!.Dogs.AsQueryable()
+            .Any(ExpressionOn<Dog>.Interpolate((y, d) => x.SpliceConstant(true)))
+        );
+        #pragma warning restore
+
+        #pragma warning disable ARB001
+        var expected = ExpressionOnNone.Of(
+            () => default(Owner)!.Dogs.AsQueryable()
+            .Any(ExpressionOn<Dog>.Interpolate((y, d) => true))
+        );
+        #pragma warning restore
+
+        Assert.Equivalent(expected, interpolated);
+    }
+
+    [Fact]
+    public void Should_not_apply_splices_for_shadowing_context_in_nested_interpolation() {
+        #pragma warning disable ARB001
+        #pragma warning disable ARB004
+        var interpolated = ExpressionOnNone.Interpolate(
+            x => default(Owner)!.Dogs.AsQueryable()
+            .Any(ExpressionOn<Dog>.Interpolate((x, d) => x.SpliceConstant(true)))
+        );
+        #pragma warning restore
+
+        var expected = ExpressionOnNone.Of(
+            () => default(Owner)!.Dogs.AsQueryable()
+            .Any(ExpressionOn<Dog>.Interpolate((x, d) => x.SpliceConstant(true)))
+        );
+
+        Assert.Equivalent(expected, interpolated);
+    }
+
+    [Fact]
+    public void Should_throw_for_outer_data_access_in_nested_interpolation() {
+        Assert.Throws<InterpolationContextReferenceException>(() => {
+            #pragma warning disable ARB001
+            #pragma warning disable ARB002
+            #pragma warning disable ARB004
+            _ = ExpressionOnNone.Interpolate(
+                default(object),
+                x => ExpressionOnNone.Interpolate("bar", y => x.Data)
+            );
+            #pragma warning restore
+        });
+    }
+
+    [Fact]
+    public void Should_not_throw_for_shadowing_data_access_in_nested_interpolation() {
+        #pragma warning disable ARB001
+        #pragma warning disable ARB002
+        #pragma warning disable ARB004
+        _ = ExpressionOnNone.Interpolate(
+            default(object),
+            x => ExpressionOnNone.Interpolate("bar", x => x.Data)
+        );
+        #pragma warning restore
     }
 }

@@ -33,7 +33,7 @@ public sealed class ExpressionInterpolator(ISplicedExpressionEvaluator splicedEx
             expressions: analyzer.EvaluatedExpressions
         ));
 
-        var splicer = new SplicingInterpolatedExpressionVisitor(evaluatedSpliceParameters);
+        var splicer = new SplicingInterpolatedExpressionVisitor(expression, evaluatedSpliceParameters);
         var spliced = splicer.Apply(expression.Body);
 
         return Expression.Lambda<TDelegate>(

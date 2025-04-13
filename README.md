@@ -1,6 +1,7 @@
 # Arborist
 
 [![build](https://github.com/jcracknell/arborist/actions/workflows/build.yml/badge.svg)](https://github.com/jcracknell/arborist/actions/workflows/build.yml)
+[![NuGet Version](https://img.shields.io/nuget/v/Arborist)](https://www.nuget.org/packages/Arborist)
 
 Arborist is a library for manipulating and combining C# expression trees consumed by the IQueryable
 interface and object-relational mappers such as EntityFramework. It provides full expression

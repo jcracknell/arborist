@@ -18,8 +18,6 @@ internal abstract class BaseInterpolatedExpressionVisitor : ExpressionVisitor {
             return false;
         if(node.Arguments[0] is not ParameterExpression parameter)
             return false;
-        if(!parameter.Type.IsAssignableTo(typeof(IInterpolationContext)))
-            return false;
         if(!ReferenceEquals(parameter, _contextParameter))
             return false;
 
@@ -31,11 +29,9 @@ internal abstract class BaseInterpolatedExpressionVisitor : ExpressionVisitor {
     private bool IsInterpolationData(MemberExpression node) {
         if(node is not { Expression: ParameterExpression parameter, Member: PropertyInfo property })
             return false;
-        if(!property.Name.Equals(nameof(IInterpolationContext<object>.Data)))
-            return false;
-        if(!parameter.Type.IsAssignableTo(typeof(IInterpolationContext)))
-            return false;
         if(!ReferenceEquals(parameter, _contextParameter))
+            return false;
+        if(!property.Name.Equals(nameof(IInterpolationContext<object>.Data)))
             return false;
 
         return true;
